@@ -44,3 +44,5 @@ dist/
 # Temporary files
 *.tmp
 temp/
+
+database.duckdb

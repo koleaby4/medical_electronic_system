@@ -10,4 +10,11 @@ dependencies = [
     "duckdb",
     "python-multipart",
     "jinja2",
+    "pydantic>=2.12.4",
+    "pydantic-settings>=2.11.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
 ]
