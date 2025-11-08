@@ -1,0 +1,6 @@
+body { font-family: Arial, sans-serif; margin: 20px; }
+header h1 { margin-bottom: 1rem; }
+#patient-list ul { list-style:none; padding:0; }
+#patient-list li { padding: 8px; border-bottom: 1px solid #eee; }
+form label { display:block; margin-bottom: 8px; }
+button { padding: 6px 10px; }
