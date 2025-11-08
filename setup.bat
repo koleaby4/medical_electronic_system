@@ -15,4 +15,15 @@ echo Syncing dependencies...
 uv sync
 
 echo.
+
+if exist database.duckdb uv run python setup_duckdb.py (
+    echo 'database.duckdb' already exists
+) else (
+    uv run python setup_duckdb.py
+    echo 'database.duckdb' created successfully
+)
+
+echo.
+
+echo.
 echo Setup complete! Run: uv run uvicorn main:app --reload

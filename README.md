@@ -11,6 +11,7 @@ tbc
 
 # Run app
 
-* for development: `uv run uvicorn src.main:app --reload`
-* for production: `uvicorn src.main:app`
+* `.venv\Scripts\activate`
+* for dev -> `uv run uvicorn src.main:app --reload`
+* for prod -> `uvicorn src.main:app`
 * open browser to `http://localhost:8000`
