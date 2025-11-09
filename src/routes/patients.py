@@ -17,13 +17,13 @@ async def render_patients(request: Request):
     db: DbStorage = request.app.storage
     return templates.TemplateResponse(
         "patients.html",
-        {"request": request, "patients": db.patients.get_all_patients()},
+        {"request": request, "active_page": "patients",  "patients": db.patients.get_all_patients()},
     )
 
 
 @router.get("/new", include_in_schema=False)
 async def create_patient_form(request: Request):
-    return templates.TemplateResponse("create_patient.html", {"request": request, "title_options": list(Title.__members__.values())})
+    return templates.TemplateResponse("create_patient.html", {"request": request, "active_page": "new_patient", "title_options": list(Title.__members__.values())})
 
 
 @router.post("/", include_in_schema=False)
