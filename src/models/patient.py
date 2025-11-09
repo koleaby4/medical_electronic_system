@@ -15,14 +15,14 @@ class Patient(BaseModel):
     middle_name: str | None = None
     patient_id: Optional[int] = None
 
-    @field_validator('first_name', 'last_name', 'middle_name', mode='before')
+    @field_validator("first_name", "last_name", "middle_name", mode="before")
     @classmethod
     def capitalize(cls, v: str):
         if v is None:
             return v
         return v.capitalize()
 
-    @field_validator('email', mode='before')
+    @field_validator("email", mode="before")
     @classmethod
     def lower_case(cls, v: str):
         if v is None:
@@ -32,4 +32,4 @@ class Patient(BaseModel):
     @field_validator("title", mode="before")
     @classmethod
     def convert_title(cls, v: str | Title) -> Title:
-        return Title(v)  if isinstance(v, str)  else v
+        return Title(v) if isinstance(v, str) else v
