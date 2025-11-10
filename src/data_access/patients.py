@@ -1,3 +1,4 @@
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -8,24 +9,23 @@ from src.models.patient import Patient
 
 
 class DuckDbPatientsStorage(IPatientsStorage):
-    def __init__(self, duckdb_file: Path):
-        self.duckdb_file = duckdb_file
-        self.conn = duckdb.connect(self.duckdb_file)
+    def __init__(self, db_file: Path):
+        self.db_file = db_file
+        self.conn = duckdb.connect(self.db_file)
+
+    def close(self) -> None:
+        with suppress(Exception):
+            self.conn.close()
 
     def create(self, patient: Patient) -> Patient:
-        patient_dict = patient.model_dump()
-        patient_dict["title"] = patient.title.value
-
-        patient_dict["first_name"] = patient_dict["email"].lower()
-        patient_dict["email"] = patient_dict["email"].lower()
-
-        patient_id = self.conn.execute(
+        result = self.conn.execute(
             """
             INSERT INTO patients (title, first_name, last_name, dob, email, phone, middle_name)
             VALUES (?, ?, ?, ?, ?, ?, ?)
+            RETURNING patient_id
             """,
             [
-                patient.title,
+                patient.title.value,
                 patient.first_name,
                 patient.last_name,
                 patient.dob,
@@ -33,10 +33,9 @@ class DuckDbPatientsStorage(IPatientsStorage):
                 patient.phone,
                 patient.middle_name,
             ],
-        ).fetchone()[0]
+        ).fetchone()
 
-        patient.patient_id = patient_id
-
+        patient.patient_id = int(result[0]) if result else None
         return patient
 
     def get_all_patients(self) -> list[Patient]:
