@@ -1,13 +1,10 @@
-from pathlib import Path
-
 import duckdb
 
 from settings import Settings
 
 
-def create_tables(db_file: Path):
-    with duckdb.connect(db_file) as conn:
-
+def create_tables(db: str):
+    with duckdb.connect(db) as conn:
         conn.execute("CREATE SEQUENCE IF NOT EXISTS patients_id_seq")
 
         conn.execute("""
@@ -24,5 +21,5 @@ def create_tables(db_file: Path):
 
 
 if __name__ == "__main__":
-    st = Settings()
-    create_tables(st.duckdb_file)
+    db_file = Settings().duckdb_file
+    create_tables(str(db_file))
