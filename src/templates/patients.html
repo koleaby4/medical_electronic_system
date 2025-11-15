@@ -2,54 +2,54 @@
 {% set page_title = "Patients" %}
 
 {% block content %}
-<h2 class="mb-3">Patients</h2>
-<input type="text" id="searchInput" class="form-control" placeholder="Search patients...">
+    <h2 class="mb-3">Patients</h2>
+    <input type="text" id="searchInput" class="form-control" placeholder="Search patients...">
 
-<div class="table-responsive mt-3">
-    <table id="patientsTable" class="table table-striped table-hover align-middle">
-        <thead class="table-primary">
-        <tr>
-            <th>Title</th>
-            <th>First Name</th>
-            <th>Middle Name</th>
-            <th>Last Name</th>
-            <th>Sex</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Tests</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for p in patients %}
-        <tr>
-            <td>{{ p.title or '' }}</td>
-            <td>{{ p.first_name or '' }}</td>
-            <td>{{ p.middle_name or '' }}</td>
-            <td>{{ p.last_name or '' }}</td>
-            <td>{{ p.sex or '' }}</td>
-            <td>{{ p.phone or '' }}</td>
-            <td>{{ p.email or '' }}</td>
-            <td>
-                <a href="/patients/{{ p.patient_id }}/tests" title="View tests">
-                    <img src="/static/images/tests.png" alt="Tests" style="width:32px;height:32px;" />
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
+    <div class="table-responsive mt-3">
+        <table id="patientsTable" class="table table-striped table-hover align-middle">
+            <thead class="table-primary">
+            <tr>
+                <th>Title</th>
+                <th>First Name</th>
+                <th>Middle Name</th>
+                <th>Last Name</th>
+                <th>Sex</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Tests</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for p in patients %}
+                <tr>
+                    <td>{{ p.title }}</td>
+                    <td>{{ p.first_name }}</td>
+                    <td>{{ p.middle_name or '' }}</td>
+                    <td>{{ p.last_name }}</td>
+                    <td>{{ p.sex }}</td>
+                    <td>{{ p.phone }}</td>
+                    <td>{{ p.email }}</td>
+                    <td>
+                        <a href="/patients/{{ p.patient_id }}/tests" title="View tests">
+                            <img src="/static/images/tests.png" alt="Tests" style="width:32px;height:32px;"/>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-<script>
-    document.getElementById("searchInput").addEventListener("input", function () {
-        const query = this.value.toLowerCase();
-        const rows = document.querySelectorAll("#patientsTable tbody tr");
-        rows.forEach(row => {
-            const visible = Array.from(row.children).some(td =>
-                td.textContent.toLowerCase().includes(query)
-            );
-            row.style.display = visible ? "" : "none";
+    <script>
+        document.getElementById("searchInput").addEventListener("input", function () {
+            const query = this.value.toLowerCase();
+            const rows = document.querySelectorAll("#patientsTable tbody tr");
+            rows.forEach(row => {
+                const visible = Array.from(row.children).some(td =>
+                    td.textContent.toLowerCase().includes(query)
+                );
+                row.style.display = visible ? "" : "none";
+            });
         });
-    });
-</script>
+    </script>
 {% endblock %}
