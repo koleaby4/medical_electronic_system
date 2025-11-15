@@ -31,6 +31,16 @@
     </div>
 
     <div class="mb-3">
+        <label for="sex" class="form-label">Sex</label>
+        <select name="sex" id="sex" class="form-select" required>
+            <option value="">Select...</option>
+            {% for s in sex_options %}
+            <option value="{{ s.value }}">{{ s.value }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
         <label for="dob" class="form-label">Date of Birth</label>
         <input type="date" name="dob" id="dob" class="form-control" required>
     </div>
