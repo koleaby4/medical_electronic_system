@@ -6,7 +6,7 @@ from starlette.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
-from src.models.enums import Title
+from src.models.enums import Title, Sex
 from src.models.patient import Patient
 
 router = APIRouter()
@@ -33,6 +33,7 @@ async def create_patient_form(request: Request):
             "request": request,
             "active_page": "new_patient",
             "title_options": list(Title.__members__.values()),
+            "sex_options": list(Sex.__members__.values()),
         },
     )
 
@@ -44,6 +45,7 @@ async def create_patient(
     first_name: str = Form(...),
     middle_name: str | None = Form(None),
     last_name: str = Form(...),
+    sex: str = Form(...),
     dob: date = Form(...),
     email: str = Form(...),
     phone: str = Form(...),
@@ -53,6 +55,7 @@ async def create_patient(
         first_name=first_name,
         middle_name=middle_name,
         last_name=last_name,
+        sex=sex,
         dob=dob,
         email=email,
         phone=phone,
