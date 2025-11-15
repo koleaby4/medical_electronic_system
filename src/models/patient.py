@@ -2,13 +2,14 @@ from datetime import date
 from typing import Optional
 from pydantic import BaseModel, field_validator
 
-from src.models.enums import Title
+from src.models.enums import Title, Sex
 
 
 class Patient(BaseModel):
     title: Title
     first_name: str
     last_name: str
+    sex: Sex
     dob: date
     email: str
     phone: str
@@ -33,3 +34,8 @@ class Patient(BaseModel):
     @classmethod
     def convert_title(cls, v: str | Title) -> Title:
         return Title(v) if isinstance(v, str) else v
+
+    @field_validator("sex", mode="before")
+    @classmethod
+    def convert_sex(cls, v: str | Sex) -> Sex:
+        return Sex(v) if isinstance(v, str) else v
