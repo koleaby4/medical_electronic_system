@@ -16,6 +16,7 @@
             <th>Sex</th>
             <th>Phone</th>
             <th>Email</th>
+            <th>Tests</th>
         </tr>
         </thead>
         <tbody>
@@ -28,6 +29,11 @@
             <td>{{ p.sex or '' }}</td>
             <td>{{ p.phone or '' }}</td>
             <td>{{ p.email or '' }}</td>
+            <td>
+                <a href="/patients/{{ p.patient_id }}/tests" title="View tests">
+                    <img src="/static/images/tests.png" alt="Tests" style="width:32px;height:32px;" />
+                </a>
+            </td>
         </tr>
         {% endfor %}
         </tbody>
