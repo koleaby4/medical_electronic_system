@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, Any
 
 from src.models.patient import Patient
 
@@ -10,6 +10,6 @@ class IPatientsStorage(Protocol):
 
     def delete(self, patient_id: str) -> None: ...
 
-    def get_patient(self, **kwargs) -> Patient | None: ...
+    def get_patient(self, patient_id: int) -> Patient | None: ...
 
     def get_all_patients(self) -> list[Patient]: ...
