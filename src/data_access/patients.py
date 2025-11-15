@@ -20,18 +20,27 @@ class DuckDbPatientsStorage(IPatientsStorage):
     def create(self, patient: Patient) -> Patient:
         result = self.conn.execute(
             """
-            INSERT INTO patients (title, first_name, last_name, dob, email, phone, middle_name)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO patients (
+                title, 
+                first_name,
+                middle_name,
+                last_name, 
+                sex, 
+                dob, 
+                email, 
+                phone)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING patient_id
             """,
             [
                 patient.title.value,
                 patient.first_name,
+                patient.middle_name,
                 patient.last_name,
+                patient.sex,
                 patient.dob,
                 patient.email,
                 patient.phone,
-                patient.middle_name,
             ],
         ).fetchone()
 
