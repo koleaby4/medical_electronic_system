@@ -1,0 +1,8 @@
+{% macro status_select(id='status', name='status', selected_value=None) %}
+    <select id="{{ id }}" name="{{ name }}" class="form-select" required>
+        <option value="" disabled {% if not selected_value %}selected{% endif %}>Select status</option>
+        <option value="Red" {% if selected_value == 'Red' %}selected{% endif %}>Red</option>
+        <option value="Amber" {% if selected_value == 'Amber' %}selected{% endif %}>Amber</option>
+        <option value="Green" {% if selected_value == 'Green' %}selected{% endif %}>Green</option>
+    </select>
+{% endmacro %}

@@ -4,27 +4,8 @@
 {% block content %}
 <div class="row g-3">
     <div class="col-md-5">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">Patient Summary</div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-6"><strong>First Name:</strong></div>
-                    <div class="col-6">{{ patient.first_name }}</div>
-                    {% if patient.middle_name %}
-                        <div class="col-6"><strong>Middle Name:</strong></div>
-                        <div class="col-6">{{ patient.middle_name }}</div>
-                    {% endif %}
-                    <div class="col-6"><strong>Last Name:</strong></div>
-                    <div class="col-6">{{ patient.last_name }}</div>
-                    <div class="col-6"><strong>Sex:</strong></div>
-                    <div class="col-6">{{ patient.sex }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <a class="btn btn-outline-secondary" href="/patients/{{ patient.patient_id }}/details">Back to details</a>
-        </div>
+        {% set show_back_button = true %}
+        {% include '_patient_summary_card.html' %}
     </div>
 
     <div class="col-md-7">

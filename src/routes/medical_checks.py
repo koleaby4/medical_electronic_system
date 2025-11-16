@@ -102,7 +102,7 @@ async def new_physicals_check(request: Request, patient_id: int, storage: DbStor
     if patient := storage.patients.get_patient(patient_id=patient_id):
         return templates.TemplateResponse(
             request,
-            "check_physicals_new.html",
+            "create_medical_check_physicals.html",
             {
                 "active_page": "patients",
                 "patient": patient,
@@ -110,3 +110,52 @@ async def new_physicals_check(request: Request, patient_id: int, storage: DbStor
             },
         )
     raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
+
+
+@router.get("/{check_id}", include_in_schema=False)
+async def medical_check_details(
+    request: Request, patient_id: int, check_id: int, storage: DbStorage = Depends(get_storage)
+):
+    if not (patient := storage.patients.get_patient(patient_id=patient_id)):
+        raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
+    row = storage.medical_checks.get_one(patient_id=patient_id, check_id=check_id)
+    if not row:
+        raise HTTPException(status_code=404, detail=f"Medical check with check_id={check_id} not found for patient {patient_id}")
+
+    mc = MedicalCheck(
+        check_id=row.get("check_id"),
+        patient_id=row.get("patient_id"),
+        date=row.get("check_date"),
+        type=MedicalCheckType(row.get("check_type")),
+        status=MedicalCheckStatus(row.get("status")),
+        notes=row.get("notes"),
+        results=row.get("results"),
+    )
+    return templates.TemplateResponse(
+        request,
+        "medical_check_details.html",
+        {
+            "active_page": "patients",
+            "patient": patient,
+            "check": mc,
+        },
+    )
+
+
+@router.post("/{check_id}/status", include_in_schema=False)
+async def update_medical_check_status(
+    patient_id: int,
+    check_id: int,
+    status: str = Form(...),
+    storage: DbStorage = Depends(get_storage),
+):
+    if not storage.patients.get_patient(patient_id=patient_id):
+        raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
+    # Validate status using enum
+    try:
+        new_status = MedicalCheckStatus(status)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid status value")
+
+    storage.medical_checks.update_status(check_id=check_id, status=new_status.value)
+    return RedirectResponse(url=f"/patients/{patient_id}/details", status_code=303)

@@ -4,3 +4,21 @@ header h1 { margin-bottom: 1rem; }
 #patient-list li { padding: 8px; border-bottom: 1px solid #eee; }
 form label { display:block; margin-bottom: 8px; }
 button { padding: 6px 10px; }
+/* Simple chart placeholder backgrounds extracted from templates */
+.chart-placeholder-diag {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  background: repeating-linear-gradient(45deg, #f8f9fa, #f8f9fa 10px, #ffffff 10px, #ffffff 20px);
+}
+
+.chart-placeholder-anti {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  background: repeating-linear-gradient(-45deg, #f8f9fa, #f8f9fa 10px, #ffffff 10px, #ffffff 20px);
+}

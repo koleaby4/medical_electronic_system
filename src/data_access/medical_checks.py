@@ -54,3 +54,33 @@ class DuckDbMedicalChecksStorage:
                 except Exception:
                     r["results"] = {}
             return rows
+
+    def get_one(self, *, patient_id: int, check_id: int) -> dict[str, Any] | None:
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT check_id, patient_id, check_type, check_date, results, status, notes
+                FROM medical_checks
+                WHERE patient_id = ? AND check_id = ?
+                """,
+                [patient_id, check_id],
+            )
+            desc = cur.description
+            if not desc:
+                return None
+            cols: list[str] = [d[0] for d in desc]
+            row = cur.fetchone()
+            if not row:
+                return None
+            r = dict(zip(cols, row))
+            try:
+                r["results"] = json.loads(r.get("results") or "{}")
+            except Exception:
+                r["results"] = {}
+            return r
+
+    def update_status(self, *, check_id: int, status: str) -> None:
+        self.conn.execute(
+            "UPDATE medical_checks SET status = ? WHERE check_id = ?",
+            [status, check_id],
+        )

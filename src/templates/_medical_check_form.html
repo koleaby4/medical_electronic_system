@@ -1,11 +1,4 @@
-{% macro status_select(id='status', name='status') %}
-    <select id="{{ id }}" name="{{ name }}" class="form-select" required>
-        <option value="" disabled selected>Select status</option>
-        <option value="Red">Red</option>
-        <option value="Amber">Amber</option>
-        <option value="Green">Green</option>
-    </select>
-{% endmacro %}
+{% from '_status_select.html' import status_select %}
 
 <form id="medicalCheckForm" class="vstack gap-3" method="post" action="/patients/{{ patient.patient_id }}/medical_checks">
     <div class="row g-2 align-items-center">

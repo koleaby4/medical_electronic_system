@@ -1,0 +1,56 @@
+{% extends '_base.html' %}
+{% set page_title = "Medical Check Details" %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-md-5">
+        {% set show_back_button = true %}
+        {% include '_patient_summary_card.html' %}
+    </div>
+
+    <div class="col-md-7">
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">Check summary</div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-4"><strong>Type:</strong></div>
+                    <div class="col-8">{{ check.type }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>Date:</strong></div>
+                    <div class="col-8">{{ check.check_date }}</div>
+                </div>
+
+                <form method="post" action="/patients/{{ patient.patient_id }}/medical_checks/{{ check.check_id }}/status" class="row g-2 align-items-end">
+                    <div class="col-8">
+                        <label for="status" class="form-label mb-0">Status</label>
+                        {% from '_status_select.html' import status_select %}
+                        {{ status_select('status', 'status', check.status) }}
+                    </div>
+                    <div class="col-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="/patients/{{ patient.patient_id }}/details" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Parameters</div>
+            <div class="card-body">
+                {% set parameters = (check.results.parameters if check.results and check.results.parameters is not none else []) %}
+                {% include '_parameters_table.html' %}
+            </div>
+        </div>
+
+        {% if check.notes %}
+        <div class="card">
+            <div class="card-header">Notes</div>
+            <div class="card-body">
+                <pre class="mb-0" style="white-space: pre-wrap;">{{ check.notes }}</pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

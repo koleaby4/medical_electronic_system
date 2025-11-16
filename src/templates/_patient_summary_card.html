@@ -1,0 +1,26 @@
+{# Renders a patient summary card and optional back-to-details button #}
+<div class="card mb-3">
+    <div class="card-header bg-primary text-white">Patient Summary</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-6"><strong>First Name:</strong></div>
+            <div class="col-6">{{ patient.first_name }}</div>
+            {% if patient.middle_name %}
+                <div class="col-6"><strong>Middle Name:</strong></div>
+                <div class="col-6">{{ patient.middle_name }}</div>
+            {% endif %}
+            <div class="col-6"><strong>Last Name:</strong></div>
+            <div class="col-6">{{ patient.last_name }}</div>
+            <div class="col-6"><strong>Sex:</strong></div>
+            <div class="col-6">{{ patient.sex }}</div>
+            {% if age is defined %}
+                <div class="col-6"><strong>Age:</strong></div>
+                <div class="col-6">{{ age }}</div>
+            {% endif %}
+        </div>
+    </div>
+  </div>
+
+{% if show_back_button %}
+  <a class="btn btn-outline-secondary" href="{{ back_url or ('/patients/' ~ patient.patient_id ~ '/details') }}">Back to details</a>
+{% endif %}

@@ -1,0 +1,25 @@
+{# Renders a read-only parameters table for a list named `parameters` #}
+{% if parameters and parameters|length > 0 %}
+  <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+          <thead>
+          <tr>
+              <th style="width: 40%">Name</th>
+              <th style="width: 20%">Units</th>
+              <th style="width: 40%">Value</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for p in parameters %}
+              <tr>
+                  <td>{{ p.name }}</td>
+                  <td>{{ p.units }}</td>
+                  <td>{{ p.value }}</td>
+              </tr>
+          {% endfor %}
+          </tbody>
+      </table>
+  </div>
+{% else %}
+  <div class="text-muted">No parameters recorded.</div>
+{% endif %}

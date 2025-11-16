@@ -6,7 +6,7 @@ from src.models.enums import MedicalCheckType, MedicalCheckStatus
 
 
 class MedicalCheck(BaseModel):
-    check_id: int | None = Field(default=None, description="DB identifier", exclude=True)
+    check_id: int | None = Field(default=None, description="DB identifier")
     patient_id: int | None = Field(default=None, description="Patient identifier", exclude=True)
     check_date: date = Field(
         ..., description="Date of the medical check", serialization_alias="date", validation_alias="date"
