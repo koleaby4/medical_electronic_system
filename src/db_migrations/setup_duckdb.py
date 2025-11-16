@@ -39,6 +39,7 @@ def create_medical_checks_table(db: str):
                 check_date DATE NOT NULL,
                 results JSON NOT NULL,
                 status TEXT NOT NULL,
+                notes TEXT NULL,
                 foreign key (patient_id) references patients(patient_id)
             )""")
 
