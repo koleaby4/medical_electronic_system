@@ -16,7 +16,7 @@ class MedicalCheck(BaseModel):
     check_id: int | None = Field(default=None, description="DB identifier")
     patient_id: int | None = Field(default=None, description="Patient identifier", exclude=True)
     check_date: date = Field(
-        ..., description="Date of the medical check", serialization_alias="date", validation_alias="date"
+        ..., description="Date of the medical check"
     )
     type: MedicalCheckType = Field(..., description="Type of medical check (e.g., blood, physicals, colonoscopy)")
     status: MedicalCheckStatus = Field(..., description="Clinical status of the check outcome (Red | Amber | Green)")
