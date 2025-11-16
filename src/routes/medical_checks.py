@@ -1,5 +1,4 @@
 import datetime
-from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -8,8 +7,7 @@ from fastapi.templating import Jinja2Templates
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
 from src.models.enums import MedicalCheckType, MedicalCheckStatus
-from src.models.medical_check import MedicalCheck, MedicalChecks
-
+from src.models.medical_check import MedicalCheck, MedicalChecks, MedicalCheckItem
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -20,21 +18,8 @@ async def list_medical_checks(patient_id: int, storage: DbStorage = Depends(get_
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
-    rows = storage.medical_checks.list_by_patient(patient_id)
-    records: list[MedicalCheck] = []
-    for r in rows:
-        records.append(
-            MedicalCheck(
-                check_id=r.get("check_id"),
-                patient_id=r.get("patient_id"),
-                date=r.get("check_date"),
-                type=MedicalCheckType(r.get("check_type")),
-                status=MedicalCheckStatus(r.get("status")),
-                notes=r.get("notes"),
-                results=r.get("results"),
-            )
-        )
-    return MedicalChecks(records=records)
+    checks: list[MedicalCheck] = storage.medical_checks.get_medical_checks(patient_id)
+    return MedicalChecks(records=checks)
 
 
 @router.post("", include_in_schema=False)
@@ -52,7 +37,7 @@ async def create_medical_check(
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
     form = await request.form()
-    parameters: list[dict[str, Any]] = []
+    medical_check_items: list[MedicalCheckItem] = []
     if param_count is None:
         indices: set[int] = set()
         for k in form.keys():
@@ -68,21 +53,15 @@ async def create_medical_check(
         name = form.get(f"param_name_{i}")
         value = form.get(f"param_value_{i}")
         units = form.get(f"param_units_{i}")
-        if name is None and value is None and units is None:
-            continue
-        parameters.append({"name": name or "", "units": units or "", "value": value})
-
-    results: dict[str, Any] = {"parameters": parameters}
-    if notes:
-        results["notes"] = notes
+        medical_check_items.append(MedicalCheckItem(name=name, units=units, value=value))
 
     mc = MedicalCheck(
         patient_id=patient_id,
-        date=date,
-        type=type,
-        status=status,
+        check_date=date,
+        type=MedicalCheckType(type),
+        status=MedicalCheckStatus(status),
         notes=notes,
-        results=results,
+        medical_check_items=medical_check_items,
     )
 
     storage.medical_checks.create(
@@ -90,7 +69,7 @@ async def create_medical_check(
         check_type=mc.type.value,
         check_date=mc.check_date,
         status=mc.status.value,
-        results=mc.results or {},
+        medical_check_items=mc.medical_check_items,
         notes=mc.notes,
     )
 
@@ -118,27 +97,20 @@ async def medical_check_details(
 ):
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
-    row = storage.medical_checks.get_one(patient_id=patient_id, check_id=check_id)
-    if not row:
-        raise HTTPException(status_code=404, detail=f"Medical check with check_id={check_id} not found for patient {patient_id}")
 
-    mc = MedicalCheck(
-        check_id=row.get("check_id"),
-        patient_id=row.get("patient_id"),
-        date=row.get("check_date"),
-        type=MedicalCheckType(row.get("check_type")),
-        status=MedicalCheckStatus(row.get("status")),
-        notes=row.get("notes"),
-        results=row.get("results"),
-    )
-    return templates.TemplateResponse(
-        request,
-        "medical_check_details.html",
-        {
-            "active_page": "patients",
-            "patient": patient,
-            "check": mc,
-        },
+    if mc := storage.medical_checks.get_medical_check(patient_id=patient_id, check_id=check_id):
+        return templates.TemplateResponse(
+            request,
+            "medical_check_details.html",
+            {
+                "active_page": "patients",
+                "patient": patient,
+                "check": mc,
+            },
+        )
+
+    raise HTTPException(
+        status_code=404, detail=f"Medical check with check_id={check_id} not found for patient {patient_id}"
     )
 
 
@@ -151,7 +123,7 @@ async def update_medical_check_status(
 ):
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
-    # Validate status using enum
+
     try:
         new_status = MedicalCheckStatus(status)
     except Exception:
