@@ -38,6 +38,7 @@ def create_test_results_table(db: str):
                 check_type TEXT NOT NULL,
                 check_date DATE NOT NULL,
                 results JSON NOT NULL,
+                status TEXT NOT NULL,
                 foreign key (patient_id) references patients(patient_id)
             )""")
 
