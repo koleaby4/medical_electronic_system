@@ -1,4 +1,4 @@
-from datetime import date
+import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -17,7 +17,6 @@ templates = Jinja2Templates(directory="src/templates")
 
 @router.get("", response_model=MedicalChecks)
 async def list_medical_checks(patient_id: int, storage: DbStorage = Depends(get_storage)) -> MedicalChecks:
-    # Ensure patient exists
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
@@ -31,7 +30,7 @@ async def list_medical_checks(patient_id: int, storage: DbStorage = Depends(get_
                 date=r.get("check_date"),
                 type=MedicalCheckType(r.get("check_type")),
                 status=MedicalCheckStatus(r.get("status")),
-                notes=None,
+                notes=r.get("notes"),
                 results=r.get("results"),
             )
         )
@@ -44,7 +43,7 @@ async def create_medical_check(
     request: Request,
     storage: DbStorage = Depends(get_storage),
     type: str = Form(...),
-    date: date = Form(...),
+    date: datetime.date = Form(...),
     status: str = Form(...),
     notes: str | None = Form(None),
     param_count: int | None = Form(None),
