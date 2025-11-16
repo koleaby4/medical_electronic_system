@@ -3,7 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from starlette.templating import Jinja2Templates
+from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
@@ -101,9 +101,9 @@ async def create_medical_check(
 async def new_physicals_check(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
     if patient := storage.patients.get_patient(patient_id=patient_id):
         return templates.TemplateResponse(
+            request,
             "check_physicals_new.html",
             {
-                "request": request,
                 "active_page": "patients",
                 "patient": patient,
                 "check_type": "physicals",

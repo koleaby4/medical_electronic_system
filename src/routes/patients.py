@@ -2,7 +2,7 @@ from datetime import date
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import RedirectResponse
-from starlette.templating import Jinja2Templates
+from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
@@ -16,9 +16,9 @@ templates = Jinja2Templates(directory="src/templates")
 @router.get("/", include_in_schema=False)
 async def render_patients(request: Request, storage: DbStorage = Depends(get_storage)):
     return templates.TemplateResponse(
+        request,
         "patients.html",
         {
-            "request": request,
             "active_page": "patients",
             "patients": storage.patients.get_all_patients(),
         },
@@ -28,9 +28,9 @@ async def render_patients(request: Request, storage: DbStorage = Depends(get_sto
 @router.get("/new", include_in_schema=False)
 async def create_patient_form(request: Request):
     return templates.TemplateResponse(
+        request,
         "create_patient.html",
         {
-            "request": request,
             "active_page": "new_patient",
             "title_options": list(Title.__members__.values()),
             "sex_options": list(Sex.__members__.values()),
@@ -76,9 +76,9 @@ def get_age(dob: date) -> int:
 async def patient_details(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
     if patient := storage.patients.get_patient(patient_id=patient_id):
         return templates.TemplateResponse(
+            request,
             "patient_details.html",
             {
-                "request": request,
                 "active_page": "patients",
                 "patient": patient,
                 "age": get_age(patient.dob),
