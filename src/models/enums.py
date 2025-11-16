@@ -19,3 +19,9 @@ class Sex(StrEnum):
     MALE = "male"
     UNKNOWN = "unknown"
     SPECIAL = "special"
+
+
+class MedicalCheckType(StrEnum):
+    PHYSICALS = "physicals"
+    BLOOD = "blood"
+    COLONOSCOPY = "colonoscopy"

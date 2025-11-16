@@ -1,0 +1,121 @@
+{% extends '_base.html' %}
+{% set page_title = "Patient Details" %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- Left column -->
+    <div class="col-md-6">
+        <!-- Patient summary tile -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">Patient Summary</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6"><strong>First Name:</strong></div>
+                    <div class="col-6">{{ patient.first_name }}</div>
+                    {% if patient.middle_name  %}
+                        <div class="col-6"><strong>Middle Name:</strong></div>
+                        <div class="col-6">{{ patient.middle_name }}</div>
+                    {% endif %}
+                    <div class="col-6"><strong>Last Name:</strong></div>
+                    <div class="col-6">{{ patient.last_name }}</div>
+                    <div class="col-6"><strong>Sex:</strong></div>
+                    <div class="col-6">{{ patient.sex }}</div>
+                    <div class="col-6"><strong>Age:</strong></div>
+                    <div class="col-6">{{ age }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Blood Check Results</div>
+            <div class="card-body" style="height:220px; display:flex; align-items:center; justify-content:center; color:#6c757d; background: repeating-linear-gradient(45deg, #f8f9fa, #f8f9fa 10px, #ffffff 10px, #ffffff 20px);">
+                <span>Chart placeholder</span>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Weight Over Time</div>
+            <div class="card-body" style="height:220px; display:flex; align-items:center; justify-content:center; color:#6c757d; background: repeating-linear-gradient(-45deg, #f8f9fa, #f8f9fa 10px, #ffffff 10px, #ffffff 20px);">
+                <span>Chart placeholder</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="col-md-6">
+        <!-- Controls -->
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">Add Medical Check Record</div>
+            <div class="card-body d-flex gap-2 align-items-center flex-wrap">
+                <select id="checkType" class="form-select" style="max-width: 240px;">
+                    <option value="physicals">physicals</option>
+                    <option value="blood">blood</option>
+                    <option value="colonoscopy">colonoscopy</option>
+                </select>
+                <button id="addRecordBtn" class="btn btn-primary">Add Record</button>
+            </div>
+        </div>
+
+        <!-- Records table -->
+        <div class="card">
+            <div class="card-header bg-info text-white">History of medical checks</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="recordsTable" class="table table-striped align-middle">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Notes</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noRecords" class="text-muted" style="display:none;">No records yet.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const patientId = {{ patient.patient_id }};
+        const tbody = document.querySelector('#recordsTable tbody');
+        const noRecords = document.getElementById('noRecords');
+
+        function render(records) {
+            tbody.innerHTML = '';
+            if (!records || records.length === 0) {
+                noRecords.style.display = '';
+                return;
+            }
+            noRecords.style.display = 'none';
+            for (const r of records) {
+                const tr = document.createElement('tr');
+                const tdDate = document.createElement('td');
+                tdDate.textContent = r.date || '';
+                const tdType = document.createElement('td');
+                tdType.textContent = r.type || '';
+                const tdNotes = document.createElement('td');
+                tdNotes.textContent = r.notes || '';
+                tr.append(tdDate, tdType, tdNotes);
+                tbody.appendChild(tr);
+            }
+        }
+
+        fetch(`/patients/${patientId}/medical_checks`)
+            .then(r => r.json())
+            .then(data => render(data.records))
+            .catch(() => render([]));
+
+        // Placeholder action for Add Record
+        document.getElementById('addRecordBtn').addEventListener('click', () => {
+            const type = document.getElementById('checkType').value;
+            alert(`Add Record clicked for type: ${type} (not implemented)`);
+        });
+    });
+</script>
+{% endblock %}
