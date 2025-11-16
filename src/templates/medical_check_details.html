@@ -38,7 +38,7 @@
         <div class="card mb-3">
             <div class="card-header">Parameters</div>
             <div class="card-body">
-                {% set parameters = (check.results.parameters if check.results and check.results.parameters is not none else []) %}
+                {% set parameters = check.medical_check_items or [] %}
                 {% include '_parameters_table.html' %}
             </div>
         </div>
