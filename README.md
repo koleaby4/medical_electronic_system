@@ -2,7 +2,7 @@
 
 1. cd into the project folder
 2. run `.\setup.bat`
-3. alternatively (for test purposes) `uv run python .\create_dummy_patients.py`
+3. to populate DB with dummy patients -> `uv run python .\create_dummy_patients.py`
 
 # Run app
 
