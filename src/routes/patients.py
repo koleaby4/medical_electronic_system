@@ -8,7 +8,6 @@ from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
 from src.models.enums import Title, Sex
 from src.models.patient import Patient
-from src.models.medical_check import MedicalChecks
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -41,15 +40,15 @@ async def create_patient_form(request: Request):
 
 @router.post("/", include_in_schema=False)
 async def create_patient(
-        storage: DbStorage = Depends(get_storage),
-        title: str = Form(...),
-        first_name: str = Form(...),
-        middle_name: str | None = Form(None),
-        last_name: str = Form(...),
-        sex: str = Form(...),
-        dob: date = Form(...),
-        email: str = Form(...),
-        phone: str = Form(...),
+    storage: DbStorage = Depends(get_storage),
+    title: str = Form(...),
+    first_name: str = Form(...),
+    middle_name: str | None = Form(None),
+    last_name: str = Form(...),
+    sex: str = Form(...),
+    dob: date = Form(...),
+    email: str = Form(...),
+    phone: str = Form(...),
 ):
     patient = Patient(
         title=title,

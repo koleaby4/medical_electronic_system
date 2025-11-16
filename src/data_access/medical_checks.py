@@ -15,7 +15,16 @@ class DuckDbMedicalChecksStorage:
         with suppress(Exception):
             self.conn.close()
 
-    def create(self, *, patient_id: int, check_type: str, check_date, status: str, results: dict[str, Any] | list[Any], notes: str | None = None) -> int:
+    def create(
+        self,
+        *,
+        patient_id: int,
+        check_type: str,
+        check_date,
+        status: str,
+        results: dict[str, Any] | list[Any],
+        notes: str | None = None,
+    ) -> int:
         res = self.conn.execute(
             """
             INSERT INTO medical_checks (patient_id, check_type, check_date, results, status, notes)

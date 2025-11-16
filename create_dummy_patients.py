@@ -1,7 +1,6 @@
 from datetime import date
 
 from settings import Settings
-from src.db_migrations.setup_duckdb import create_tables
 from src.data_access.db_storage import DbStorage
 from src.models.enums import Title, Sex
 from src.models.patient import Patient
