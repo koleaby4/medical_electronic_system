@@ -1,13 +1,14 @@
 from datetime import date
 
-from fastapi import APIRouter, Request, Form, Depends
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, Form, Depends, HTTPException
+from fastapi.responses import RedirectResponse, JSONResponse
 from starlette.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
 from src.models.enums import Title, Sex
 from src.models.patient import Patient
+
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -62,3 +63,33 @@ async def create_patient(
     )
     storage.patients.create(patient)
     return RedirectResponse(url="/patients", status_code=303)
+
+
+def get_age(dob: date) -> int:
+    today = date.today()
+    years = today.year - dob.year
+    if (today.month, today.day) < (dob.month, dob.day):
+        years -= 1
+    return years
+
+
+@router.get("/{patient_id}/medical_checks", include_in_schema=False)
+async def patient_tests(
+    request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)
+):
+    if patient := storage.patients.get_patient(patient_id=patient_id):
+        return templates.TemplateResponse(
+            "medical_checks.html",
+            {
+                "request": request,
+                "active_page": "patients",
+                "patient": patient,
+                "age": get_age(patient.dob),
+            },
+        )
+    raise HTTPException(status_code=404, detail=f"Patient with {patient_id=} not found")
+
+
+@router.get("/{patient_id}/medical_checks", include_in_schema=False)
+async def patient_medical_checks(patient_id: int) -> JSONResponse:
+    return JSONResponse(content={"records": []})

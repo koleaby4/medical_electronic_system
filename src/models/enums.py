@@ -13,6 +13,7 @@ class Title(StrEnum):
     LORD = "Lord"
     LADY = "Lady"
 
+
 class Sex(StrEnum):
     FEMALE = "female"
     MALE = "male"

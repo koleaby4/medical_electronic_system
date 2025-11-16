@@ -54,7 +54,7 @@ class DuckDbPatientsStorage(IPatientsStorage):
 
     def get_patient(self, patient_id: int) -> Patient | None:
         with self.conn.cursor() as cur:
-            cur.execute(f"select * from patients where patient_id = ?", patient_id)
+            cur.execute("select * from patients where patient_id = ?", [patient_id])
             rows = _to_dicts(cur)
             return Patient(**rows[0]) if rows else None
 
