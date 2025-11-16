@@ -61,7 +61,7 @@
 
                     <!-- Bottom: tiles list -->
                     <div id="noRecords" class="text-muted" style="display:none;">No records yet.</div>
-                    <div id="checksTiles" class="row row-cols-1 row-cols-sm-2 g-2">
+                    <div id="checksTiles" class="row row-cols-1 g-2">
                         <!-- populated by JS -->
                     </div>
                 </div>
@@ -87,36 +87,26 @@
                     col.className = 'col';
 
                     const card = document.createElement('div');
-                    card.className = 'border rounded p-2 h-100';
+                    card.className = 'border rounded py-2 px-3 d-flex justify-content-between align-items-center';
 
                     const type = document.createElement('div');
-                    type.className = 'fw-bold';
+                    type.className = 'fw-bold text-truncate';
                     type.textContent = r.type || '';
 
                     const date = document.createElement('div');
-                    date.className = 'text-muted';
+                    date.className = 'text-muted ms-3';
                     date.textContent = r.date || '';
 
-                    const status = document.createElement('span');
-                    status.className = 'badge ms-2';
                     const sVal = r.status || '';
-                    status.textContent = sVal;
-                    // Color code badge and tile background based on status
                     if (sVal === 'Red') {
-                        status.classList.add('bg-danger');
                         card.classList.add('bg-danger', 'text-white');
                     } else if (sVal === 'Amber') {
-                        status.classList.add('bg-warning', 'text-dark');
                         card.classList.add('bg-warning', 'text-dark');
                     } else if (sVal === 'Green') {
-                        status.classList.add('bg-success');
                         card.classList.add('bg-success', 'text-white');
                     }
 
-                    const header = document.createElement('div');
-                    header.append(type, status);
-
-                    card.append(header, date);
+                    card.append(type, date);
                     col.appendChild(card);
                     tiles.appendChild(col);
                 }
