@@ -5,7 +5,7 @@ logger = getLogger(__name__)
 logger.setLevel("INFO")
 
 
-def create_tables(db: str):
+def create_patients_table(db: str):
     with duckdb.connect(db) as conn:
         conn.execute("CREATE SEQUENCE IF NOT EXISTS patients_id_seq")
         logger.info("Created patients_id_seq (if not exists)")
@@ -26,7 +26,7 @@ def create_tables(db: str):
         logger.info("Created patients table (if not exists)")
 
 
-def create_test_results_table(db: str):
+def create_medical_checks_table(db: str):
     with duckdb.connect(db) as conn:
         conn.execute("CREATE SEQUENCE IF NOT EXISTS medical_checks_id_seq")
         logger.info("Created medical_checks_id_seq (if not exists)")
@@ -43,6 +43,11 @@ def create_test_results_table(db: str):
             )""")
 
         logger.info("Created medical_checks table (if not exists)")
+
+
+def create_tables(db: str):
+    create_patients_table(db)
+    create_medical_checks_table(db)
 
 
 if __name__ == "__main__":
