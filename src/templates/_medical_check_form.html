@@ -1,0 +1,85 @@
+{% macro status_select(id='status', name='status') %}
+    <select id="{{ id }}" name="{{ name }}" class="form-select" required>
+        <option value="" disabled selected>Select status</option>
+        <option value="Red">Red</option>
+        <option value="Amber">Amber</option>
+        <option value="Green">Green</option>
+    </select>
+{% endmacro %}
+
+<form id="medicalCheckForm" class="vstack gap-3" method="post" action="/patients/{{ patient.patient_id }}/medical_checks">
+    <div class="row g-2 align-items-center">
+        <div class="col-sm-4">
+            <label for="checkType" class="form-label mb-0">Check type</label>
+            <input id="checkType" class="form-control" value="{{ check_type }}" disabled>
+            <input type="hidden" name="type" value="{{ check_type }}">
+        </div>
+        <div class="col-sm-4">
+            <label for="checkDate" class="form-label mb-0">Date</label>
+            <input id="checkDate" name="date" type="date" class="form-control" required>
+        </div>
+        <div class="col-sm-4">
+            <label for="status" class="form-label mb-0">Status</label>
+            {{ status_select('status', 'status') }}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Parameters</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%">Name</th>
+                            <th style="width: 20%">Units</th>
+                            <th style="width: 40%">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for p in parameters %}
+                        <tr>
+                            <td>
+                                <span>{{ p.name }}</span>
+                                <input type="hidden" name="param_name_{{ loop.index0 }}" value="{{ p.name }}">
+                            </td>
+                            <td>
+                                <span>{{ p.units or '' }}</span>
+                                <input type="hidden" name="param_units_{{ loop.index0 }}" value="{{ p.units or '' }}">
+                            </td>
+                            <td>
+                                <input class="form-control" id="param_{{ loop.index0 }}" name="param_value_{{ loop.index0 }}" type="{{ p.input_type or 'text' }}" step="{{ p.step or '1' }}" pattern="{{ p.pattern or '' }}" placeholder="{{ p.placeholder or '' }}">
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <label for="notes" class="form-label">Notes</label>
+        <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+    </div>
+
+    {# Provide param_count to assist server-side parsing #}
+    <input type="hidden" name="param_count" value="{{ parameters|length }}">
+
+    <div class="d-flex gap-2">
+        <button id="saveBtn" type="submit" class="btn btn-primary">Save</button>
+        <a href="/patients/{{ patient.patient_id }}/details" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+<script>
+    (function(){
+        const dateEl = document.getElementById('checkDate');
+        if (dateEl && !dateEl.value) {
+            const today = new Date();
+            const m = String(today.getMonth()+1).padStart(2,'0');
+            const d = String(today.getDate()).padStart(2,'0');
+            dateEl.value = `${today.getFullYear()}-${m}-${d}`;
+        }
+    })();
+</script>

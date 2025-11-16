@@ -127,10 +127,14 @@
                 .then(data => render(data.records))
                 .catch(() => render([]));
 
-            // Placeholder action for Add Record
+            // Redirect to specific add page based on selected type
             document.getElementById('addRecordBtn').addEventListener('click', () => {
                 const type = document.getElementById('checkType').value;
-                alert(`Add Record clicked for type: ${type} (not implemented)`);
+                if (type === 'physicals') {
+                    window.location.href = `/patients/${patientId}/medical_checks/physicals/new`;
+                } else {
+                    alert(`Add page for type: ${type} is not implemented yet.`);
+                }
             });
         });
     </script>

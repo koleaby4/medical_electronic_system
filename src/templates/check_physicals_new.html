@@ -1,0 +1,46 @@
+{% extends '_base.html' %}
+{% set page_title = "Add physicals check" %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-md-5">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">Patient Summary</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6"><strong>First Name:</strong></div>
+                    <div class="col-6">{{ patient.first_name }}</div>
+                    {% if patient.middle_name %}
+                        <div class="col-6"><strong>Middle Name:</strong></div>
+                        <div class="col-6">{{ patient.middle_name }}</div>
+                    {% endif %}
+                    <div class="col-6"><strong>Last Name:</strong></div>
+                    <div class="col-6">{{ patient.last_name }}</div>
+                    <div class="col-6"><strong>Sex:</strong></div>
+                    <div class="col-6">{{ patient.sex }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <a class="btn btn-outline-secondary" href="/patients/{{ patient.patient_id }}/details">Back to details</a>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-info text-white">Add physicals check</div>
+            <div class="card-body">
+                {# Define parameters locally for physicals so backend doesn't need to pass them #}
+                {% set parameters = [
+                    {"name": "height", "units": "cm", "input_type": "number", "step": "1", "placeholder": "e.g. 180"},
+                    {"name": "weight", "units": "kg", "input_type": "number", "step": "0.1", "placeholder": "e.g. 75.5"},
+                    {"name": "blood pressure (systolic)", "units": "mmHg", "input_type": "number", "step": "1", "placeholder": "e.g. 120"},
+                    {"name": "blood pressure (diastolic)", "units": "mmHg", "input_type": "number", "step": "1", "placeholder": "e.g. 80"}
+                ] %}
+                {% include '_medical_check_form.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
