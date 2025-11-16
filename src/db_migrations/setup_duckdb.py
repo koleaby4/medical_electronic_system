@@ -31,24 +31,44 @@ def create_medical_checks_table(db: str):
         conn.execute("CREATE SEQUENCE IF NOT EXISTS medical_checks_id_seq")
         logger.info("Created medical_checks_id_seq (if not exists)")
 
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS medical_checks (
-                check_id INTEGER PRIMARY KEY DEFAULT nextval('medical_checks_id_seq'),
-                patient_id INTEGER NOT NULL,
-                check_type TEXT NOT NULL,
-                check_date DATE NOT NULL,
-                results JSON NOT NULL,
-                status TEXT NOT NULL,
-                notes TEXT NULL,
-                foreign key (patient_id) references patients(patient_id)
-            )""")
+               check_id INTEGER PRIMARY KEY DEFAULT nextval('medical_checks_id_seq'),
+               patient_id INTEGER NOT NULL,
+               check_type TEXT NOT NULL,
+               check_date DATE NOT NULL,
+               status TEXT NOT NULL,
+               notes TEXT NULL,
+               foreign key (patient_id) references patients(patient_id)
+            )
+            """
+        )
 
         logger.info("Created medical_checks table (if not exists)")
+
+
+def medical_check_items_table(db: str):
+    with duckdb.connect(db) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS medical_check_items (
+                check_item_id UUID PRIMARY KEY DEFAULT uuid(),
+                check_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                units TEXT NOT NULL,
+                value TEXT NOT NULL,
+                foreign key (check_id) references medical_checks(check_id)
+            )
+            """
+        )
+        logger.info("Created medical_check_items table (if not exists)")
 
 
 def create_tables(db: str):
     create_patients_table(db)
     create_medical_checks_table(db)
+    medical_check_items_table(db)
 
 
 if __name__ == "__main__":
