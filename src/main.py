@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from settings import Settings
 from src.data_access.db_storage import DbStorage
-from src.routes import root, patients
+from src.routes import root, patients, medical_checks
 import uvicorn
 
 
@@ -21,6 +21,7 @@ def create_app() -> FastAPI:
     app.mount("/static", StaticFiles(directory="src/static"), name="static")
     app.include_router(root.router)
     app.include_router(patients.router, prefix="/patients")
+    app.include_router(medical_checks.router, prefix="/patients/{patient_id}/medical_checks")
     return app
 
 

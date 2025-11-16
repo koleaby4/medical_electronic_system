@@ -41,15 +41,15 @@ async def create_patient_form(request: Request):
 
 @router.post("/", include_in_schema=False)
 async def create_patient(
-    storage: DbStorage = Depends(get_storage),
-    title: str = Form(...),
-    first_name: str = Form(...),
-    middle_name: str | None = Form(None),
-    last_name: str = Form(...),
-    sex: str = Form(...),
-    dob: date = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
+        storage: DbStorage = Depends(get_storage),
+        title: str = Form(...),
+        first_name: str = Form(...),
+        middle_name: str | None = Form(None),
+        last_name: str = Form(...),
+        sex: str = Form(...),
+        dob: date = Form(...),
+        email: str = Form(...),
+        phone: str = Form(...),
 ):
     patient = Patient(
         title=title,
@@ -85,12 +85,4 @@ async def patient_details(request: Request, patient_id: int, storage: DbStorage 
                 "age": get_age(patient.dob),
             },
         )
-    raise HTTPException(status_code=404, detail=f"Patient with {patient_id=} not found")
-
-
-@router.get("/{patient_id}/medical_checks", response_model=MedicalChecks)
-async def patient_medical_checks(patient_id: int, storage: DbStorage = Depends(get_storage)) -> MedicalChecks:
-    if storage.patients.get_patient(patient_id=patient_id):
-        return MedicalChecks(records=[])
-
     raise HTTPException(status_code=404, detail=f"Patient with {patient_id=} not found")
