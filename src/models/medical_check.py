@@ -1,7 +1,7 @@
 from datetime import date
 
 from pydantic import BaseModel, Field
-from src.models.enums import MedicalCheckType
+from src.models.enums import MedicalCheckType, MedicalCheckStatus
 
 
 class MedicalCheck(BaseModel):
@@ -10,6 +10,9 @@ class MedicalCheck(BaseModel):
     )
     type: MedicalCheckType = Field(
         ..., description="Type of medical check (e.g., blood, physicals, colonoscopy)"
+    )
+    status: MedicalCheckStatus = Field(
+        ..., description="Clinical status of the check outcome (Red | Amber | Green)"
     )
     notes: str | None = Field(None, description="Optional notes about the check")
 
