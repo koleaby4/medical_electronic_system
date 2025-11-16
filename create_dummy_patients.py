@@ -9,11 +9,12 @@ from src.models.patient import Patient
 
 def main() -> None:
     db_path = Settings().duckdb_file
-    create_tables(str(db_path))
     storage = DbStorage(db_path)
+
+    if storage.patients.get_all_patients():
+        return
+
     try:
-        if storage.patients.get_all_patients():
-            return
         samples: list[Patient] = [
             Patient(
                 title=Title.MR,
