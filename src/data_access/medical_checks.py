@@ -6,7 +6,7 @@ from src.models.medical_check import MedicalCheckItem, MedicalCheck
 from src.models.enums import MedicalCheckType, MedicalCheckStatus
 
 
-class DuckDbMedicalChecksStorage:
+class MedicalCheckItemsStorage:
     def __init__(self, db_file: Path):
         self.db_file = db_file
         self.conn = duckdb.connect(self.db_file)
@@ -14,6 +14,50 @@ class DuckDbMedicalChecksStorage:
     def close(self) -> None:
         with suppress(Exception):
             self.conn.close()
+
+    def insert_items(self, *, check_id: int, medical_check_items: list[MedicalCheckItem]) -> None:
+        for mci in medical_check_items:
+            self.conn.execute(
+                """
+                INSERT INTO medical_check_items (check_id, name, units, value)
+                VALUES (?, ?, ?, ?)
+                """,
+                [check_id, mci.name, mci.units, str(mci.value)],
+            )
+
+    def get_items_by_check_id(self, *, check_id: int) -> list[MedicalCheckItem]:
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT check_item_id, name, units, value
+                FROM medical_check_items
+                WHERE check_id = ?
+                ORDER BY check_item_id
+                """,
+                [check_id],
+            )
+            return [
+                MedicalCheckItem(
+                    check_item_id=str(check_item_id) if check_item_id else None,
+                    name=name,
+                    units=units or "",
+                    value=value,
+                )
+                for (check_item_id, name, units, value) in cur.fetchall()
+            ]
+
+
+class MedicalChecksStorage:
+    def __init__(self, db_file: Path):
+        self.db_file = db_file
+        self.conn = duckdb.connect(self.db_file)
+        self.items = MedicalCheckItemsStorage(db_file)
+
+    def close(self) -> None:
+        with suppress(Exception):
+            self.conn.close()
+        with suppress(Exception):
+            self.items.close()
 
     def create(
         self,
@@ -36,14 +80,7 @@ class DuckDbMedicalChecksStorage:
 
         check_id = int(res[0])
 
-        for mci in medical_check_items:
-            self.conn.execute(
-                """
-                INSERT INTO medical_check_items (check_id, name, units, value)
-                VALUES (?, ?, ?, ?)
-                """,
-                [check_id, mci.name, mci.units, str(mci.value)],
-            )
+        self.items.insert_items(check_id=check_id, medical_check_items=medical_check_items)
         return check_id
 
     def get_medical_checks(self, patient_id: int) -> list[MedicalCheck]:
@@ -63,24 +100,7 @@ class DuckDbMedicalChecksStorage:
         records: list[MedicalCheck] = []
         for r in raw_rows:
             check_id = r.get("check_id")
-            with self.conn.cursor() as cur2:
-                cur2.execute(
-                    """
-                    SELECT check_item_id, name, units, value
-                    FROM medical_check_items
-                    WHERE check_id = ?
-                    """,
-                    [check_id],
-                )
-                items = [
-                    MedicalCheckItem(
-                        check_item_id=str(check_item_id),
-                        name=name,
-                        units=units or "",
-                        value=value,
-                    )
-                    for (check_item_id, name, units, value) in cur2.fetchall()
-                ]
+            items = self.items.get_items_by_check_id(check_id=check_id)
             mc = MedicalCheck(
                 check_id=r.get("check_id"),
                 patient_id=r.get("patient_id"),
@@ -98,9 +118,15 @@ class DuckDbMedicalChecksStorage:
         with self.conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT check_id, patient_id, check_type, check_date, status, notes
+                SELECT check_id, 
+                       patient_id, 
+                       check_type, 
+                       check_date, 
+                       status, 
+                       notes
                 FROM medical_checks
-                WHERE patient_id = ? AND check_id = ?
+                WHERE patient_id = ? 
+                  AND check_id = ?
                 """,
                 [patient_id, check_id],
             )
@@ -113,25 +139,7 @@ class DuckDbMedicalChecksStorage:
                 return None
             r = dict(zip(cols, row))
 
-        with self.conn.cursor() as cur2:
-            cur2.execute(
-                """
-                SELECT check_item_id, name, units, value
-                FROM medical_check_items
-                WHERE check_id = ?
-                ORDER BY check_item_id ASC
-                """,
-                [check_id],
-            )
-            items = [
-                MedicalCheckItem(
-                    check_item_id=str(check_item_id) if check_item_id else None,
-                    name=name,
-                    units=units or "",
-                    value=value,
-                )
-                for (check_item_id, name, units, value) in cur2.fetchall()
-            ]
+        items = self.items.get_items_by_check_id(check_id=check_id)
 
         mc = MedicalCheck(
             check_id=r.get("check_id"),
