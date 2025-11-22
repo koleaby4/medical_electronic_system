@@ -1,18 +1,13 @@
-from contextlib import suppress
-from pathlib import Path
-
 import duckdb
 from src.models.medical_check_item import MedicalCheckItem
 
 
 class MedicalCheckItemsStorage:
-    def __init__(self, db_file: Path):
-        self.db_file = db_file
-        self.conn = duckdb.connect(self.db_file)
+    def __init__(self, conn: duckdb.DuckDBPyConnection):
+        self.conn = conn
 
     def close(self) -> None:
-        with suppress(Exception):
-            self.conn.close()
+        return None
 
     def insert_items(self, *, check_id: int, medical_check_items: list[MedicalCheckItem]) -> None:
         for mci in medical_check_items:
@@ -45,9 +40,7 @@ class MedicalCheckItemsStorage:
                 for (check_item_id, name, units, value) in cur.fetchall()
             ]
 
-    def get_time_series(
-        self, *, patient_id: int, check_type: str, item_name: str
-    ) -> list[dict]:
+    def get_time_series(self, *, patient_id: int, check_type: str, item_name: str) -> list[dict]:
         """
         Return a time series for the given patient, check_type and item name.
         Each item: {date: YYYY-MM-DD, value: str, units: str}
@@ -59,11 +52,11 @@ class MedicalCheckItemsStorage:
                     mci.value AS value, 
                     COALESCE(mci.units, '') AS units
                 FROM medical_check_items mci
-                JOIN medical_checks mc ON mci.check_id = mc.check_id
+                    JOIN medical_checks mc ON mci.check_id = mc.check_id
                 WHERE mc.patient_id = ?
                   AND mc.check_type = ?
                   AND mci.name = ?
-                ORDER BY mc.check_date ASC, mc.check_id ASC, mci.check_item_id ASC
+                ORDER BY mc.check_date, mc.check_id, mci.check_item_id
                 """,
                 [patient_id, check_type, item_name],
             )

@@ -47,6 +47,14 @@ def create_medical_checks_table(db: str):
 
         logger.info("Created medical_checks table (if not exists)")
 
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_medical_checks_patient_date
+            ON medical_checks(patient_id, check_date);
+            """
+        )
+        logger.info("Ensured idx_medical_checks_patient_date exists")
+
 
 def medical_check_items_table(db: str):
     with duckdb.connect(db) as conn:
@@ -63,6 +71,21 @@ def medical_check_items_table(db: str):
             """
         )
         logger.info("Created medical_check_items table (if not exists)")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_medical_check_items_check
+            ON medical_check_items(check_id);
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_medical_check_items_name
+            ON medical_check_items(name);
+            """
+        )
+        logger.info("Ensured indexes on medical_check_items exist")
 
 
 def create_tables(db: str):

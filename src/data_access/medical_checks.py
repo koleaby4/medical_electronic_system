@@ -1,6 +1,3 @@
-from contextlib import suppress
-from pathlib import Path
-
 import duckdb
 
 from src.data_access.medical_check_items import MedicalCheckItemsStorage
@@ -10,16 +7,12 @@ from src.models.medical_check_item import MedicalCheckItem
 
 
 class MedicalChecksStorage:
-    def __init__(self, db_file: Path):
-        self.db_file = db_file
-        self.conn = duckdb.connect(self.db_file)
-        self.items = MedicalCheckItemsStorage(db_file)
+    def __init__(self, conn: duckdb.DuckDBPyConnection):
+        self.conn = conn
+        self.items = MedicalCheckItemsStorage(conn)
 
     def close(self) -> None:
-        with suppress(Exception):
-            self.conn.close()
-        with suppress(Exception):
-            self.items.close()
+        return None
 
     def create(
         self,

@@ -1,5 +1,3 @@
-from contextlib import suppress
-from pathlib import Path
 from typing import Any
 
 import duckdb
@@ -9,13 +7,11 @@ from src.models.patient import Patient
 
 
 class PatientsStorage(IPatientsStorage):
-    def __init__(self, db_file: Path):
-        self.db_file = db_file
-        self.conn = duckdb.connect(self.db_file)
+    def __init__(self, conn: duckdb.DuckDBPyConnection):
+        self.conn = conn
 
     def close(self) -> None:
-        with suppress(Exception):
-            self.conn.close()
+        return None
 
     def create(self, patient: Patient) -> Patient:
         result = self.conn.execute(

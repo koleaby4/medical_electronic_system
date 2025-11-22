@@ -38,7 +38,8 @@ def _get_random_patient() -> Patient:
         sex=sex,
         dob=fake.date_of_birth(minimum_age=16, maximum_age=95),
         email=f"{first_name.lower()}.{last_name.lower()}@gmail.com",
-        phone=fake.phone_number())
+        phone=fake.phone_number(),
+    )
 
 
 def build_sample_patients() -> list[Patient]:
@@ -94,7 +95,7 @@ def build_sample_patients() -> list[Patient]:
             phone="555-0103",
         ),
         _get_random_patient(),
-        _get_random_patient()
+        _get_random_patient(),
     ]
 
 
