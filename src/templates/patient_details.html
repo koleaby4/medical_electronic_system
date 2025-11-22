@@ -23,7 +23,9 @@
                         </div>
                         <div class="col-auto">
                             <label for="chartItemName" class="form-label">Item name</label>
-                            <input id="chartItemName" class="form-control" placeholder="e.g., weight or hemoglobin" />
+                            <select id="chartItemName" class="form-select">
+                                <!-- populated dynamically -->
+                            </select>
                         </div>
                         <div class="col-auto">
                             <button id="addChartTileBtn" class="btn btn-primary">Add Tile</button>
@@ -75,6 +77,9 @@
             const chartCheckType = document.getElementById('chartCheckType');
             const chartItemName = document.getElementById('chartItemName');
 
+            // Hold available options based on existing data
+            const itemsByType = new Map(); // type -> Set(item names)
+
             function render(records) {
                 tiles.innerHTML = '';
                 if (!records || records.length === 0) {
@@ -121,8 +126,20 @@
 
             fetch(`/patients/${patientId}/medical_checks`)
                 .then(r => r.json())
-                .then(data => render(data.records))
-                .catch(() => render([]));
+                .then(data => {
+                    const records = Array.isArray(data.records) ? data.records : [];
+                    // Build dropdown options from existing records
+                    buildChartOptions(records);
+                    populateTypeSelect();
+                    populateItemSelect(chartCheckType.value);
+                    updateChartsControlsState();
+                    render(records);
+                })
+                .catch(() => {
+                    // If failed, disable controls and render empty list
+                    render([]);
+                    updateChartsControlsState(true);
+                });
 
             // Redirect to specific add page based on selected type
             document.getElementById('addRecordBtn').addEventListener('click', () => {
@@ -168,6 +185,68 @@
 
                 return { col, canvas, removeBtn };
             }
+
+            function buildChartOptions(records) {
+                itemsByType.clear();
+                for (const r of records) {
+                    const type = r.type || r.check_type || '';
+                    if (!type) continue;
+                    if (!itemsByType.has(type)) itemsByType.set(type, new Set());
+                    const set = itemsByType.get(type);
+                    const items = Array.isArray(r.medical_check_items) ? r.medical_check_items : [];
+                    for (const it of items) {
+                        if (it && typeof it.name === 'string' && it.name.trim().length) {
+                            set.add(it.name);
+                        }
+                    }
+                }
+            }
+
+            function populateTypeSelect() {
+                // Populate check types from itemsByType keys
+                const current = chartCheckType.value;
+                chartCheckType.innerHTML = '';
+                const types = Array.from(itemsByType.keys());
+                // If there are no types (no data), keep defaults minimal
+                if (types.length === 0) {
+                    // leave any existing static options; disable later
+                    return;
+                }
+                for (const t of types) {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    chartCheckType.appendChild(opt);
+                }
+                // Try restore previous selection if still present
+                if (types.includes(current)) chartCheckType.value = current;
+            }
+
+            function populateItemSelect(type) {
+                chartItemName.innerHTML = '';
+                const names = Array.from(itemsByType.get(type || '') || []);
+                for (const n of names) {
+                    const opt = document.createElement('option');
+                    opt.value = n;
+                    opt.textContent = n;
+                    chartItemName.appendChild(opt);
+                }
+                // If none, leave empty
+            }
+
+            function updateChartsControlsState(forceDisable = false) {
+                const hasData = !forceDisable && itemsByType.size > 0;
+                chartCheckType.disabled = !hasData;
+                // item select depends on type presence and available items
+                const hasItems = hasData && (itemsByType.get(chartCheckType.value || '')?.size || 0) > 0;
+                chartItemName.disabled = !hasItems;
+                addChartTileBtn.disabled = !hasItems;
+            }
+
+            chartCheckType.addEventListener('change', () => {
+                populateItemSelect(chartCheckType.value);
+                updateChartsControlsState();
+            });
 
             async function fetchSeries(type, name) {
                 const url = new URL(window.location.origin + `/patients/${patientId}/medical_checks/timeseries`);
@@ -226,9 +305,9 @@
 
             async function addTile() {
                 const type = chartCheckType.value;
-                const name = chartItemName.value.trim();
-                if (!name) {
-                    alert('Please enter an item name');
+                const name = chartItemName.value;
+                if (!type || !name) {
+                    alert('Please select check type and item name');
                     return;
                 }
                 const key = normalizeKey(type, name);
