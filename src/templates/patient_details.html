@@ -134,6 +134,9 @@
                     populateItemSelect(chartCheckType.value);
                     updateChartsControlsState();
                     render(records);
+
+                    // Auto-add default charts for physicals if available
+                    tryAutoAddDefaultPhysicalsCharts();
                 })
                 .catch(() => {
                     // If failed, disable controls and render empty list
@@ -303,17 +306,11 @@
                 });
             }
 
-            async function addTile() {
-                const type = chartCheckType.value;
-                const name = chartItemName.value;
-                if (!type || !name) {
-                    alert('Please select check type and item name');
-                    return;
-                }
+            async function addTileWith(type, name) {
+                if (!type || !name) return;
                 const key = normalizeKey(type, name);
                 if (chartState.has(key)) {
-                    alert('This tile already exists');
-                    return;
+                    return; // already present
                 }
                 const { col, canvas, removeBtn } = createTileElement(type, name);
                 chartTiles.appendChild(col);
@@ -328,6 +325,16 @@
                 }
             }
 
+            async function addTile() {
+                const type = chartCheckType.value;
+                const name = chartItemName.value;
+                if (!type || !name) {
+                    alert('Please select check type and item name');
+                    return;
+                }
+                await addTileWith(type, name);
+            }
+
             function removeTile(key) {
                 const state = chartState.get(key);
                 if (!state) return;
@@ -337,6 +344,27 @@
             }
 
             addChartTileBtn.addEventListener('click', addTile);
+
+            function tryAutoAddDefaultPhysicalsCharts() {
+                const type = 'physicals';
+                const set = itemsByType.get(type);
+                if (!set || set.size === 0) return;
+                const available = Array.from(set);
+                const want = [
+                    'weight',
+                    'blood pressure (diastolic)',
+                    'blood pressure (systolic)',
+                    'heart rate',
+                ];
+                // Map desired names to actual casing from available set (case-insensitive)
+                for (const desired of want) {
+                    const match = available.find(n => String(n).trim().toLowerCase() === desired);
+                    if (match) {
+                        // fire and forget; no need to await sequentially
+                        addTileWith(type, match);
+                    }
+                }
+            }
         });
     </script>
 {% endblock %}
