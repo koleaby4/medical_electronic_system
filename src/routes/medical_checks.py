@@ -92,6 +92,26 @@ async def new_physicals_check(request: Request, patient_id: int, storage: DbStor
     raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
 
+@router.get("/timeseries", response_model=None)
+async def get_timeseries(
+    patient_id: int,
+    check_type: str,
+    item_name: str,
+    storage: DbStorage = Depends(get_storage),
+):
+    """Return item value over time for a given patient, check type and item name.
+    Response example: {"records": [{"date": "2025-01-01", "value": "72.5", "units": "kg"}, ...]}
+    """
+    if not storage.patients.get_patient(patient_id=patient_id):
+        raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
+
+    series = storage.medical_checks.items.get_time_series(
+        patient_id=patient_id, check_type=check_type, item_name=item_name
+    )
+
+    return {"records": series}
+
+
 @router.get("/{check_id}", include_in_schema=False)
 async def medical_check_details(
     request: Request, patient_id: int, check_id: int, storage: DbStorage = Depends(get_storage)

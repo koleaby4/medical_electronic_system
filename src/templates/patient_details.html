@@ -7,17 +7,33 @@
         <div class="col-md-6">
             {% include '_patient_summary_card.html' %}
 
+            <!-- Dynamic chart tiles -->
             <div class="card mb-3">
-                <div class="card-header">Blood Check Results</div>
-                <div class="card-body chart-placeholder-diag">
-                    <span>Chart placeholder</span>
-                </div>
-            </div>
+                <div class="card-header bg-secondary text-white">Charts</div>
+                <div class="card-body">
+                    <!-- Add tile controls -->
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-auto">
+                            <label for="chartCheckType" class="form-label">Check type</label>
+                            <select id="chartCheckType" class="form-select">
+                                <option value="physicals">physicals</option>
+                                <option value="blood">blood</option>
+                                <option value="colonoscopy">colonoscopy</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <label for="chartItemName" class="form-label">Item name</label>
+                            <input id="chartItemName" class="form-control" placeholder="e.g., weight or hemoglobin" />
+                        </div>
+                        <div class="col-auto">
+                            <button id="addChartTileBtn" class="btn btn-primary">Add Tile</button>
+                        </div>
+                    </div>
 
-            <div class="card mb-3">
-                <div class="card-header">Weight Over Time</div>
-                <div class="card-body chart-placeholder-anti">
-                    <span>Chart placeholder</span>
+                    <!-- Tiles grid -->
+                    <div id="chartTiles" class="row row-cols-1 g-3">
+                        <!-- tiles injected here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -48,11 +64,16 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const patientId = {{ patient.patient_id }};
             const tiles = document.getElementById('checksTiles');
             const noRecords = document.getElementById('noRecords');
+            const chartTiles = document.getElementById('chartTiles');
+            const addChartTileBtn = document.getElementById('addChartTileBtn');
+            const chartCheckType = document.getElementById('chartCheckType');
+            const chartItemName = document.getElementById('chartItemName');
 
             function render(records) {
                 tiles.innerHTML = '';
@@ -112,6 +133,131 @@
                     alert(`Add page for type: ${type} is not implemented yet.`);
                 }
             });
+
+            // --- Dynamic chart tiles ---
+            const chartState = new Map(); // key -> { chart, el }
+
+            function normalizeKey(type, name) {
+                return `${type}::${(name || '').trim().toLowerCase()}`;
+            }
+
+            function createTileElement(type, name) {
+                const col = document.createElement('div');
+                col.className = 'col';
+
+                const card = document.createElement('div');
+                card.className = 'card shadow-sm';
+
+                const header = document.createElement('div');
+                header.className = 'card-header d-flex justify-content-between align-items-center';
+                header.innerHTML = `<span class="fw-bold">${type} · ${name}</span>`;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn btn-sm btn-outline-danger';
+                removeBtn.textContent = 'Remove';
+                header.appendChild(removeBtn);
+
+                const body = document.createElement('div');
+                body.className = 'card-body';
+                const canvas = document.createElement('canvas');
+                canvas.height = 160;
+                body.appendChild(canvas);
+
+                card.append(header, body);
+                col.appendChild(card);
+
+                return { col, canvas, removeBtn };
+            }
+
+            async function fetchSeries(type, name) {
+                const url = new URL(window.location.origin + `/patients/${patientId}/medical_checks/timeseries`);
+                url.searchParams.set('check_type', type);
+                url.searchParams.set('item_name', name);
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error('Failed to load time series');
+                const data = await resp.json();
+                return Array.isArray(data.records) ? data.records : [];
+            }
+
+            function toChartData(records) {
+                // records: {date: YYYY-MM-DD, value: str, units: str}
+                const labels = [];
+                const values = [];
+                for (const r of records) {
+                    labels.push(r.date);
+                    const v = parseFloat(String(r.value).replace(',', '.'));
+                    values.push(Number.isFinite(v) ? v : null);
+                }
+                return { labels, values, unit: (records[0]?.units) || '' };
+            }
+
+            function renderChart(ctx, labels, values, label) {
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label,
+                            data: values,
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            tension: 0.2,
+                            spanGaps: true,
+                            pointRadius: 3,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                ticks: { autoSkip: true, maxTicksLimit: 8 }
+                            },
+                            y: {
+                                beginAtZero: false
+                            }
+                        },
+                        plugins: {
+                            legend: { display: true }
+                        }
+                    }
+                });
+            }
+
+            async function addTile() {
+                const type = chartCheckType.value;
+                const name = chartItemName.value.trim();
+                if (!name) {
+                    alert('Please enter an item name');
+                    return;
+                }
+                const key = normalizeKey(type, name);
+                if (chartState.has(key)) {
+                    alert('This tile already exists');
+                    return;
+                }
+                const { col, canvas, removeBtn } = createTileElement(type, name);
+                chartTiles.appendChild(col);
+                try {
+                    const series = await fetchSeries(type, name);
+                    const { labels, values, unit } = toChartData(series);
+                    const chart = renderChart(canvas.getContext('2d'), labels, values, unit || name);
+                    chartState.set(key, { chart, el: col });
+                    removeBtn.addEventListener('click', () => removeTile(key));
+                } catch (e) {
+                    col.querySelector('.card-body').innerHTML = `<div class="text-danger">Failed to load data</div>`;
+                }
+            }
+
+            function removeTile(key) {
+                const state = chartState.get(key);
+                if (!state) return;
+                try { state.chart.destroy(); } catch (_) {}
+                state.el.remove();
+                chartState.delete(key);
+            }
+
+            addChartTileBtn.addEventListener('click', addTile);
         });
     </script>
 {% endblock %}

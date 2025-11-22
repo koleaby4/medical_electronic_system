@@ -44,3 +44,28 @@ class MedicalCheckItemsStorage:
                 )
                 for (check_item_id, name, units, value) in cur.fetchall()
             ]
+
+    def get_time_series(
+        self, *, patient_id: int, check_type: str, item_name: str
+    ) -> list[dict]:
+        """
+        Return a time series for the given patient, check_type and item name.
+        Each item: {date: YYYY-MM-DD, value: str, units: str}
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT mc.check_date AS date, 
+                    mci.value AS value, 
+                    COALESCE(mci.units, '') AS units
+                FROM medical_check_items mci
+                JOIN medical_checks mc ON mci.check_id = mc.check_id
+                WHERE mc.patient_id = ?
+                  AND mc.check_type = ?
+                  AND mci.name = ?
+                ORDER BY mc.check_date ASC, mc.check_id ASC, mci.check_item_id ASC
+                """,
+                [patient_id, check_type, item_name],
+            )
+            cols = [d[0] for d in cur.description]
+            return [dict(zip(cols, row)) for row in cur.fetchall()]

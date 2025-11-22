@@ -8,7 +8,7 @@ from src.data_access.interfaces import IPatientsStorage
 from src.models.patient import Patient
 
 
-class DuckDbPatientsStorage(IPatientsStorage):
+class PatientsStorage(IPatientsStorage):
     def __init__(self, db_file: Path):
         self.db_file = db_file
         self.conn = duckdb.connect(self.db_file)
