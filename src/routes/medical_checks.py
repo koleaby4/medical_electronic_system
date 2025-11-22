@@ -7,7 +7,8 @@ from fastapi.templating import Jinja2Templates
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
 from src.models.enums import MedicalCheckType, MedicalCheckStatus
-from src.models.medical_check import MedicalCheck, MedicalChecks, MedicalCheckItem
+from src.models.medical_check import MedicalCheck, MedicalChecks
+from src.models.medical_check_item import MedicalCheckItem
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")

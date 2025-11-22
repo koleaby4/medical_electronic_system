@@ -5,7 +5,8 @@ import duckdb
 
 from src.data_access.medical_check_items import MedicalCheckItemsStorage
 from src.models.enums import MedicalCheckType, MedicalCheckStatus
-from src.models.medical_check import MedicalCheckItem, MedicalCheck
+from src.models.medical_check import MedicalCheck
+from src.models.medical_check_item import MedicalCheckItem
 
 
 class MedicalChecksStorage:

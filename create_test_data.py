@@ -4,7 +4,7 @@ from settings import Settings
 from src.data_access.db_storage import DbStorage
 from src.models.enums import Title, Sex, MedicalCheckType, MedicalCheckStatus
 from src.models.patient import Patient
-from src.models.medical_check import MedicalCheckItem
+from src.models.medical_check_item import MedicalCheckItem
 
 
 def build_sample_patients() -> list[Patient]:

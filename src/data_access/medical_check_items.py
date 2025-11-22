@@ -2,7 +2,7 @@ from contextlib import suppress
 from pathlib import Path
 
 import duckdb
-from src.models.medical_check import MedicalCheckItem
+from src.models.medical_check_item import MedicalCheckItem
 
 
 class MedicalCheckItemsStorage:

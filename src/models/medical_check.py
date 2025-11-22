@@ -1,15 +1,8 @@
 from datetime import date
-from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 from src.models.enums import MedicalCheckType, MedicalCheckStatus
-
-
-class MedicalCheckItem(BaseModel):
-    check_item_id: str | None = Field(default=None, description="GUID of the item assigned by DB")
-    name: str = Field("")
-    units: str = Field("")
-    value: Any = Field("")
+from src.models.medical_check_item import MedicalCheckItem
 
 
 class MedicalCheck(BaseModel):
