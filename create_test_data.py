@@ -27,7 +27,7 @@ def _get_random_patient() -> Patient:
         case _:
             title = random.choice(list(Title))
             first_name = fake.first_name()
-            middle_name = fake.middle_name()
+            middle_name = fake.first_name()
             last_name = fake.last_name()
 
     return Patient(
@@ -108,26 +108,26 @@ def _get_random_physicals_items() -> list[MedicalCheckItem]:
     height_m = height_cm / 100
     weight = random.randint(45, 150)
     return [
-        MedicalCheckItem(name="Height", units="cm", value=str(height_cm)),
-        MedicalCheckItem(name="Weight", units="kg", value=str(weight)),
+        MedicalCheckItem(name="height", units="cm", value=str(height_cm)),
+        MedicalCheckItem(name="weight", units="kg", value=str(weight)),
         MedicalCheckItem(name="BMI", units="", value=round(weight / (height_m * height_m), 2)),
         MedicalCheckItem(name="blood pressure (systolic)", units="mmHg", value=str(random.randint(100, 200))),
         MedicalCheckItem(name="blood pressure (diastolic)", units="mmHg", value=str(random.randint(60, 150))),
-        MedicalCheckItem(name="Heart Rate", units="bpm", value=str(random.randint(40, 150))),
+        MedicalCheckItem(name="heart rate", units="bpm", value=str(random.randint(40, 150))),
     ]
 
 
 def _get_random_blood_items() -> list[MedicalCheckItem]:
     return [
-        MedicalCheckItem(name="Hemoglobin", units="g/dL", value="14.0"),
+        MedicalCheckItem(name="hemoglobin", units="g/dL", value="14.0"),
         MedicalCheckItem(name="WBC", units="10^9/L", value="6.5"),
-        MedicalCheckItem(name="Platelets", units="10^9/L", value="250"),
-        MedicalCheckItem(name="Glucose (fasting)", units="mg/dL", value="92"),
+        MedicalCheckItem(name="platelets", units="10^9/L", value="250"),
+        MedicalCheckItem(name="glucose (fasting)", units="mg/dL", value="92"),
     ]
 
 
 def _get_check_status(medical_check_items: list[MedicalCheckItem]) -> MedicalCheckStatus:
-    if weights := [x for x in medical_check_items if x.name == "Weight"]:
+    if weights := [x for x in medical_check_items if x.name == "weight"]:
         weight = float(weights[0].value)
         if weight < 40 or weight > 100:
             return MedicalCheckStatus.RED
@@ -153,77 +153,32 @@ def _get_check_status(medical_check_items: list[MedicalCheckItem]) -> MedicalChe
 
 
 def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
-    """Create several dummy medical checks for each patient."""
     today = date.today()
-    for p in patients:
-        if p.patient_id is None:
-            continue
+    for p in [p for p in patients if p.patient_id]:
 
-        medical_check_items = _get_random_physicals_items()
-        status: MedicalCheckStatus = _get_check_status(medical_check_items)
+        for i in range(random.randint(5, 12)):
+            check_type = random.choice([MedicalCheckType.PHYSICALS, MedicalCheckType.BLOOD])
+            check_date = today - timedelta(days=random.randint(1, 365 * random.randint(1, 5)))
 
-        db.medical_checks.create(
-            patient_id=p.patient_id,
-            check_type=MedicalCheckType.PHYSICALS.value,
-            check_date=today - timedelta(days=random.randint(1, 30)),
-            status=status.value,
-            medical_check_items=medical_check_items,
-            notes="recent physical examination",
-        )
+            match check_type:
+                case MedicalCheckType.PHYSICALS:
+                    medical_check_items = _get_random_physicals_items()
 
-        medical_check_items = _get_random_physicals_items()
-        status: MedicalCheckStatus = _get_check_status(medical_check_items)
+                case MedicalCheckType.BLOOD:
+                    medical_check_items = _get_random_blood_items()
 
-        db.medical_checks.create(
-            patient_id=p.patient_id,
-            check_type=MedicalCheckType.PHYSICALS.value,
-            check_date=today - timedelta(days=random.randint(30, 365)),
-            status=status.value,
-            medical_check_items=_get_random_physicals_items(),
-            notes="older physical examination",
-        )
+                case _:
+                    raise ValueError(f"Invalid medical {check_type=}")
 
-        medical_check_items = _get_random_physicals_items()
-        status: MedicalCheckStatus = _get_check_status(medical_check_items)
-
-        db.medical_checks.create(
-            patient_id=p.patient_id,
-            check_type=MedicalCheckType.PHYSICALS.value,
-            check_date=today - timedelta(days=random.randint(365, 365 * random.randint(1, 5))),
-            status=status.value,
-            medical_check_items=_get_random_physicals_items(),
-            notes="oldest physical examination",
-        )
-
-        # Recent blood test
-        db.medical_checks.create(
-            patient_id=p.patient_id,
-            check_type=MedicalCheckType.BLOOD.value,
-            check_date=today - timedelta(days=random.randint(1, 30)),
-            status=random.choice(list(MedicalCheckStatus)).value,
-            medical_check_items=_get_random_blood_items(),
-            notes="recent blood test",
-        )
-
-        # Older blood test
-        db.medical_checks.create(
-            patient_id=p.patient_id,
-            check_type=MedicalCheckType.BLOOD.value,
-            check_date=today - timedelta(days=random.randint(30, 365)),
-            status=random.choice(list(MedicalCheckStatus)).value,
-            medical_check_items=_get_random_blood_items(),
-            notes="older blood test",
-        )
-
-        # Oldest blood test
-        db.medical_checks.create(
-            patient_id=p.patient_id,
-            check_type=MedicalCheckType.BLOOD.value,
-            check_date=today - timedelta(days=random.randint(365, 365 * random.randint(1, 5))),
-            status=random.choice(list(MedicalCheckStatus)).value,
-            medical_check_items=_get_random_blood_items(),
-            notes="oldest blood test",
-        )
+            status: MedicalCheckStatus = _get_check_status(medical_check_items)
+            db.medical_checks.create(
+                patient_id=p.patient_id,
+                check_type=check_type.value,
+                check_date=check_date,
+                status=status.value,
+                medical_check_items=medical_check_items,
+                notes=f"{check_type=} examination on {check_date=}",
+            )
 
 
 if __name__ == "__main__":
