@@ -44,5 +44,3 @@ class MedicalCheckItemsStorage:
                 )
                 for (check_item_id, name, units, value) in cur.fetchall()
             ]
-
-

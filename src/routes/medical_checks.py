@@ -1,4 +1,5 @@
 import datetime
+from contextlib import suppress
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -43,10 +44,9 @@ async def create_medical_check(
         indices: set[int] = set()
         for k in form.keys():
             if k.startswith("param_name_") or k.startswith("param_value_") or k.startswith("param_units_"):
-                try:
+                with suppress(Exception):
                     indices.add(int(k.split("_")[-1]))
-                except Exception:
-                    pass
+
     else:
         indices = set(range(int(param_count)))
 
