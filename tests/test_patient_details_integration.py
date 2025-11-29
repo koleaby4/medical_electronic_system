@@ -2,8 +2,10 @@ import re
 
 from fastapi.testclient import TestClient
 
+from src.models.patient import Patient
 
-def _create_sample_patient(client: TestClient) -> int:
+
+def _create_sample_patient(client: TestClient) -> Patient:
     form = {
         "title": "Mr",
         "first_name": "john",
@@ -22,13 +24,13 @@ def _create_sample_patient(client: TestClient) -> int:
     # Find the first details link: /patients/{id}/details
     m = re.search(r"/patients/(\d+)/details", html)
     assert m, "Expected patients list to contain a details link"
-    return int(m.group(1))
+    return Patient(patient_id=int(m.group(1)), **form)
 
 
 def test_patient_details_page_renders(client: TestClient):
-    patient_id = _create_sample_patient(client)
+    patient = _create_sample_patient(client)
 
-    resp = client.get(f"/patients/{patient_id}/details")
+    resp = client.get(f"/patients/{patient.patient_id}/details")
     assert resp.status_code == 200
     html = resp.text
 
@@ -46,6 +48,16 @@ def test_patient_details_page_renders(client: TestClient):
 
     # UI containers used by the details page
     assert "checksTiles" in html  # container for the tiles grid
+
+    patient.first_name = "jonathan"
+    patient.last_name = "wick"
+
+    resp = client.put(f"/patients/{patient.patient_id}", data=patient.model_dump())
+    assert resp.status_code == 200
+    html = resp.text
+
+    assert "Jonathan" in html
+    assert "Wick" in html
 
 
 def test_patient_details_not_found(client: TestClient):
