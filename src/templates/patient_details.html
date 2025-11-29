@@ -106,8 +106,8 @@
                     type.textContent = r.type || '';
 
                     const date = document.createElement('div');
-                    date.className = 'text-muted ms-3';
-                    date.textContent = r.date || '';
+                    date.className = 'fw-bold ms-3';
+                    date.textContent = r.check_date;
 
                     const sVal = r.status || '';
                     if (sVal === 'Red') {
