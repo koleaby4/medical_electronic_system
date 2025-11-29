@@ -13,15 +13,19 @@ router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
 
 
-@router.get("/", include_in_schema=False)
-async def render_patients(request: Request, storage: DbStorage = Depends(get_storage)):
+@router.get("", include_in_schema=False)
+async def list_patients(
+    request: Request,
+    storage: DbStorage = Depends(get_storage),
+    format: str = "html",  # Optional: ?format=json for API
+):
+    patients = storage.patients.get_all_patients()
+
+    if format.lower() == "json" or request.headers.get("accept") == "application/json":
+        return patients
+
     return templates.TemplateResponse(
-        request,
-        "patients.html",
-        {
-            "active_page": "patients",
-            "patients": storage.patients.get_all_patients(),
-        },
+        "patients.html", {"request": request, "active_page": "patients", "patients": patients}
     )
 
 
@@ -89,7 +93,7 @@ async def _handle_patient_form(
     return RedirectResponse(url="/patients", status_code=303)
 
 
-@router.post("/", include_in_schema=False)
+@router.post("", include_in_schema=False)
 async def create_patient(
     request: Request,
     storage: DbStorage = Depends(get_storage),
