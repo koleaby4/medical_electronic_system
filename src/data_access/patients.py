@@ -45,7 +45,7 @@ class PatientsStorage(IPatientsStorage):
 
     def get_all_patients(self) -> list[Patient]:
         with self.conn.cursor() as cur:
-            cur.execute("select * from patients")
+            cur.execute("select * from patients order by patient_id desc")
             return [Patient(**d) for d in _to_dicts(cur)]
 
     def get_patient(self, patient_id: int) -> Patient | None:
