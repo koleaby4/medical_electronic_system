@@ -22,5 +22,5 @@
   </div>
 
 {% if show_back_button %}
-  <a class="btn btn-outline-secondary" href="{{ back_url or ('/patients/' ~ patient.patient_id ~ '/details') }}">Back to details</a>
+  <a class="btn btn-outline-secondary" href="{{ back_url or ('/patients/' ~ patient.patient_id) }}">Back to details</a>
 {% endif %}

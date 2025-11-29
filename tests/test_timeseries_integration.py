@@ -18,7 +18,7 @@ def _create_sample_patient(client: TestClient) -> int:
     resp = client.post("/patients", data=form, follow_redirects=True)
     assert resp.status_code == 200
 
-    m = re.search(r"/patients/(\d+)/details", resp.text)
+    m = re.search(r"/patients/(\d+)", resp.text)
     assert m
     return int(m.group(1))
 

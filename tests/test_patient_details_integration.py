@@ -21,8 +21,7 @@ def _create_sample_patient(client: TestClient) -> Patient:
     assert resp.status_code == 200
     html = resp.text
 
-    # Find the first details link: /patients/{id}/details
-    m = re.search(r"/patients/(\d+)/details", html)
+    m = re.search(r"/patients/(\d+)", html)
     assert m, "Expected patients list to contain a details link"
     return Patient(patient_id=int(m.group(1)), **form)
 
@@ -30,7 +29,7 @@ def _create_sample_patient(client: TestClient) -> Patient:
 def test_patient_details_page_renders(client: TestClient):
     patient = _create_sample_patient(client)
 
-    resp = client.get(f"/patients/{patient.patient_id}/details")
+    resp = client.get(f"/patients/{patient.patient_id}")
     assert resp.status_code == 200
     html = resp.text
 
@@ -61,8 +60,7 @@ def test_patient_details_page_renders(client: TestClient):
 
 
 def test_patient_details_not_found(client: TestClient):
-    resp = client.get("/patients/999/details")
+    resp = client.get("/patients/999")
     assert resp.status_code == 404
     data = resp.json()
     assert "detail" in data
-    assert "patient_id=999" in data["detail"]

@@ -89,7 +89,7 @@ async def _handle_patient_form(
 
     # Redirect to patient details if updating, or to patients list if creating
     if patient_id:
-        return RedirectResponse(url=f"/patients/{saved_patient.patient_id}/details", status_code=303)
+        return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
     return RedirectResponse(url="/patients", status_code=303)
 
 
@@ -163,16 +163,25 @@ def get_age(dob: date) -> int:
     return years
 
 
-@router.get("/{patient_id}/details", include_in_schema=False)
-async def patient_details(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
-    if patient := storage.patients.get_patient(patient_id=patient_id):
-        return templates.TemplateResponse(
-            request,
-            "patient_details.html",
-            {
-                "active_page": "patients",
-                "patient": patient,
-                "age": get_age(patient.dob),
-            },
-        )
-    raise HTTPException(status_code=404, detail=f"Patient with {patient_id=} not found")
+@router.get("/{patient_id}", include_in_schema=False)
+async def get_patient(
+    request: Request,
+    patient_id: int,
+    storage: DbStorage = Depends(get_storage),
+    format: str = "html"  # Optional: ?format=json for API
+):
+    if not (patient := storage.patients.get_patient(patient_id=patient_id)):
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    if format.lower() == "json" or request.headers.get("accept") == "application/json":
+        return patient
+
+    return templates.TemplateResponse(
+        "patient_details.html",
+        {
+            "request": request,
+            "active_page": "patients",
+            "patient": patient,
+            "age": get_age(patient.dob),
+        },
+    )

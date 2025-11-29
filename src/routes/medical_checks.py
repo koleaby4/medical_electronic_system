@@ -74,7 +74,7 @@ async def create_medical_check(
         notes=mc.notes,
     )
 
-    return RedirectResponse(url=f"/patients/{patient.patient_id}/details", status_code=303)
+    return RedirectResponse(url=f"/patients/{patient.patient_id}", status_code=303)
 
 
 @router.get("/physicals/new", include_in_schema=False)
@@ -151,4 +151,4 @@ async def update_medical_check_status(
         raise HTTPException(status_code=400, detail="Invalid status value")
 
     storage.medical_checks.update_status(check_id=check_id, status=new_status.value)
-    return RedirectResponse(url=f"/patients/{patient_id}/details", status_code=303)
+    return RedirectResponse(url=f"/patients/{patient_id}", status_code=303)
