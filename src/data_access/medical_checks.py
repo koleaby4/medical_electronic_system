@@ -14,7 +14,7 @@ class MedicalChecksStorage:
     def close(self) -> None:
         return None
 
-    def create(
+    def save(
         self,
         *,
         patient_id: int,

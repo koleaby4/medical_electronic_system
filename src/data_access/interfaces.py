@@ -6,7 +6,7 @@ from src.models.medical_check_item import MedicalCheckItem
 
 
 class IPatientsStorage(Protocol):
-    def create(self, patient: Patient) -> Patient: ...
+    def save(self, patient: Patient) -> Patient: ...
 
     def get_patient(self, patient_id: int) -> Patient | None: ...
 
@@ -24,7 +24,7 @@ class IMedicalCheckItemsStorage(Protocol):
 class IMedicalChecksStorage(Protocol):
     items: IMedicalCheckItemsStorage
 
-    def create(
+    def save(
         self,
         *,
         patient_id: int,

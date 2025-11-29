@@ -100,7 +100,7 @@ def build_sample_patients() -> list[Patient]:
 
 
 def _seed_patients(storage: DbStorage) -> list[Patient]:
-    return [storage.patients.create(p) for p in build_sample_patients()]
+    return [storage.patients.save(p) for p in build_sample_patients()]
 
 
 def _get_random_physicals_items() -> list[MedicalCheckItem]:
@@ -170,7 +170,7 @@ def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
                     raise ValueError(f"Invalid medical {check_type=}")
 
             status: MedicalCheckStatus = _get_check_status(medical_check_items)
-            db.medical_checks.create(
+            db.medical_checks.save(
                 patient_id=p.patient_id,
                 check_type=check_type.value,
                 check_date=check_date,

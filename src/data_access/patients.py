@@ -13,20 +13,41 @@ class PatientsStorage(IPatientsStorage):
     def close(self) -> None:
         return None
 
-    def create(self, patient: Patient) -> Patient:
+    def save(self, patient: Patient) -> Patient:
+        if patient.patient_id:
+            self.conn.execute(
+                """
+                UPDATE patients
+                SET title       = ?,
+                    first_name  = ?,
+                    middle_name = ?,
+                    last_name   = ?,
+                    sex         = ?,
+                    dob         = ?,
+                    email       = ?,
+                    phone       = ?
+                WHERE patient_id = ?
+                """,
+                [
+                    patient.title.value,
+                    patient.first_name,
+                    patient.middle_name,
+                    patient.last_name,
+                    patient.sex,
+                    patient.dob,
+                    patient.email,
+                    patient.phone,
+                    patient.patient_id,
+                ],
+            )
+
+            return patient
+
         result = self.conn.execute(
             """
-            INSERT INTO patients (
-                title, 
-                first_name,
-                middle_name,
-                last_name, 
-                sex, 
-                dob, 
-                email, 
-                phone)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            RETURNING patient_id
+            INSERT INTO patients (title, first_name, middle_name, last_name,
+                                  sex, dob, email, phone)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING patient_id
             """,
             [
                 patient.title.value,
@@ -40,13 +61,17 @@ class PatientsStorage(IPatientsStorage):
             ],
         ).fetchone()
 
-        patient.patient_id = int(result[0]) if result else None
+        patient.patient_id = int(result[0])
         return patient
 
     def get_all_patients(self) -> list[Patient]:
         with self.conn.cursor() as cur:
-            cur.execute("select * from patients order by patient_id desc")
-            return [Patient(**d) for d in _to_dicts(cur)]
+            cur.execute("""
+                        SELECT *
+                        FROM patients
+                        ORDER BY patient_id DESC
+                        """)
+            return [Patient(**row) for row in _to_dicts(cur)]
 
     def get_patient(self, patient_id: int) -> Patient | None:
         with self.conn.cursor() as cur:

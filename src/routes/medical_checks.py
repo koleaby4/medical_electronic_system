@@ -65,7 +65,7 @@ async def create_medical_check(
         medical_check_items=medical_check_items,
     )
 
-    storage.medical_checks.create(
+    storage.medical_checks.save(
         patient_id=patient_id,
         check_type=mc.type.value,
         check_date=mc.check_date,
