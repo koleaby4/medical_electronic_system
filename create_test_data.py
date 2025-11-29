@@ -155,7 +155,6 @@ def _get_check_status(medical_check_items: list[MedicalCheckItem]) -> MedicalChe
 def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
     today = date.today()
     for p in [p for p in patients if p.patient_id]:
-
         for i in range(random.randint(5, 12)):
             check_type = random.choice([MedicalCheckType.PHYSICALS, MedicalCheckType.BLOOD])
             check_date = today - timedelta(days=random.randint(1, 365 * random.randint(1, 5)))
