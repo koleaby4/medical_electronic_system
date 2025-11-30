@@ -16,7 +16,7 @@ class MedicalCheck(BaseModel):
 
     @field_validator("status", mode="before")
     @classmethod
-    def convert_title(cls, v: str | MedicalCheckStatus) -> MedicalCheckStatus:
+    def convert_status(cls, v: str | MedicalCheckStatus) -> MedicalCheckStatus:
         return MedicalCheckStatus(v) if isinstance(v, str) else v
 
 
