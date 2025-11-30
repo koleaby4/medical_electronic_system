@@ -2,21 +2,16 @@
 {% if patient %}
     {% set page_title = "Edit Patient" %}
     {% set form_action = "/patients/" + patient.patient_id|string %}
-    {% set form_method = "post" %}
     {% set submit_text = "Update Patient" %}
 {% else %}
     {% set page_title = "Add New Patient" %}
     {% set form_action = "/patients" %}
-    {% set form_method = "post" %}
     {% set submit_text = "Create Patient" %}
 {% endif %}
 
 {% block content %}
 <h2 class="mb-4">{{ page_title }}</h2>
-<form action="{{ form_action }}" method="{{ form_method }}" class="needs-validation" novalidate>
-    {% if patient %}
-    <input type="hidden" name="_method" value="PUT">
-    {% endif %}
+<form id="patientForm" action="{{ form_action }}" method="post" class="needs-validation" novalidate>
     <div class="mb-3">
         <label for="title" class="form-label">Title</label>
         <select name="title" id="title" class="form-select" required>
@@ -75,16 +70,49 @@
 <script>
     (() => {
         'use strict';
-        const forms = document.querySelectorAll('.needs-validation');
-        Array.from(forms).forEach(form => {
-            form.addEventListener('submit', event => {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
+        const form = document.getElementById('patientForm');
+        const isEdit = {{ 'true' if patient else 'false' }};
+
+        form.addEventListener('submit', async (event) => {
+            // Bootstrap validation
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
                 form.classList.add('was-validated');
-            }, false);
-        });
+                return;
+            }
+            form.classList.add('was-validated');
+
+            if (!isEdit) {
+                // Create: allow normal POST to get a server redirect
+                return;
+            }
+
+            // Edit: submit via PUT using fetch and then navigate to response URL
+            event.preventDefault();
+            const fd = new FormData(form);
+            const body = new URLSearchParams(fd);
+            try {
+                const resp = await fetch(form.action, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'text/html',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body
+                });
+                // If server redirected, resp.url is the final URL
+                if (resp.redirected) {
+                    window.location.href = resp.url;
+                    return;
+                }
+                // Fallback: navigate to patient details if Location known in final URL
+                window.location.href = resp.url || form.action.replace(/\/edit$/, '');
+            } catch (e) {
+                console.error(e);
+                alert('Failed to update patient. Please try again.');
+            }
+        }, false);
     })();
 </script>
 {% endblock %}

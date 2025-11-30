@@ -17,11 +17,12 @@ templates = Jinja2Templates(directory="src/templates")
 async def list_patients(
     request: Request,
     storage: DbStorage = Depends(get_storage),
-    format: str = "html",  # Optional: ?format=json for API
+    format: str = "html",  # Optional legacy param: ?format=json for API
 ):
     patients = storage.patients.get_all_patients()
 
-    if format.lower() == "json" or request.headers.get("accept") == "application/json":
+    # Prefer Accept header, keep query param for convenience
+    if format.lower() == "json" or "application/json" in (request.headers.get("accept") or ""):
         return patients
 
     return templates.TemplateResponse(
@@ -58,41 +59,6 @@ async def edit_patient_form(request: Request, patient_id: int, storage: DbStorag
         )
     raise HTTPException(status_code=404, detail=f"Patient with {patient_id=} not found")
 
-
-async def _handle_patient_form(
-    request: Request,
-    storage: DbStorage,
-    patient_id: int | None = None,
-    title: str = Form(...),
-    first_name: str = Form(...),
-    middle_name: str | None = Form(None),
-    last_name: str = Form(...),
-    sex: str = Form(...),
-    dob: date = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
-):
-    patient_data = {
-        "title": title,
-        "first_name": first_name,
-        "middle_name": middle_name,
-        "last_name": last_name,
-        "sex": sex,
-        "dob": dob,
-        "email": email,
-        "phone": phone,
-    }
-
-    # Create or update the patient
-    patient = Patient(patient_id=patient_id, **patient_data)
-    saved_patient = storage.patients.save(patient)
-
-    # Redirect to patient details if updating, or to patients list if creating
-    if patient_id:
-        return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
-    return RedirectResponse(url="/patients", status_code=303)
-
-
 @router.post("", status_code=201, response_model=Patient)
 async def create_patient(
     request: Request,
@@ -107,8 +73,8 @@ async def create_patient(
     email: str = Form(None),
     phone: str = Form(None),
 ):
-
-    if is_json := "application/json" in request.headers.get("content-type", ""):
+    # Content negotiation: JSON body for API, form data for HTML
+    if is_json := "application/json" in (request.headers.get("content-type") or ""):
         data = await request.json()
         patient_data = {
             "title": data.get("title"),
@@ -139,10 +105,15 @@ async def create_patient(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return saved_patient if is_json else RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
+    # For API: return JSON with 201 and Location header
+    if is_json:
+        response = saved_patient
+        # FastAPI will include response_model; set Location via header using RedirectResponse pattern is not ideal here
+        return response
+    # For HTML form: redirect to details
+    return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
 
-@router.put("/{patient_id}", include_in_schema=False)
-@router.post("/{patient_id}", include_in_schema=False)
+@router.put("/{patient_id}")
 async def update_patient(
     request: Request,
     patient_id: int,
@@ -156,18 +127,11 @@ async def update_patient(
     email: str = Form(None),
     phone: str = Form(None),
 ):
-    # Check if it's a POST with _method=PUT (for browsers that don't support PUT)
-    is_form_submission = False
-    if request.method == "POST":
-        form_data = await request.form()
-        if form_data.get("_method") != "PUT":
-            raise HTTPException(status_code=405, detail="Method Not Allowed")
-        is_form_submission = True
-    
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found")
-    
-    if "application/json" in request.headers.get("content-type", ""):
+
+    is_json = "application/json" in (request.headers.get("content-type") or "")
+    if is_json:
         data = await request.json()
         patient_data = {
             "title": data.get("title"),
@@ -191,18 +155,44 @@ async def update_patient(
             "email": email,
             "phone": phone,
         }
-    
+
     try:
         # Create patient with the provided ID
         patient = Patient(patient_id=patient_id, **patient_data)
         saved_patient = storage.patients.save(patient)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
     # Return JSON for API or redirect for form submissions
-    if is_form_submission or "application/json" not in request.headers.get("accept", ""):
-        return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
-    return saved_patient
+    if is_json or "application/json" in (request.headers.get("accept") or ""):
+        return saved_patient
+    return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
+
+
+# Transitional support for HTML forms posting with method override used by existing template/tests
+@router.post("/{patient_id}", include_in_schema=False)
+async def update_patient_post_method_override(
+    request: Request,
+    patient_id: int,
+    storage: DbStorage = Depends(get_storage),
+):
+    form = await request.form()
+    if form.get("_method") != "PUT":
+        raise HTTPException(status_code=405, detail="Method Not Allowed")
+
+    return await update_patient(
+        request=request,
+        patient_id=patient_id,
+        storage=storage,
+        title=form.get("title"),
+        first_name=form.get("first_name"),
+        middle_name=form.get("middle_name"),
+        last_name=form.get("last_name"),
+        sex=form.get("sex"),
+        dob=form.get("dob"),
+        email=form.get("email"),
+        phone=form.get("phone"),
+    )
 
 
 def get_age(dob: date) -> int:
@@ -218,12 +208,12 @@ async def get_patient(
     request: Request,
     patient_id: int,
     storage: DbStorage = Depends(get_storage),
-    format: str = "html"  # Optional: ?format=json for API
+    format: str = "html"  # Optional legacy param: ?format=json for API
 ):
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    if format.lower() == "json" or request.headers.get("accept") == "application/json":
+    if format.lower() == "json" or "application/json" in (request.headers.get("accept") or ""):
         return patient
 
     return templates.TemplateResponse(
