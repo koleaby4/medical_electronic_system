@@ -8,22 +8,21 @@ from src.models.patient import Patient
 def _create_sample_patient(client: TestClient) -> Patient:
     form = {
         "title": "Mr",
-        "first_name": "john",
-        "middle_name": "albert",
-        "last_name": "doe",
+        "first_name": "Albert",
+        "last_name": "Doe",
         "sex": "male",
-        "dob": "1990-01-02",
-        "email": "JOHN.DOE@EXAMPLE.COM",
-        "phone": "+1-555-0100",
+        "dob": "1990-01-01",
+        "email": "albert.doe@example.com",
+        "phone": "1234567890",
     }
-    # Create patient; follow redirect to patients list to be able to extract the details link
-    resp = client.post("/patients", data=form, follow_redirects=True)
-    assert resp.status_code == 200
-    html = resp.text
 
-    m = re.search(r"/patients/(\d+)", html)
-    assert m, "Expected patients list to contain a details link"
-    return Patient(patient_id=int(m.group(1)), **form)
+    resp = client.post("/patients", data=form, follow_redirects=False)
+    patient_url = resp.headers.get("location")
+    assert patient_url.startswith("/patients/")
+
+    # Extract patient ID from the redirect URL
+    patient_id = int(patient_url.rstrip('/').split('/')[-1])
+    return Patient(patient_id=patient_id, **form)
 
 
 def test_patient_details_page_renders(client: TestClient):
@@ -39,7 +38,6 @@ def test_patient_details_page_renders(client: TestClient):
     assert "Medical checks" in html
 
     # Patient data should be title-cased/formatted by the model behavior
-    assert "John" in html
     assert "Albert" in html
     assert "Doe" in html
     assert "male" in html

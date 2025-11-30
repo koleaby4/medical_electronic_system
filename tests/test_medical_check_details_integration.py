@@ -1,4 +1,3 @@
-import re
 from datetime import date
 
 from fastapi.testclient import TestClient
@@ -15,11 +14,11 @@ def _create_sample_patient(client: TestClient) -> int:
         "email": "JOHN.DOE@EXAMPLE.COM",
         "phone": "+1-555-0100",
     }
-    resp = client.post("/patients", data=form, follow_redirects=True)
-    assert resp.status_code == 200
-    m = re.search(r"/patients/(\d+)", resp.text)
-    assert m
-    return int(m.group(1))
+    resp = client.post("/patients", data=form, follow_redirects=False)
+    assert resp.status_code == 303  # Check for redirect
+    patient_url = resp.headers.get("location")
+    assert patient_url and patient_url.startswith("/patients/")
+    return int(patient_url.split("/")[-1])
 
 
 def _create_physicals_check(client: TestClient, patient_id: int, status: str = "Red", notes: str | None = None) -> int:

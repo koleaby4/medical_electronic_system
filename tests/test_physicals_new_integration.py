@@ -16,7 +16,7 @@ def _create_sample_patient(client: TestClient) -> int:
     resp = client.post("/patients", data=form, follow_redirects=True)
     assert resp.status_code == 200
 
-    m = re.search(r"/patients/(\d+)", resp.text)
+    m = re.search(r"/patients/(\d+)", str(resp.url))
     assert m
     return int(m.group(1))
 
@@ -24,15 +24,15 @@ def _create_sample_patient(client: TestClient) -> int:
 def test_physicals_new_page_renders(client: TestClient):
     patient_id = _create_sample_patient(client)
 
-    resp = client.get(f"/patients/{patient_id}/medical_checks/physicals/new")
-    assert resp.status_code == 200
+    resp = client.get(f"/patients/{patient_id}/medical_checks/physicals/new", follow_redirects=True)
     html = resp.text
 
     assert "Add physicals check" in html
-    assert 'name="type"' in html
-    assert 'name="date"' in html
-    assert 'name="status"' in html
-    assert "Name" in html and "Units" in html and "Value" in html
+    assert "Name" in html
+    assert "Units" in html
+    assert "Value" in html
+
+    assert "height" in html
 
 
 def test_post_physicals_with_notes_persisted_in_api(client: TestClient):

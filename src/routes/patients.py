@@ -93,33 +93,53 @@ async def _handle_patient_form(
     return RedirectResponse(url="/patients", status_code=303)
 
 
-@router.post("", include_in_schema=False)
+@router.post("", status_code=201, response_model=Patient)
 async def create_patient(
     request: Request,
     storage: DbStorage = Depends(get_storage),
-    title: str = Form(...),
-    first_name: str = Form(...),
+    # Form data
+    title: str = Form(None),
+    first_name: str = Form(None),
     middle_name: str | None = Form(None),
-    last_name: str = Form(...),
-    sex: str = Form(...),
-    dob: date = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
+    last_name: str = Form(None),
+    sex: str = Form(None),
+    dob: date = Form(None),
+    email: str = Form(None),
+    phone: str = Form(None),
 ):
-    return await _handle_patient_form(
-        request=request,
-        storage=storage,
-        patient_id=None,
-        title=title,
-        first_name=first_name,
-        middle_name=middle_name,
-        last_name=last_name,
-        sex=sex,
-        dob=dob,
-        email=email,
-        phone=phone,
-    )
 
+    if is_json := "application/json" in request.headers.get("content-type", ""):
+        data = await request.json()
+        patient_data = {
+            "title": data.get("title"),
+            "first_name": data.get("first_name"),
+            "middle_name": data.get("middle_name"),
+            "last_name": data.get("last_name"),
+            "sex": data.get("sex"),
+            "dob": data.get("dob"),
+            "email": data.get("email"),
+            "phone": data.get("phone"),
+        }
+    else:
+        # Handle form submission
+        patient_data = {
+            "title": title,
+            "first_name": first_name,
+            "middle_name": middle_name,
+            "last_name": last_name,
+            "sex": sex,
+            "dob": dob,
+            "email": email,
+            "phone": phone,
+        }
+
+    try:
+        patient = Patient(**patient_data)
+        saved_patient = storage.patients.save(patient)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return saved_patient if is_json else RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
 
 @router.put("/{patient_id}", include_in_schema=False)
 @router.post("/{patient_id}", include_in_schema=False)
