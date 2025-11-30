@@ -147,32 +147,62 @@ async def update_patient(
     request: Request,
     patient_id: int,
     storage: DbStorage = Depends(get_storage),
-    title: str = Form(...),
-    first_name: str = Form(...),
+    title: str = Form(None),
+    first_name: str = Form(None),
     middle_name: str | None = Form(None),
-    last_name: str = Form(...),
-    sex: str = Form(...),
-    dob: date = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
+    last_name: str = Form(None),
+    sex: str = Form(None),
+    dob: date = Form(None),
+    email: str = Form(None),
+    phone: str = Form(None),
 ):
     # Check if it's a POST with _method=PUT (for browsers that don't support PUT)
-    form_data = await request.form()
-    if form_data.get("_method") == "PUT" or request.method == "PUT":
-        return await _handle_patient_form(
-            request=request,
-            storage=storage,
-            patient_id=patient_id,
-            title=title,
-            first_name=first_name,
-            middle_name=middle_name,
-            last_name=last_name,
-            sex=sex,
-            dob=dob,
-            email=email,
-            phone=phone,
-        )
-    raise HTTPException(status_code=405, detail="Method Not Allowed")
+    is_form_submission = False
+    if request.method == "POST":
+        form_data = await request.form()
+        if form_data.get("_method") != "PUT":
+            raise HTTPException(status_code=405, detail="Method Not Allowed")
+        is_form_submission = True
+    
+    if not storage.patients.get_patient(patient_id=patient_id):
+        raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found")
+    
+    if "application/json" in request.headers.get("content-type", ""):
+        data = await request.json()
+        patient_data = {
+            "title": data.get("title"),
+            "first_name": data.get("first_name"),
+            "middle_name": data.get("middle_name"),
+            "last_name": data.get("last_name"),
+            "sex": data.get("sex"),
+            "dob": data.get("dob"),
+            "email": data.get("email"),
+            "phone": data.get("phone"),
+        }
+    else:
+        # Handle form submission
+        patient_data = {
+            "title": title,
+            "first_name": first_name,
+            "middle_name": middle_name,
+            "last_name": last_name,
+            "sex": sex,
+            "dob": dob,
+            "email": email,
+            "phone": phone,
+        }
+    
+    try:
+        # Create patient with the provided ID
+        patient = Patient(patient_id=patient_id, **patient_data)
+        saved_patient = storage.patients.save(patient)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Return JSON for API or redirect for form submissions
+    if is_form_submission or "application/json" not in request.headers.get("accept", ""):
+        return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
+    return saved_patient
 
 
 def get_age(dob: date) -> int:
