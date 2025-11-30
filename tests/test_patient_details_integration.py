@@ -2,11 +2,9 @@ import re
 
 from fastapi.testclient import TestClient
 
-from src.models.patient import Patient
 
-
-def _create_sample_patient(client: TestClient) -> Patient:
-    form = {
+def _patient_overrides():
+    return {
         "title": "Mr",
         "first_name": "Albert",
         "last_name": "Doe",
@@ -16,19 +14,11 @@ def _create_sample_patient(client: TestClient) -> Patient:
         "phone": "1234567890",
     }
 
-    resp = client.post("/patients", data=form, follow_redirects=False)
-    patient_url = resp.headers.get("location")
-    assert patient_url.startswith("/patients/")
 
-    # Extract patient ID from the redirect URL
-    patient_id = int(patient_url.rstrip('/').split('/')[-1])
-    return Patient(patient_id=patient_id, **form)
+def test_patient_details_page_renders(client: TestClient, create_patient):
+    patient_id = create_patient(_patient_overrides())
 
-
-def test_patient_details_page_renders(client: TestClient):
-    patient = _create_sample_patient(client)
-
-    resp = client.get(f"/patients/{patient.patient_id}")
+    resp = client.get(f"/patients/{patient_id}")
     assert resp.status_code == 200
     html = resp.text
 
@@ -46,10 +36,17 @@ def test_patient_details_page_renders(client: TestClient):
     # UI containers used by the details page
     assert "checksTiles" in html  # container for the tiles grid
 
-    patient.first_name = "jonathan"
-    patient.last_name = "wick"
+    update_form = {
+        "title": "Mr",
+        "first_name": "jonathan",
+        "last_name": "wick",
+        "sex": "male",
+        "dob": "1990-01-01",
+        "email": "albert.doe@example.com",
+        "phone": "1234567890",
+    }
 
-    resp = client.put(f"/patients/{patient.patient_id}", data=patient.model_dump())
+    resp = client.put(f"/patients/{patient_id}", data=update_form)
     assert resp.status_code == 200
     html = resp.text
 

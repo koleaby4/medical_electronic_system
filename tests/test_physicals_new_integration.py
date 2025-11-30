@@ -1,28 +1,9 @@
 from fastapi.testclient import TestClient
-import re
 
 
-def _create_sample_patient(client: TestClient) -> int:
-    form = {
-        "title": "Mr",
-        "first_name": "john",
-        "middle_name": "albert",
-        "last_name": "doe",
-        "sex": "male",
-        "dob": "1990-01-02",
-        "email": "JOHN.DOE@EXAMPLE.COM",
-        "phone": "+1-555-0100",
-    }
-    resp = client.post("/patients", data=form, follow_redirects=True)
-    assert resp.status_code == 200
 
-    m = re.search(r"/patients/(\d+)", str(resp.url))
-    assert m
-    return int(m.group(1))
-
-
-def test_physicals_new_page_renders(client: TestClient):
-    patient_id = _create_sample_patient(client)
+def test_physicals_new_page_renders(client: TestClient, create_patient):
+    patient_id = create_patient()
 
     resp = client.get(f"/patients/{patient_id}/medical_checks/physicals/new", follow_redirects=True)
     html = resp.text
@@ -35,8 +16,8 @@ def test_physicals_new_page_renders(client: TestClient):
     assert "height" in html
 
 
-def test_post_physicals_with_notes_persisted_in_api(client: TestClient):
-    patient_id = _create_sample_patient(client)
+def test_post_physicals_with_notes_persisted_in_api(client: TestClient, create_patient):
+    patient_id = create_patient()
 
     from datetime import date
 

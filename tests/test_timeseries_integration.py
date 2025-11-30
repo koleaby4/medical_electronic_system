@@ -1,26 +1,10 @@
 from datetime import date, timedelta
-import re
 
 from fastapi.testclient import TestClient
 
 
-def _create_sample_patient(client: TestClient) -> int:
-    form = {
-        "title": "Mr",
-        "first_name": "john",
-        "middle_name": "albert",
-        "last_name": "doe",
-        "sex": "male",
-        "dob": "1990-01-02",
-        "email": "JOHN.DOE@EXAMPLE.COM",
-        "phone": "+1-555-0100",
-    }
-    resp = client.post("/patients", data=form, follow_redirects=True)
-    assert resp.status_code == 200
-
-    m = re.search(r"/patients/(\d+)", str(resp.url))
-    assert m
-    return int(m.group(1))
+def _create_sample_patient_id(create_patient) -> int:
+    return create_patient()
 
 
 def _create_physicals_with_item(
@@ -39,8 +23,8 @@ def _create_physicals_with_item(
     assert resp.status_code in (303, 307)
 
 
-def test_timeseries_happy_path_returns_sorted_values(client: TestClient):
-    patient_id = _create_sample_patient(client)
+def test_timeseries_happy_path_returns_sorted_values(client: TestClient, create_patient):
+    patient_id = create_patient()
 
     d1 = date.today() - timedelta(days=10)
     d2 = date.today() - timedelta(days=5)
