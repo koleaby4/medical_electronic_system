@@ -3,6 +3,8 @@
     <div class="card-header bg-primary text-white">Patient Summary</div>
     <div class="card-body">
         <div class="row">
+            <div class="col-6"><strong>Title:</strong></div>
+            <div class="col-6">{{ patient.title }}</div>
             <div class="col-6"><strong>First Name:</strong></div>
             <div class="col-6">{{ patient.first_name }}</div>
             {% if patient.middle_name %}
