@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 
 
-
 def test_physicals_new_page_renders(client: TestClient, create_patient):
     patient_id = create_patient()
 

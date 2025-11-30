@@ -11,14 +11,16 @@ def test_patients_page_initially_empty(client: TestClient):
 
 
 def test_create_patient_and_list(client: TestClient, create_patient):
-    create_patient({
-        "first_name": "john",
-        "last_name": "doe",
-        "sex": "male",
-        "dob": "1990-01-01",
-        "email": "test@example.com",
-        "phone": "1234567890",
-    })
+    create_patient(
+        {
+            "first_name": "john",
+            "last_name": "doe",
+            "sex": "male",
+            "dob": "1990-01-01",
+            "email": "test@example.com",
+            "phone": "1234567890",
+        }
+    )
 
     resp = client.get("/patients")
 
@@ -31,14 +33,16 @@ def test_create_patient_and_list(client: TestClient, create_patient):
 
 def test_update_patient(client: TestClient, create_patient):
     # First, create a patient
-    patient_id = create_patient({
-        "first_name": "john",
-        "last_name": "doe",
-        "sex": "male",
-        "dob": "1990-01-01",
-        "email": "john.doe@example.com",
-        "phone": "1234567890",
-    })
+    patient_id = create_patient(
+        {
+            "first_name": "john",
+            "last_name": "doe",
+            "sex": "male",
+            "dob": "1990-01-01",
+            "email": "john.doe@example.com",
+            "phone": "1234567890",
+        }
+    )
 
     # Now update the patient via PUT
     update_form = {
@@ -55,7 +59,7 @@ def test_update_patient(client: TestClient, create_patient):
 
     assert resp.status_code == 200
     html = resp.text
-    
+
     assert "Johnathan" in html
     assert "Doe" in html
 

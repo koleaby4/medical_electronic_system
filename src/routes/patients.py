@@ -59,6 +59,7 @@ async def edit_patient_form(request: Request, patient_id: int, storage: DbStorag
         )
     raise HTTPException(status_code=404, detail=f"Patient with {patient_id=} not found")
 
+
 @router.post("", status_code=201, response_model=Patient)
 async def create_patient(
     request: Request,
@@ -105,13 +106,12 @@ async def create_patient(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # For API: return JSON with 201 and Location header
     if is_json:
         response = saved_patient
-        # FastAPI will include response_model; set Location via header using RedirectResponse pattern is not ideal here
         return response
-    # For HTML form: redirect to details
+
     return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
+
 
 @router.put("/{patient_id}")
 async def update_patient(
@@ -130,8 +130,7 @@ async def update_patient(
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found")
 
-    is_json = "application/json" in (request.headers.get("content-type") or "")
-    if is_json:
+    if is_json := "application/json" in request.headers.get("content-type", ""):
         data = await request.json()
         patient_data = {
             "title": data.get("title"),
@@ -157,15 +156,14 @@ async def update_patient(
         }
 
     try:
-        # Create patient with the provided ID
         patient = Patient(patient_id=patient_id, **patient_data)
         saved_patient = storage.patients.save(patient)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Return JSON for API or redirect for form submissions
-    if is_json or "application/json" in (request.headers.get("accept") or ""):
+    if is_json or "application/json" in (request.headers.get("accept", "")):
         return saved_patient
+
     return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
 
 
@@ -195,7 +193,7 @@ async def update_patient_post_method_override(
     )
 
 
-def get_age(dob: date) -> int:
+def _get_age(dob: date) -> int:
     today = date.today()
     years = today.year - dob.year
     if (today.month, today.day) < (dob.month, dob.day):
@@ -208,12 +206,12 @@ async def get_patient(
     request: Request,
     patient_id: int,
     storage: DbStorage = Depends(get_storage),
-    format: str = "html"  # Optional legacy param: ?format=json for API
 ):
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    if format.lower() == "json" or "application/json" in (request.headers.get("accept") or ""):
+    # Serve JSON when requested via Accept header; otherwise render HTML template
+    if "application/json" in request.headers.get("accept", ""):
         return patient
 
     return templates.TemplateResponse(
@@ -222,6 +220,6 @@ async def get_patient(
             "request": request,
             "active_page": "patients",
             "patient": patient,
-            "age": get_age(patient.dob),
+            "age": _get_age(patient.dob),
         },
     )
