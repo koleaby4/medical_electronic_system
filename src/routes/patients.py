@@ -33,9 +33,9 @@ async def list_patients(
 @router.get("/new", include_in_schema=False)
 async def create_patient_form(request: Request):
     return templates.TemplateResponse(
-        request,
         "upsert_patient.html",
         {
+            "request": request,
             "active_page": "new_patient",
             "title_options": list(Title.__members__.values()),
             "sex_options": list(Sex.__members__.values()),
@@ -48,9 +48,9 @@ async def create_patient_form(request: Request):
 async def edit_patient_form(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
     if patient := storage.patients.get_patient(patient_id=patient_id):
         return templates.TemplateResponse(
-            request,
             "upsert_patient.html",
             {
+                "request": request,
                 "active_page": "patients",
                 "title_options": list(Title.__members__.values()),
                 "sex_options": list(Sex.__members__.values()),

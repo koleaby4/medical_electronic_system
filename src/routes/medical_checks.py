@@ -81,9 +81,9 @@ async def create_medical_check(
 async def new_physicals_check(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
     if patient := storage.patients.get_patient(patient_id=patient_id):
         return templates.TemplateResponse(
-            request,
             "create_medical_check_physicals.html",
             {
+                "request": request,
                 "active_page": "patients",
                 "patient": patient,
                 "check_type": "physicals",
@@ -121,9 +121,9 @@ async def medical_check_details(
 
     if mc := storage.medical_checks.get_medical_check(patient_id=patient_id, check_id=check_id):
         return templates.TemplateResponse(
-            request,
             "medical_check_details.html",
             {
+                "request": request,
                 "active_page": "patients",
                 "patient": patient,
                 "check": mc,
