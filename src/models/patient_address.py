@@ -10,7 +10,6 @@ class Address(BaseModel):
     postcode: str
     country: Literal["United Kingdom"] | str = "United Kingdom"
 
-
     @field_validator("postcode")
     def format_postcode(cls, v: str) -> str:
         v = v.strip().upper().replace(" ", "")
