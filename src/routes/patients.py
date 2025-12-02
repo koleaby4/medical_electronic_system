@@ -8,6 +8,7 @@ from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
 from src.models.enums import Title, Sex
 from src.models.patient import Patient
+from src.models.address import Address
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -73,10 +74,18 @@ async def create_patient(
     dob: date = Form(None),
     email: str = Form(None),
     phone: str = Form(None),
+    # Address fields (optional)
+    address_line_1: str | None = Form(None),
+    address_line_2: str | None = Form(None),
+    address_town: str | None = Form(None),
+    address_postcode: str | None = Form(None),
+    address_country: str | None = Form(None),
 ):
     # Content negotiation: JSON body for API, form data for HTML
     if is_json := "application/json" in (request.headers.get("content-type") or ""):
         data = await request.json()
+        addr = data.get("address") or {}
+        # Support flat JSON too
         patient_data = {
             "title": data.get("title"),
             "first_name": data.get("first_name"),
@@ -86,6 +95,25 @@ async def create_patient(
             "dob": data.get("dob"),
             "email": data.get("email"),
             "phone": data.get("phone"),
+            "address": (
+                Address(
+                    line_1=(addr.get("line_1") or data.get("address_line_1")),
+                    line_2=(addr.get("line_2") or data.get("address_line_2")),
+                    town=(addr.get("town") or data.get("address_town")),
+                    postcode=(addr.get("postcode") or data.get("address_postcode")),
+                    country=(addr.get("country") or data.get("address_country") or "United Kingdom"),
+                )
+                if any(
+                    x
+                    for x in [
+                        addr.get("line_1") or data.get("address_line_1"),
+                        addr.get("town") or data.get("address_town"),
+                        addr.get("postcode") or data.get("address_postcode"),
+                        addr.get("country") or data.get("address_country"),
+                    ]
+                )
+                else None
+            ),
         }
     else:
         # Handle form submission
@@ -98,6 +126,17 @@ async def create_patient(
             "dob": dob,
             "email": email,
             "phone": phone,
+            "address": (
+                Address(
+                    line_1=address_line_1,
+                    line_2=address_line_2,
+                    town=address_town,
+                    postcode=address_postcode,
+                    country=address_country or "United Kingdom",
+                )
+                if any([address_line_1, address_town, address_postcode, address_country])
+                else None
+            ),
         }
 
     try:
@@ -126,12 +165,19 @@ async def update_patient(
     dob: date = Form(None),
     email: str = Form(None),
     phone: str = Form(None),
+    # Address fields (optional)
+    address_line_1: str | None = Form(None),
+    address_line_2: str | None = Form(None),
+    address_town: str | None = Form(None),
+    address_postcode: str | None = Form(None),
+    address_country: str | None = Form(None),
 ):
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found")
 
     if is_json := "application/json" in request.headers.get("content-type", ""):
         data = await request.json()
+        addr = data.get("address") or {}
         patient_data = {
             "title": data.get("title"),
             "first_name": data.get("first_name"),
@@ -141,6 +187,25 @@ async def update_patient(
             "dob": data.get("dob"),
             "email": data.get("email"),
             "phone": data.get("phone"),
+            "address": (
+                Address(
+                    line_1=(addr.get("line_1") or data.get("address_line_1")),
+                    line_2=(addr.get("line_2") or data.get("address_line_2")),
+                    town=(addr.get("town") or data.get("address_town")),
+                    postcode=(addr.get("postcode") or data.get("address_postcode")),
+                    country=(addr.get("country") or data.get("address_country") or "United Kingdom"),
+                )
+                if any(
+                    x
+                    for x in [
+                        addr.get("line_1") or data.get("address_line_1"),
+                        addr.get("town") or data.get("address_town"),
+                        addr.get("postcode") or data.get("address_postcode"),
+                        addr.get("country") or data.get("address_country"),
+                    ]
+                )
+                else None
+            ),
         }
     else:
         # Handle form submission
@@ -153,6 +218,17 @@ async def update_patient(
             "dob": dob,
             "email": email,
             "phone": phone,
+            "address": (
+                Address(
+                    line_1=address_line_1,
+                    line_2=address_line_2,
+                    town=address_town,
+                    postcode=address_postcode,
+                    country=address_country or "United Kingdom",
+                )
+                if any([address_line_1, address_town, address_postcode, address_country])
+                else None
+            ),
         }
 
     try:
@@ -190,6 +266,12 @@ async def update_patient_post_method_override(
         dob=form.get("dob"),
         email=form.get("email"),
         phone=form.get("phone"),
+        # Forward optional address fields explicitly so they are None/str, not Form(...) defaults
+        address_line_1=form.get("address_line_1"),
+        address_line_2=form.get("address_line_2"),
+        address_town=form.get("address_town"),
+        address_postcode=form.get("address_postcode"),
+        address_country=form.get("address_country"),
     )
 
 

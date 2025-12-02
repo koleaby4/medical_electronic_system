@@ -1,8 +1,8 @@
 from datetime import date
-from typing import Optional
 from pydantic import BaseModel, field_validator
 
 from src.models.enums import Title, Sex
+from src.models.address import Address
 
 
 class Patient(BaseModel):
@@ -14,7 +14,8 @@ class Patient(BaseModel):
     email: str
     phone: str
     middle_name: str | None = None
-    patient_id: Optional[int] = None
+    patient_id: int | None = None
+    address: Address | None = None
 
     @field_validator("first_name", "last_name", "middle_name", mode="before")
     @classmethod

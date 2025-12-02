@@ -88,10 +88,33 @@ def medical_check_items_table(db: str):
         logger.info("Ensured indexes on medical_check_items exist")
 
 
+def create_addresses_table(db: str):
+    with duckdb.connect(db) as conn:
+        conn.execute("CREATE SEQUENCE IF NOT EXISTS addresses_id_seq")
+        logger.info("Created addresses_id_seq (if not exists)")
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS addresses (
+                address_id INTEGER PRIMARY KEY DEFAULT nextval('addresses_id_seq'),
+                patient_id INTEGER UNIQUE NOT NULL,
+                line_1 TEXT NOT NULL,
+                line_2 TEXT NULL,
+                town TEXT NOT NULL,
+                postcode TEXT NOT NULL,
+                country TEXT NOT NULL,
+                foreign key (patient_id) references patients(patient_id)
+            )
+            """
+        )
+        logger.info("Created addresses table (if not exists)")
+
+
 def create_tables(db: str):
     create_patients_table(db)
     create_medical_checks_table(db)
     medical_check_items_table(db)
+    create_addresses_table(db)
 
 
 if __name__ == "__main__":
