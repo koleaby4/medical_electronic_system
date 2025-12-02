@@ -16,3 +16,8 @@ class Address(BaseModel):
         if len(v) > 3:
             v = v[:-3] + " " + v[-3:]
         return v
+
+
+    @field_validator("country")
+    def format_country(cls, v: str) -> str:
+        return v.strip().title()
