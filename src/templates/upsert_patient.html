@@ -67,6 +67,22 @@
         <input type="text" name="phone" id="phone" class="form-control" value="{{ patient.phone if patient else '' }}" required>
     </div>
 
+    <div class="accordion mb-3" id="addressAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="addressHeading">
+                {% set has_address = patient and patient.address %}
+                <button class="accordion-button {% if not has_address %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#addressCollapse" aria-expanded="{{ 'true' if has_address else 'false' }}" aria-controls="addressCollapse">
+                    Address (optional)
+                </button>
+            </h2>
+            <div id="addressCollapse" class="accordion-collapse collapse {% if has_address %}show{% endif %}" aria-labelledby="addressHeading" data-bs-parent="#addressAccordion">
+                <div class="accordion-body">
+                    {% include '_address_form.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <button type="submit" class="btn btn-success">{{ submit_text }}</button>
     <a href="{{ '/patients/' + patient.patient_id|string if patient else '/patients' }}" class="btn btn-secondary">Cancel</a>
 </form>

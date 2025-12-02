@@ -1,0 +1,26 @@
+{# Reusable Address form partial. Expects `patient` variable in context. #}
+<div class="mb-3">
+  <label for="address_line_1" class="form-label">Address line 1</label>
+  <input type="text" name="address_line_1" id="address_line_1" class="form-control" value="{{ patient.address.line_1 if patient and patient.address else '' }}">
+</div>
+
+<div class="mb-3">
+  <label for="address_line_2" class="form-label">Address line 2</label>
+  <input type="text" name="address_line_2" id="address_line_2" class="form-control" value="{{ patient.address.line_2 if patient and patient.address and patient.address.line_2 else '' }}">
+</div>
+
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <label for="address_town" class="form-label">Town/City</label>
+    <input type="text" name="address_town" id="address_town" class="form-control" value="{{ patient.address.town if patient and patient.address else '' }}">
+  </div>
+  <div class="col-md-6 mb-3">
+    <label for="address_postcode" class="form-label">Postcode</label>
+    <input type="text" name="address_postcode" id="address_postcode" class="form-control" value="{{ patient.address.postcode if patient and patient.address else '' }}">
+  </div>
+  </div>
+
+<div class="mb-3">
+  <label for="address_country" class="form-label">Country</label>
+  <input type="text" name="address_country" id="address_country" class="form-control" value="{{ patient.address.country if patient and patient.address else 'United Kingdom' }}">
+</div>
