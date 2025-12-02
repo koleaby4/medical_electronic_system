@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import StrEnum, Enum
 
 
 class Title(StrEnum):
@@ -31,3 +31,23 @@ class MedicalCheckStatus(StrEnum):
     RED = "Red"
     AMBER = "Amber"
     GREEN = "Green"
+
+
+class AllergySeverity(str, Enum):
+    MILD = "mild"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+    LIFE_THREATENING = "life-threatening"
+
+
+class AllergyStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    RESOLVED = "resolved"
+
+
+class AllergyCategory(str, Enum):
+    DRUG = "drug"
+    FOOD = "food"
+    ENVIRONMENT = "environment"
+    OTHER = "other"
