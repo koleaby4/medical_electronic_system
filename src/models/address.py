@@ -1,6 +1,4 @@
-from typing import Literal
-
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 
 
 class Address(BaseModel):
@@ -8,7 +6,7 @@ class Address(BaseModel):
     line_2: str | None
     town: str
     postcode: str
-    country: Literal["United Kingdom"] | str = "United Kingdom"
+    country: str = Field(default="United Kingdom")
 
     @field_validator("postcode")
     def format_postcode(cls, v: str) -> str:
@@ -16,7 +14,6 @@ class Address(BaseModel):
         if len(v) > 3:
             v = v[:-3] + " " + v[-3:]
         return v
-
 
     @field_validator("country")
     def format_country(cls, v: str) -> str:
