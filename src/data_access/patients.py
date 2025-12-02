@@ -3,13 +3,15 @@ from typing import Any
 import duckdb
 
 from src.data_access.interfaces import IPatientsStorage
+from src.data_access.addresses import AddressesStorage
 from src.models.patient import Patient
-from src.models.address import Address
+from src.models.address_utils import build_address
 
 
 class PatientsStorage(IPatientsStorage):
     def __init__(self, conn: duckdb.DuckDBPyConnection):
         self.conn = conn
+        self._addresses = AddressesStorage(conn)
 
     def close(self) -> None:
         return None
@@ -43,45 +45,7 @@ class PatientsStorage(IPatientsStorage):
             )
 
             if a := patient.address:
-                self.conn.execute(
-                    """
-                    UPDATE addresses
-                    SET line_1 = ?,
-                        line_2 = ?,
-                        town = ?,
-                        postcode = ?,
-                        country = ?
-                    WHERE patient_id = ?
-                    """,
-                    [
-                        a.line_1,
-                        a.line_2,
-                        a.town,
-                        a.postcode,
-                        a.country,
-                        patient.patient_id,
-                    ],
-                )
-                # Some DuckDB drivers may not report rowcount reliably; ensure a row exists, otherwise insert
-                exists = self.conn.execute(
-                    "SELECT 1 FROM addresses WHERE patient_id = ?",
-                    [patient.patient_id],
-                ).fetchone()
-                if not exists:
-                    self.conn.execute(
-                        """
-                        INSERT INTO addresses (patient_id, line_1, line_2, town, postcode, country)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        """,
-                        [
-                            patient.patient_id,
-                            a.line_1,
-                            a.line_2,
-                            a.town,
-                            a.postcode,
-                            a.country,
-                        ],
-                    )
+                self._addresses.upsert_for_patient(patient.patient_id, a)
 
             return patient
 
@@ -106,21 +70,7 @@ class PatientsStorage(IPatientsStorage):
         patient.patient_id = int(result[0])
 
         if a := patient.address:
-
-            self.conn.execute(
-                """
-                INSERT INTO addresses (patient_id, line_1, line_2, town, postcode, country)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                [
-                    patient.patient_id,
-                    a.line_1,
-                    a.line_2,
-                    a.town,
-                    a.postcode,
-                    a.country,
-                ],
-            )
+            self._addresses.insert_for_patient(patient.patient_id, a)
         return patient
 
     def get_all_patients(self) -> list[Patient]:
@@ -134,24 +84,7 @@ class PatientsStorage(IPatientsStorage):
                 """
             )
             rows = _to_dicts(cur)
-            patients: list[Patient] = []
-            for r in rows:
-                address: Address | None = None
-                if r.get("line_1") and r.get("town") and r.get("postcode"):
-                    address = Address(
-                        line_1=r.get("line_1"),
-                        line_2=r.get("line_2"),
-                        town=r.get("town"),
-                        postcode=r.get("postcode"),
-                        country=r.get("country") or "United Kingdom",
-                    )
-                patient_data = {k: v for k, v in r.items() if k in {
-                    "patient_id", "title", "first_name", "middle_name", "last_name",
-                    "sex", "dob", "email", "phone"
-                }}
-                patient = Patient(**patient_data, address=address)
-                patients.append(patient)
-            return patients
+            return [_row_to_patient(r) for r in rows]
 
     def get_patient(self, patient_id: int) -> Patient | None:
         with self.conn.cursor() as cur:
@@ -167,23 +100,30 @@ class PatientsStorage(IPatientsStorage):
             rows = _to_dicts(cur)
             if not rows:
                 return None
-            r = rows[0]
-            address: Address | None = None
-            if r.get("line_1") and r.get("town") and r.get("postcode"):
-                address = Address(
-                    line_1=r.get("line_1"),
-                    line_2=r.get("line_2"),
-                    town=r.get("town"),
-                    postcode=r.get("postcode"),
-                    country=r.get("country") or "United Kingdom",
-                )
-            patient_data = {k: v for k, v in r.items() if k in {
-                "patient_id", "title", "first_name", "middle_name", "last_name",
-                "sex", "dob", "email", "phone"
-            }}
-            return Patient(**patient_data, address=address)
+            return _row_to_patient(rows[0])
 
 
 def _to_dicts(cur) -> list[dict[str, Any]]:
     cols: list[str] = [desc[0] for desc in cur.description]
     return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def _row_to_patient(r: dict[str, Any]) -> Patient:
+    address = build_address(r)
+    patient_data = {
+        k: v
+        for k, v in r.items()
+        if k
+        in {
+            "patient_id",
+            "title",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "sex",
+            "dob",
+            "email",
+            "phone",
+        }
+    }
+    return Patient(**patient_data, address=address)

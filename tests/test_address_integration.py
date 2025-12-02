@@ -10,12 +10,12 @@ def test_create_patient_with_address_form_and_get_json(client: TestClient, creat
             "dob": "1989-05-01",
             "email": "amy.pond@example.com",
             "phone": "0700000000",
-            # Address via form
-            "address_line_1": "Leadworth Cottage",
-            "address_line_2": "",
-            "address_town": "leadworth",
-            "address_postcode": "sw1a1aa",
-            "address_country": "united kingdom",
+            # Address via form (canonical fields)
+            "line_1": "Leadworth Cottage",
+            "line_2": "",
+            "town": "leadworth",
+            "postcode": "sw1a1aa",
+            "country": "united kingdom",
         }
     )
 
@@ -51,11 +51,11 @@ def test_update_patient_address_form_and_omit_does_not_delete(client: TestClient
         "dob": "1990-01-02",
         "email": "rory.williams@example.com",
         "phone": "+1-555-0101",
-        "address_line_1": "Some Street 1",
-        "address_line_2": "Flat B",
-        "address_town": "Leadworth",
-        "address_postcode": "EC1A1BB",
-        "address_country": "UNITED KINGDOM",
+        "line_1": "Some Street 1",
+        "line_2": "Flat B",
+        "town": "Leadworth",
+        "postcode": "EC1A1BB",
+        "country": "UNITED KINGDOM",
     }
     resp = client.put(f"/patients/{patient_id}", data=update_form)
     assert resp.status_code in (200, 303)
@@ -136,11 +136,11 @@ def test_create_patient_with_address_json_flat_fields(client: TestClient):
         "dob": "1980-01-01",
         "email": "js@example.com",
         "phone": "0000",
-        # flat address fields supported by API
-        "address_line_1": "10 Downing St",
-        "address_town": "London",
-        "address_postcode": "sw1a2aa",
-        "address_country": "united kingdom",
+        # canonical address fields at top level
+        "line_1": "10 Downing St",
+        "town": "London",
+        "postcode": "sw1a2aa",
+        "country": "united kingdom",
     }
     resp = client.post("/patients", json=payload)
     assert resp.status_code == 201
