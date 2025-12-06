@@ -51,6 +51,12 @@ def create_patient(client: TestClient):
             "dob": "1990-01-02",
             "email": "JOHN.DOE@EXAMPLE.COM",
             "phone": "+1-555-0100",
+            # Default required address fields
+            "line_1": "1 Test Street",
+            "line_2": "",
+            "town": "Testville",
+            "postcode": "SW1A1AA",
+            "country": "United Kingdom",
         }
         form = {**default_form, **(form_overrides or {})}
 

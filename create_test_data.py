@@ -5,6 +5,7 @@ from settings import Settings
 from src.data_access.db_storage import DbStorage
 from src.models.enums import Title, Sex, MedicalCheckType, MedicalCheckStatus
 from src.models.patient import Patient
+from src.models.address import Address
 from src.models.medical_check_item import MedicalCheckItem
 from faker import Faker
 
@@ -12,6 +13,15 @@ fake = Faker()
 
 
 def _get_random_patient() -> Patient:
+    def _get_random_address() -> Address:
+        return Address(
+            line_1=fake.street_address(),
+            line_2=None,
+            town=fake.city(),
+            postcode=fake.postcode(),
+            country="United Kingdom",
+        )
+
     sex = random.choice(list(Sex))
     match sex:
         case Sex.MALE:
@@ -39,6 +49,7 @@ def _get_random_patient() -> Patient:
         dob=fake.date_of_birth(minimum_age=16, maximum_age=95),
         email=f"{first_name.lower()}.{last_name.lower()}@gmail.com",
         phone=fake.phone_number(),
+        address=_get_random_address(),
     )
 
 
@@ -53,6 +64,13 @@ def build_sample_patients() -> list[Patient]:
             dob=fake.date_of_birth(minimum_age=16, maximum_age=95),
             email="JOHN.DOE@EXAMPLE.COM",
             phone="+1-555-0100",
+            address=Address(
+                line_1="1 Baker Street",
+                line_2=None,
+                town="London",
+                postcode="SW1A1AA",
+                country="United Kingdom",
+            ),
         ),
         Patient(
             title=Title.MRS,
@@ -63,6 +81,13 @@ def build_sample_patients() -> list[Patient]:
             dob=fake.date_of_birth(minimum_age=16, maximum_age=95),
             email="EMILY.CLARK@MAIL.COM",
             phone="+44 20 7946 0001",
+            address=Address(
+                line_1="221B Baker Street",
+                line_2="",
+                town="London",
+                postcode="EC1A1BB",
+                country="United Kingdom",
+            ),
         ),
         Patient(
             title=Title.DR,
@@ -73,6 +98,13 @@ def build_sample_patients() -> list[Patient]:
             dob=fake.date_of_birth(minimum_age=45, maximum_age=95),
             email="ALEX.TAYLOR@HEALTH.ORG",
             phone="(555) 0101",
+            address=Address(
+                line_1="10 Downing Street",
+                line_2=None,
+                town="London",
+                postcode="W1A0AX",
+                country="United Kingdom",
+            ),
         ),
         Patient(
             title=Title.MX,
@@ -83,6 +115,13 @@ def build_sample_patients() -> list[Patient]:
             dob=fake.date_of_birth(minimum_age=16, maximum_age=35),
             email="SAM.RIVERS@MAIL.NET",
             phone="+1 555 0102",
+            address=Address(
+                line_1="1600 Pennsylvania Ave",
+                line_2=None,
+                town="Washington",
+                postcode="SW1A2AA",
+                country="United Kingdom",
+            ),
         ),
         Patient(
             title=Title.MS,
@@ -93,6 +132,13 @@ def build_sample_patients() -> list[Patient]:
             dob=fake.date_of_birth(minimum_age=14, maximum_age=26),
             email="OLIVIA.MARTIN@EXAMPLE.CO.UK",
             phone="555-0103",
+            address=Address(
+                line_1="742 Evergreen Terrace",
+                line_2=None,
+                town="Springfield",
+                postcode="SW1A1AA",
+                country="United Kingdom",
+            ),
         ),
         _get_random_patient(),
         _get_random_patient(),

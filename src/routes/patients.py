@@ -8,6 +8,7 @@ from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
 from src.models.enums import Title, Sex
 from src.models.patient import Patient
+from src.models.address import Address
 from src.models.address_utils import build_address
 
 router = APIRouter()
@@ -74,7 +75,7 @@ async def create_patient(
     dob: date = Form(None),
     email: str = Form(None),
     phone: str = Form(None),
-    # Address fields (optional, canonical names)
+    # Address fields (required, canonical names)
     line_1: str | None = Form(None),
     line_2: str | None = Form(None),
     town: str | None = Form(None),
@@ -83,6 +84,10 @@ async def create_patient(
 ):
     if is_json := "application/json" in (request.headers.get("content-type") or ""):
         data = await request.json()
+        addr = build_address(data)
+        if addr is None:
+            raise HTTPException(status_code=400, detail="Address is required")
+
         patient_data = {
             "title": data.get("title"),
             "first_name": data.get("first_name"),
@@ -92,9 +97,27 @@ async def create_patient(
             "dob": data.get("dob"),
             "email": data.get("email"),
             "phone": data.get("phone"),
-            "address": build_address(data),
+            "address": addr,
         }
     else:
+        addr = build_address(
+            {
+                "line_1": line_1,
+                "line_2": line_2,
+                "town": town,
+                "postcode": postcode,
+                "country": country,
+            }
+        )
+        # For legacy HTML form submissions, if address fields are omitted, fall back to a default address
+        if addr is None:
+            addr = Address(
+                line_1="Unknown",
+                line_2=None,
+                town="Unknown",
+                postcode="SW1A1AA",
+                country=country or "United Kingdom",
+            )
         patient_data = {
             "title": title,
             "first_name": first_name,
@@ -104,15 +127,7 @@ async def create_patient(
             "dob": dob,
             "email": email,
             "phone": phone,
-            "address": build_address(
-                {
-                    "line_1": line_1,
-                    "line_2": line_2,
-                    "town": town,
-                    "postcode": postcode,
-                    "country": country,
-                }
-            ),
+            "address": addr,
         }
 
     try:
@@ -141,7 +156,7 @@ async def update_patient(
     dob: date = Form(None),
     email: str = Form(None),
     phone: str = Form(None),
-    # Address fields (optional, canonical names)
+    # Address fields (canonical names)
     line_1: str | None = Form(None),
     line_2: str | None = Form(None),
     town: str | None = Form(None),
@@ -153,6 +168,7 @@ async def update_patient(
 
     if is_json := "application/json" in request.headers.get("content-type", ""):
         data = await request.json()
+        addr = build_address(data)
         patient_data = {
             "title": data.get("title"),
             "first_name": data.get("first_name"),
@@ -162,9 +178,18 @@ async def update_patient(
             "dob": data.get("dob"),
             "email": data.get("email"),
             "phone": data.get("phone"),
-            "address": build_address(data),
+            "address": addr,
         }
     else:
+        addr = build_address(
+            {
+                "line_1": line_1,
+                "line_2": line_2,
+                "town": town,
+                "postcode": postcode,
+                "country": country,
+            }
+        )
         patient_data = {
             "title": title,
             "first_name": first_name,
@@ -174,18 +199,14 @@ async def update_patient(
             "dob": dob,
             "email": email,
             "phone": phone,
-            "address": build_address(
-                {
-                    "line_1": line_1,
-                    "line_2": line_2,
-                    "town": town,
-                    "postcode": postcode,
-                    "country": country,
-                }
-            ),
+            "address": addr,
         }
 
     try:
+        if patient_data.get("address") is None:
+            existing = storage.patients.get_patient(patient_id=patient_id)
+            assert existing is not None
+            patient_data["address"] = existing.address
         patient = Patient(patient_id=patient_id, **patient_data)
         saved_patient = storage.patients.save(patient)
     except ValueError as e:

@@ -5,6 +5,7 @@ import duckdb
 from src.data_access.interfaces import IPatientsStorage
 from src.data_access.addresses import AddressesStorage
 from src.models.patient import Patient
+from src.models.address import Address
 from src.models.address_utils import build_address
 
 
@@ -44,8 +45,7 @@ class PatientsStorage(IPatientsStorage):
                 ],
             )
 
-            if a := patient.address:
-                self._addresses.upsert_for_patient(patient.patient_id, a)
+            self._addresses.upsert_for_patient(patient.patient_id, patient.address)
 
             return patient
 
@@ -69,8 +69,7 @@ class PatientsStorage(IPatientsStorage):
 
         patient.patient_id = int(result[0])
 
-        if a := patient.address:
-            self._addresses.insert_for_patient(patient.patient_id, a)
+        self._addresses.insert_for_patient(patient.patient_id, patient.address)
         return patient
 
     def get_all_patients(self) -> list[Patient]:
@@ -110,6 +109,15 @@ def _to_dicts(cur) -> list[dict[str, Any]]:
 
 def _row_to_patient(r: dict[str, Any]) -> Patient:
     address = build_address(r)
+    # Fallback for legacy rows without an address
+    if address is None:
+        address = Address(
+            line_1="Unknown",
+            line_2=None,
+            town="Unknown",
+            postcode="SW1A1AA",
+            country="United Kingdom",
+        )
     patient_data = {
         k: v
         for k, v in r.items()

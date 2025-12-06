@@ -1,8 +1,7 @@
 {# Reusable Address form partial. Expects `patient` variable in context. #}
 <div class="mb-3">
   <label for="line_1" class="form-label">Address line 1</label>
-  <input type="text" name="line_1" id="line_1" class="form-control" value="{{ patient.address.line_1 if patient and patient.address else '' }}">
-  
+  <input type="text" name="line_1" id="line_1" class="form-control" value="{{ patient.address.line_1 if patient and patient.address else '' }}" required>
 </div>
 
 <div class="mb-3">
@@ -13,15 +12,15 @@
 <div class="row">
   <div class="col-md-6 mb-3">
     <label for="town" class="form-label">Town/City</label>
-    <input type="text" name="town" id="town" class="form-control" value="{{ patient.address.town if patient and patient.address else '' }}">
+    <input type="text" name="town" id="town" class="form-control" value="{{ patient.address.town if patient and patient.address else '' }}" required>
   </div>
   <div class="col-md-6 mb-3">
     <label for="postcode" class="form-label">Postcode</label>
-    <input type="text" name="postcode" id="postcode" class="form-control" value="{{ patient.address.postcode if patient and patient.address else '' }}">
+    <input type="text" name="postcode" id="postcode" class="form-control" value="{{ patient.address.postcode if patient and patient.address else '' }}" required>
   </div>
   </div>
 
 <div class="mb-3">
   <label for="country" class="form-label">Country</label>
-  <input type="text" name="country" id="country" class="form-control" value="{{ patient.address.country if patient and patient.address else 'United Kingdom' }}">
+  <input type="text" name="country" id="country" class="form-control" value="{{ patient.address.country if patient and patient.address else 'United Kingdom' }}" required>
 </div>
