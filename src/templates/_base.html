@@ -10,6 +10,25 @@
             background-color: #f8f9fa;
             padding-top: 70px;
         }
+        @media (min-width: 992px) {
+            .navbar .dropdown:hover .dropdown-menu {
+                display: block;
+                margin-top: 0;
+            }
+        }
+        /* Keep dropdown menus within the viewport */
+        .dropdown-menu {
+            max-height: calc(100vh - 90px); /* viewport minus navbar */
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            /* allow horizontal scrolling if items are too long */
+            overflow-x: auto;
+            max-width: calc(100vw - 20px);
+        }
+        .dropdown-item {
+            /* keep each entry on a single line */
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>

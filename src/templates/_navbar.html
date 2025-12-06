@@ -7,6 +7,20 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- Left aligned (immediately after logo): Admin dropdown -->
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if active_page and active_page.startswith('admin') %}active{% endif %}"
+                       href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+                        Admin
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                        <li><a class="dropdown-item" href="/admin/medical_check_templates">Medical Check Templates</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- Right aligned: main navigation links -->
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link {% if active_page == 'patients' %}active{% endif %}"
                                         href="/patients">Patients</a></li>

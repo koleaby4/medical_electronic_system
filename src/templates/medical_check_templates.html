@@ -1,0 +1,46 @@
+{% extends '_base.html' %}
+{% set page_title = "Medical Check Templates" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h4 mb-0">Medical Check Templates</h1>
+    <a href="#" class="btn btn-primary">
+        + Create New Template
+    </a>
+  </div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-striped table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Type</th>
+            <th scope="col">Last Updated</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% if templates and templates|length > 0 %}
+          {% for t in templates %}
+          <tr>
+            <td>{{ t.name }}</td>
+            <td>{{ t.type }}</td>
+            <td>{{ t.updated_at }}</td>
+            <td class="text-end">
+              <a href="#" class="btn btn-sm btn-outline-secondary">Edit</a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" class="text-center text-muted py-4">No templates yet.</td>
+          </tr>
+        {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
