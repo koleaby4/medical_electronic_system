@@ -1,17 +1,17 @@
 import sqlite3
+from src.data_access.base import BaseStorage
 from src.models.medical_check_item import MedicalCheckItem
+import uuid
 
 
-class MedicalCheckItemsStorage:
+class MedicalCheckItemsStorage(BaseStorage):
     def __init__(self, conn: sqlite3.Connection):
-        self.conn = conn
+        super().__init__(conn)
 
     def close(self) -> None:
         return None
 
     def insert_items(self, *, check_id: int, medical_check_items: list[MedicalCheckItem]) -> None:
-        import uuid
-
         for mci in medical_check_items:
             check_item_id = mci.check_item_id or str(uuid.uuid4())
             self.conn.execute(
@@ -59,7 +59,8 @@ class MedicalCheckItemsStorage:
                     mci.value AS value, 
                     COALESCE(mci.units, '') AS units
                 FROM medical_check_items mci
-                    JOIN medical_checks mc ON mci.check_id = mc.check_id
+                    JOIN medical_checks mc
+                ON mci.check_id = mc.check_id
                 WHERE mc.patient_id = ?
                   AND mc.check_type = ?
                   AND mci.name = ?
@@ -67,7 +68,6 @@ class MedicalCheckItemsStorage:
                 """,
                 [patient_id, check_type, item_name],
             )
-            cols = [d[0] for d in cur.description]
-            return [dict(zip(cols, row)) for row in cur.fetchall()]
+            return self._fetch_all_dicts(cur)
         finally:
             cur.close()

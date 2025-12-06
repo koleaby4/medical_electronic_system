@@ -1,6 +1,7 @@
 from typing import Any
 import sqlite3
 
+from src.data_access.base import BaseStorage
 from src.data_access.interfaces import IPatientsStorage
 from src.data_access.addresses import AddressesStorage
 from src.models.patient import Patient
@@ -8,9 +9,9 @@ from src.models.address import Address
 from src.models.address_utils import build_address
 
 
-class PatientsStorage(IPatientsStorage):
+class PatientsStorage(BaseStorage, IPatientsStorage):
     def __init__(self, conn: sqlite3.Connection):
-        self.conn = conn
+        super().__init__(conn)
         self._addresses = AddressesStorage(conn)
 
     def close(self) -> None:
@@ -35,7 +36,7 @@ class PatientsStorage(IPatientsStorage):
                 phone = excluded.phone
             """,
             [
-                patient.patient_id,  # None -> insert new row with autoincrement id
+                patient.patient_id,
                 patient.title.value,
                 patient.first_name,
                 patient.middle_name,
@@ -65,8 +66,7 @@ class PatientsStorage(IPatientsStorage):
                 ORDER BY p.patient_id DESC
                 """
             )
-            rows = _to_dicts(cur)
-            return [_row_to_patient(r) for r in rows]
+            return [_row_to_patient(r) for r in self._fetch_all_dicts(cur)]
         finally:
             cur.close()
 
@@ -82,17 +82,10 @@ class PatientsStorage(IPatientsStorage):
                 """,
                 [patient_id],
             )
-            rows = _to_dicts(cur)
-            if not rows:
-                return None
-            return _row_to_patient(rows[0])
+            if r := self._fetch_one_dict(cur):
+                return _row_to_patient(r)
         finally:
             cur.close()
-
-
-def _to_dicts(cur) -> list[dict[str, Any]]:
-    cols: list[str] = [desc[0] for desc in cur.description]
-    return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
 def _row_to_patient(r: dict[str, Any]) -> Patient:

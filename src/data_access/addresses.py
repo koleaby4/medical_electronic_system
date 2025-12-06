@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import sqlite3
 
+from src.data_access.base import BaseStorage
 from src.models.address import Address
 
 
-class AddressesStorage:
+class AddressesStorage(BaseStorage):
     def __init__(self, conn: sqlite3.Connection):
-        self.conn = conn
+        super().__init__(conn)
 
     def upsert_for_patient(self, patient_id: int, address: Address) -> None:
         self.conn.execute(

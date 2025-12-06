@@ -1,14 +1,15 @@
 import sqlite3
 
+from src.data_access.base import BaseStorage
 from src.data_access.medical_check_items import MedicalCheckItemsStorage
 from src.models.enums import MedicalCheckType, MedicalCheckStatus
 from src.models.medical_check import MedicalCheck
 from src.models.medical_check_item import MedicalCheckItem
 
 
-class MedicalChecksStorage:
+class MedicalChecksStorage(BaseStorage):
     def __init__(self, conn: sqlite3.Connection):
-        self.conn = conn
+        super().__init__(conn)
         self.items = MedicalCheckItemsStorage(conn)
 
     def close(self) -> None:
@@ -50,8 +51,7 @@ class MedicalChecksStorage:
                 """,
                 [patient_id],
             )
-            cols: list[str] = [desc[0] for desc in cur.description]
-            raw_rows = [dict(zip(cols, row)) for row in cur.fetchall()]
+            raw_rows = self._fetch_all_dicts(cur)
         finally:
             cur.close()
 
@@ -89,14 +89,9 @@ class MedicalChecksStorage:
                 """,
                 [patient_id, check_id],
             )
-            desc = cur.description
-            if not desc:
+            r = self._fetch_one_dict(cur)
+            if not r:
                 return None
-            cols: list[str] = [d[0] for d in desc]
-            row = cur.fetchone()
-            if not row:
-                return None
-            r = dict(zip(cols, row))
         finally:
             cur.close()
 
@@ -118,3 +113,4 @@ class MedicalChecksStorage:
             "UPDATE medical_checks SET status = ? WHERE check_id = ?",
             [status, check_id],
         )
+        self.conn.commit()
