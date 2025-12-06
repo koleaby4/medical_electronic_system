@@ -12,3 +12,11 @@ async def medical_check_templates(request: Request):
         "medical_check_templates.html",
         {"request": request, "active_page": "admin", "templates": []},
     )
+
+
+@router.get("/medical_check_templates/new", include_in_schema=False)
+async def new_medical_check_template(request: Request):
+    return templates.TemplateResponse(
+        "upsert_medical_check_template.html",
+        {"request": request, "active_page": "admin"},
+    )
