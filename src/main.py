@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from settings import Settings
-from src.db_migrations.setup_duckdb import create_tables
 from src.data_access.db_storage import DbStorage
 from src.routes import root, patients, medical_checks
 import uvicorn
@@ -12,8 +11,7 @@ import uvicorn
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    db_path = Settings().duckdb_file
-    create_tables(str(db_path))
+    db_path = Settings().db_file
     app.storage = storage = DbStorage(db_path)
     yield
     storage.close()

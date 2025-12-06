@@ -5,14 +5,14 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
-from src.db_migrations.setup_duckdb import create_tables
+from setup_db import create_tables
 from src.main import create_app
 
 
 @pytest.fixture()
 def temp_db_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    db_path = tmp_path / "test.duckdb"
-    monkeypatch.setenv("DUCKDB_FILE", str(db_path))
+    db_path = tmp_path / "test.sqlite"
+    monkeypatch.setenv("DB_FILE", str(db_path))
     return db_path
 
 

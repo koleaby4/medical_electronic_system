@@ -1,26 +1,30 @@
-import duckdb
+import sqlite3
 from src.models.medical_check_item import MedicalCheckItem
 
 
 class MedicalCheckItemsStorage:
-    def __init__(self, conn: duckdb.DuckDBPyConnection):
+    def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
     def close(self) -> None:
         return None
 
     def insert_items(self, *, check_id: int, medical_check_items: list[MedicalCheckItem]) -> None:
+        import uuid
+
         for mci in medical_check_items:
+            check_item_id = mci.check_item_id or str(uuid.uuid4())
             self.conn.execute(
                 """
-                INSERT INTO medical_check_items (check_id, name, units, value)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO medical_check_items (check_item_id, check_id, name, units, value)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                [check_id, mci.name, mci.units, str(mci.value)],
+                [check_item_id, check_id, mci.name, mci.units or "", str(mci.value)],
             )
 
     def get_items_by_check_id(self, *, check_id: int) -> list[MedicalCheckItem]:
-        with self.conn.cursor() as cur:
+        cur = self.conn.cursor()
+        try:
             cur.execute(
                 """
                 SELECT check_item_id, name, units, value
@@ -39,13 +43,16 @@ class MedicalCheckItemsStorage:
                 )
                 for (check_item_id, name, units, value) in cur.fetchall()
             ]
+        finally:
+            cur.close()
 
     def get_time_series(self, *, patient_id: int, check_type: str, item_name: str) -> list[dict]:
         """
         Return a time series for the given patient, check_type and item name.
         Each item: {date: YYYY-MM-DD, value: str, units: str}
         """
-        with self.conn.cursor() as cur:
+        cur = self.conn.cursor()
+        try:
             cur.execute(
                 """
                 SELECT mc.check_date AS date, 
@@ -62,3 +69,5 @@ class MedicalCheckItemsStorage:
             )
             cols = [d[0] for d in cur.description]
             return [dict(zip(cols, row)) for row in cur.fetchall()]
+        finally:
+            cur.close()

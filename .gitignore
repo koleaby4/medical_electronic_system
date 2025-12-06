@@ -45,4 +45,4 @@ dist/
 *.tmp
 temp/
 
-database.duckdb
+database.sqlite

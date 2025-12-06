@@ -16,11 +16,11 @@ uv sync
 
 echo.
 
-if exist database.duckdb (
-    echo 'database.duckdb' already exists
+if exist database.sqlite (
+    echo 'database.sqlite' already exists
 ) else (
-    uv run python src\db_migrations\setup_duckdb.py
-    echo 'database.duckdb' created successfully
+    uv run python -m setup_db
+    echo 'database.sqlite' created successfully
 )
 
 echo.

@@ -7,11 +7,12 @@ requires-python = "==3.13.*"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
-    "duckdb",
     "python-multipart",
     "jinja2",
     "pydantic>=2.12.4",
     "pydantic-settings>=2.11.0",
+    "alembic>=1.14.0",
+    "SQLAlchemy>=2.0.36",
 ]
 
 [dependency-groups]

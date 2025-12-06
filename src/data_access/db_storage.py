@@ -1,16 +1,17 @@
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
+import sqlite3
 
-import duckdb
 from src.data_access.patients import PatientsStorage
 from src.data_access.medical_checks import MedicalChecksStorage
 
 
 @dataclass
 class DbStorage:
-    def __init__(self, duckdb_file: Path) -> None:
-        self._conn = duckdb.connect(str(duckdb_file))
+    def __init__(self, db_file: Path) -> None:
+        self._conn = sqlite3.connect(str(db_file))
+        self._conn.execute("PRAGMA foreign_keys = ON;")
         self.patients = PatientsStorage(self._conn)
         self.medical_checks = MedicalChecksStorage(self._conn)
 

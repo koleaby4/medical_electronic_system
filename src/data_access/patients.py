@@ -1,6 +1,5 @@
 from typing import Any
-
-import duckdb
+import sqlite3
 
 from src.data_access.interfaces import IPatientsStorage
 from src.data_access.addresses import AddressesStorage
@@ -10,7 +9,7 @@ from src.models.address_utils import build_address
 
 
 class PatientsStorage(IPatientsStorage):
-    def __init__(self, conn: duckdb.DuckDBPyConnection):
+    def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
         self._addresses = AddressesStorage(conn)
 
@@ -18,62 +17,46 @@ class PatientsStorage(IPatientsStorage):
         return None
 
     def save(self, patient: Patient) -> Patient:
-        if patient.patient_id:
-            self.conn.execute(
-                """
-                UPDATE patients
-                SET title       = ?,
-                    first_name  = ?,
-                    middle_name = ?,
-                    last_name   = ?,
-                    sex         = ?,
-                    dob         = ?,
-                    email       = ?,
-                    phone       = ?
-                WHERE patient_id = ?
-                """,
-                [
-                    patient.title.value,
-                    patient.first_name,
-                    patient.middle_name,
-                    patient.last_name,
-                    patient.sex,
-                    patient.dob,
-                    patient.email,
-                    patient.phone,
-                    patient.patient_id,
-                ],
-            )
-
-            self._addresses.upsert_for_patient(patient.patient_id, patient.address)
-
-            return patient
-
-        result = self.conn.execute(
+        cur = self.conn.execute(
             """
-            INSERT INTO patients (title, first_name, middle_name, last_name,
-                                  sex, dob, email, phone)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING patient_id
+            INSERT INTO patients (
+                patient_id, title, first_name, middle_name, last_name,
+                sex, dob, email, phone
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(patient_id) DO UPDATE SET
+                title = excluded.title,
+                first_name = excluded.first_name,
+                middle_name = excluded.middle_name,
+                last_name = excluded.last_name,
+                sex = excluded.sex,
+                dob = excluded.dob,
+                email = excluded.email,
+                phone = excluded.phone
             """,
             [
+                patient.patient_id,  # None -> insert new row with autoincrement id
                 patient.title.value,
                 patient.first_name,
                 patient.middle_name,
                 patient.last_name,
-                patient.sex,
+                patient.sex.value,
                 patient.dob,
                 patient.email,
                 patient.phone,
             ],
-        ).fetchone()
+        )
 
-        patient.patient_id = int(result[0])
+        if patient.patient_id is None:
+            patient.patient_id = int(cur.lastrowid)
 
-        self._addresses.insert_for_patient(patient.patient_id, patient.address)
+        self._addresses.upsert_for_patient(patient.patient_id, patient.address)
+        self.conn.commit()
         return patient
 
     def get_all_patients(self) -> list[Patient]:
-        with self.conn.cursor() as cur:
+        cur = self.conn.cursor()
+        try:
             cur.execute(
                 """
                 SELECT p.*, a.line_1, a.line_2, a.town, a.postcode, a.country
@@ -84,9 +67,12 @@ class PatientsStorage(IPatientsStorage):
             )
             rows = _to_dicts(cur)
             return [_row_to_patient(r) for r in rows]
+        finally:
+            cur.close()
 
     def get_patient(self, patient_id: int) -> Patient | None:
-        with self.conn.cursor() as cur:
+        cur = self.conn.cursor()
+        try:
             cur.execute(
                 """
                 SELECT p.*, a.line_1, a.line_2, a.town, a.postcode, a.country
@@ -100,6 +86,8 @@ class PatientsStorage(IPatientsStorage):
             if not rows:
                 return None
             return _row_to_patient(rows[0])
+        finally:
+            cur.close()
 
 
 def _to_dicts(cur) -> list[dict[str, Any]]:

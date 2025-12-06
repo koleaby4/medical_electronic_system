@@ -1,3 +1,4 @@
+import logging
 import random
 from datetime import date, timedelta
 
@@ -10,6 +11,7 @@ from src.models.medical_check_item import MedicalCheckItem
 from faker import Faker
 
 fake = Faker()
+logger = logging.getLogger(__name__)
 
 
 def _get_random_patient() -> Patient:
@@ -227,11 +229,14 @@ def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
 
 
 if __name__ == "__main__":
-    storage = DbStorage(Settings().duckdb_file)
+    storage = DbStorage(Settings().db_file)
 
     if storage.patients.get_all_patients():
+        logger.warning("Database already contains data. Skipping seeding.")
         storage.close()
         exit(0)
+
+    logger.warning("Creating test data...")
 
     try:
         patients = _seed_patients(storage)

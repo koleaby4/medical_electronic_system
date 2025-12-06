@@ -1,42 +1,35 @@
 from __future__ import annotations
 
-import duckdb
+import sqlite3
 
 from src.models.address import Address
 
 
 class AddressesStorage:
-    def __init__(self, conn: duckdb.DuckDBPyConnection):
+    def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
     def upsert_for_patient(self, patient_id: int, address: Address) -> None:
-        # Try to update first
         self.conn.execute(
             """
-            UPDATE addresses
-            SET line_1 = ?,
-                line_2 = ?,
-                town = ?,
-                postcode = ?,
-                country = ?
-            WHERE patient_id = ?
+            INSERT INTO addresses (patient_id, line_1, line_2, town, postcode, country)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(patient_id) DO UPDATE SET
+                line_1 = excluded.line_1,
+                line_2 = excluded.line_2,
+                town = excluded.town,
+                postcode = excluded.postcode,
+                country = excluded.country
             """,
             [
+                patient_id,
                 address.line_1,
                 address.line_2,
                 address.town,
                 address.postcode,
                 address.country,
-                patient_id,
             ],
         )
-
-        exists = self.conn.execute(
-            "SELECT 1 FROM addresses WHERE patient_id = ?",
-            [patient_id],
-        ).fetchone()
-        if not exists:
-            self.insert_for_patient(patient_id, address)
 
     def insert_for_patient(self, patient_id: int, address: Address) -> None:
         self.conn.execute(
