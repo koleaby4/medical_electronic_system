@@ -278,5 +278,7 @@ async def get_patient(
             "active_page": "patients",
             "patient": patient,
             "age": _get_age(patient.dob),
+            # Provide available medical check templates for UI dropdown
+            "templates": storage.medical_check_templates.list_medical_check_templates(),
         },
     )

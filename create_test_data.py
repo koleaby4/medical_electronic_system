@@ -1,5 +1,7 @@
 import logging
 import random
+import re
+from contextlib import suppress
 from datetime import date, timedelta
 
 from settings import Settings
@@ -8,6 +10,7 @@ from src.models.enums import Title, Sex, MedicalCheckType, MedicalCheckStatus
 from src.models.patient import Patient
 from src.models.address import Address
 from src.models.medical_check_item import MedicalCheckItem
+from src.models.medical_check_template import MedicalCheckTemplateItem
 from faker import Faker
 
 fake = Faker()
@@ -151,26 +154,97 @@ def _seed_patients(storage: DbStorage) -> list[Patient]:
     return [storage.patients.save(p) for p in build_sample_patients()]
 
 
-def _get_random_physicals_items() -> list[MedicalCheckItem]:
+def _extract_example_number(placeholder: str) -> float | None:
+    if not placeholder:
+        return None
+    if m := re.search(r"(-?\d+(?:[\.,]\d+)?)", placeholder):
+        with suppress(Exception):
+            return float(m.group(1).replace(",", "."))
+    return None
+
+
+def _generate_value_for_item(name: str, input_type: str, placeholder: str) -> str:
+    ex = _extract_example_number(placeholder)
+    if input_type == "number" and ex is not None:
+        val = random.uniform(ex * 0.8, ex * 1.2)  # sample within ±20% of example
+        if "." in str(ex):
+            return f"{val:.1f}"
+        return str(int(round(val)))
+
+    if input_type != "number":
+        return ""
+
+    values = {
+        "height": str(random.randint(150, 200)),
+        "weight": f"{random.uniform(50, 110):.1f}",
+        "systolic": str(random.randint(100, 180)),
+        "diastolic": str(random.randint(60, 120)),
+        "heart rate": str(random.randint(50, 110)),
+        "pulse": str(random.randint(50, 110)),
+        "hemoglobin": f"{random.uniform(12.0, 17.5):.1f}",
+        "white blood": f"{random.uniform(3.5, 11.0):.1f}",
+        "wbc": f"{random.uniform(3.5, 11.0):.1f}",
+        "platelet": str(int(random.uniform(150, 450))),
+        "glucose": f"{random.uniform(3.9, 6.5):.1f}",
+        "cholesterol": f"{random.uniform(3.0, 6.5):.1f}",
+    }
+
+    param = name.strip().lower()
+
+    return values.get(param, f"{random.uniform(0, 100):.1f}")
+
+
+def _build_items_from_template(storage: DbStorage, template_name: str) -> list[MedicalCheckItem] | None:
+    try:
+        templates = storage.medical_check_templates.list_medical_check_templates()
+        match_t = next(
+            (t for t in templates if (t.template_name or "").strip().lower() == template_name.strip().lower()),
+            None,
+        )
+        if not match_t or match_t.template_id is None:
+            return None
+
+        full = storage.medical_check_templates.get_template(template_id=match_t.template_id)
+        if not full:
+            return None
+
+        items: list[MedicalCheckItem] = []
+        for ti in full.items:
+            value = _generate_value_for_item(ti.name, (ti.input_type or "short_text").lower(), ti.placeholder)
+            items.append(MedicalCheckItem(name=ti.name, units=ti.units, value=str(value)))
+        return items
+    except Exception:
+        return None
+
+
+def _get_random_physicals_items(storage: DbStorage) -> list[MedicalCheckItem]:
+    templated = _build_items_from_template(storage, "physicals")
+    if templated is not None and len(templated) > 0:
+        return templated
+
     height_cm = random.randint(150, 200)
-    height_m = height_cm / 100
     weight = random.randint(45, 150)
     return [
         MedicalCheckItem(name="height", units="cm", value=str(height_cm)),
         MedicalCheckItem(name="weight", units="kg", value=str(weight)),
-        MedicalCheckItem(name="BMI", units="", value=round(weight / (height_m * height_m), 2)),
         MedicalCheckItem(name="blood pressure (systolic)", units="mmHg", value=str(random.randint(100, 200))),
         MedicalCheckItem(name="blood pressure (diastolic)", units="mmHg", value=str(random.randint(60, 150))),
-        MedicalCheckItem(name="heart rate", units="bpm", value=str(random.randint(40, 150))),
     ]
 
 
-def _get_random_blood_items() -> list[MedicalCheckItem]:
+def _get_random_blood_items(storage: DbStorage) -> list[MedicalCheckItem]:
+    templated = _build_items_from_template(storage, "blood")
+    if templated is not None and len(templated) > 0:
+        return templated
+
+    # Todo: delete?
+    # Fallback (legacy)
     return [
-        MedicalCheckItem(name="hemoglobin", units="g/dL", value="14.0"),
-        MedicalCheckItem(name="WBC", units="10^9/L", value="6.5"),
-        MedicalCheckItem(name="platelets", units="10^9/L", value="250"),
-        MedicalCheckItem(name="glucose (fasting)", units="mg/dL", value="92"),
+        MedicalCheckItem(name="Hemoglobin", units="g/dL", value="14.2"),
+        MedicalCheckItem(name="White Blood Cell Count (WBC)", units="×10^9/L", value="6.5"),
+        MedicalCheckItem(name="Platelet Count", units="×10^9/L", value="250"),
+        MedicalCheckItem(name="Blood Glucose (fasting)", units="mmol/L", value="5.2"),
+        MedicalCheckItem(name="Total Cholesterol", units="mmol/L", value="4.8"),
     ]
 
 
@@ -209,10 +283,10 @@ def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
 
             match check_type:
                 case MedicalCheckType.PHYSICALS:
-                    medical_check_items = _get_random_physicals_items()
+                    medical_check_items = _get_random_physicals_items(db)
 
                 case MedicalCheckType.BLOOD:
-                    medical_check_items = _get_random_blood_items()
+                    medical_check_items = _get_random_blood_items(db)
 
                 case _:
                     raise ValueError(f"Invalid medical {check_type=}")
@@ -228,8 +302,86 @@ def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
             )
 
 
+def _seed_medical_check_templates(storage: DbStorage) -> None:
+    """Ensure a 'physicals' template with 4 standard items exists.
+
+    Idempotent: uses upsert with existing template_id if a template with the
+    same name is found (case-insensitive).
+    """
+    # Find existing template by name (case-insensitive)
+    existing = None
+    try:
+        templates = storage.medical_check_templates.list_medical_check_templates()
+        existing = next((t for t in templates if (t.template_name or "").strip().lower() == "physicals"), None)
+    except Exception:
+        existing = None
+
+    template_id = existing.template_id if existing and getattr(existing, "template_id", None) is not None else None
+
+    items = [
+        MedicalCheckTemplateItem(name="height", units="cm", input_type="number", placeholder="e.g. 180"),
+        MedicalCheckTemplateItem(name="weight", units="kg", input_type="number", placeholder="e.g. 75.5"),
+        MedicalCheckTemplateItem(
+            name="blood pressure (systolic)", units="mmHg", input_type="number", placeholder="e.g. 120"
+        ),
+        MedicalCheckTemplateItem(
+            name="blood pressure (diastolic)", units="mmHg", input_type="number", placeholder="e.g. 80"
+        ),
+    ]
+
+    new_id = storage.medical_check_templates.upsert(
+        template_id=template_id,
+        template_name="physicals",
+        items=items,
+    )
+    logger.info("Seeded/updated medical_check_template 'physicals' with id=%s", new_id)
+
+
+def _seed_medical_check_template_blood(storage: DbStorage) -> None:
+    """Ensure a 'blood' template exists with standard blood test items.
+
+    Idempotent: finds an existing template named 'blood' (case-insensitive) and
+    upserts items accordingly.
+    """
+    existing = None
+    try:
+        templates = storage.medical_check_templates.list_medical_check_templates()
+        existing = next((t for t in templates if (t.template_name or "").strip().lower() == "blood"), None)
+    except Exception:
+        existing = None
+
+    template_id = existing.template_id if existing and getattr(existing, "template_id", None) is not None else None
+
+    items = [
+        MedicalCheckTemplateItem(name="Hemoglobin", units="g/dL", input_type="number", placeholder="e.g. 14.2"),
+        MedicalCheckTemplateItem(
+            name="White Blood Cell Count (WBC)", units="×10^9/L", input_type="number", placeholder="e.g. 6.5"
+        ),
+        MedicalCheckTemplateItem(
+            name="Platelet Count", units="×10^9/L", input_type="number", placeholder="e.g. 250"
+        ),
+        MedicalCheckTemplateItem(
+            name="Blood Glucose (fasting)", units="mmol/L", input_type="number", placeholder="e.g. 5.2"
+        ),
+        MedicalCheckTemplateItem(
+            name="Total Cholesterol", units="mmol/L", input_type="number", placeholder="e.g. 4.8"
+        ),
+    ]
+
+    new_id = storage.medical_check_templates.upsert(
+        template_id=template_id,
+        template_name="blood",
+        items=items,
+    )
+    logger.info("Seeded/updated medical_check_template 'blood' with id=%s", new_id)
+
+
 if __name__ == "__main__":
     storage = DbStorage(Settings().db_file)
+
+    # Always ensure templates exist, regardless of patient data presence
+    _seed_medical_check_templates(storage)
+    _seed_medical_check_template_blood(storage)
 
     if storage.patients.get_all_patients():
         logger.warning("Database already contains data. Skipping seeding.")

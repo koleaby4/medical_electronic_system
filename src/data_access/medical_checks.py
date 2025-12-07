@@ -114,3 +114,31 @@ class MedicalChecksStorage(BaseStorage):
             [status, check_id],
         )
         self.conn.commit()
+
+    def get_chartable_options(self, *, patient_id: int) -> list[dict]:
+        cur = self.conn.cursor()
+        try:
+            cur.execute(
+                """
+                SELECT 
+                    mc.check_type AS check_type,
+                    ti.name AS item_name,
+                    t.template_name || ' -> ' || ti.name AS label
+                FROM medical_check_templates t
+                JOIN medical_check_template_items ti 
+                    ON ti.template_id = t.template_id
+                JOIN medical_checks mc 
+                    ON mc.check_type = t.template_name COLLATE NOCASE
+                JOIN medical_check_items mci 
+                    ON mci.check_id = mc.check_id
+                   AND mci.name = ti.name COLLATE NOCASE
+                WHERE mc.patient_id = ?
+                  AND LOWER(ti.input_type) = 'number'
+                GROUP BY mc.check_type, ti.name, t.template_name
+                ORDER BY label COLLATE NOCASE
+                """,
+                [patient_id],
+            )
+            return self._fetch_all_dicts(cur)
+        finally:
+            cur.close()

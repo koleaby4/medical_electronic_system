@@ -14,17 +14,9 @@
                     <!-- Add tile controls -->
                     <div class="row g-2 align-items-end mb-3">
                         <div class="col-auto">
-                            <label for="chartCheckType" class="form-label">Check type</label>
-                            <select id="chartCheckType" class="form-select">
-                                <option value="physicals">physicals</option>
-                                <option value="blood">blood</option>
-                                <option value="colonoscopy">colonoscopy</option>
-                            </select>
-                        </div>
-                        <div class="col-auto">
-                            <label for="chartItemName" class="form-label">Item name</label>
-                            <select id="chartItemName" class="form-select">
-                                <!-- populated dynamically -->
+                            <label for="chartOption" class="form-label">Chart item</label>
+                            <select id="chartOption" class="form-select">
+                                <!-- options populated dynamically as: template_name -> item_name -->
                             </select>
                         </div>
                         <div class="col-auto">
@@ -48,10 +40,10 @@
                 <div class="card-body">
                     <!-- Top: Add control -->
                     <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
-                        <select id="checkType" class="form-select" style="max-width: 240px;">
-                            <option value="physicals">physicals</option>
-                            <option value="blood">blood</option>
-                            <option value="colonoscopy">colonoscopy</option>
+                        <select id="checkType" class="form-select" style="max-width: 320px;">
+                            {% for t in templates or [] %}
+                                <option value="{{ t.template_id }}">{{ t.template_name }}</option>
+                            {% endfor %}
                         </select>
                         <button id="addRecordBtn" class="btn btn-primary">Add Record</button>
                     </div>
@@ -74,11 +66,11 @@
             const noRecords = document.getElementById('noRecords');
             const chartTiles = document.getElementById('chartTiles');
             const addChartTileBtn = document.getElementById('addChartTileBtn');
-            const chartCheckType = document.getElementById('chartCheckType');
-            const chartItemName = document.getElementById('chartItemName');
+            const chartOption = document.getElementById('chartOption');
 
-            // Hold available options based on existing data
-            const itemsByType = new Map(); // type -> Set(item names)
+            // Hold available options for current patient (from backend)
+            // Array of {check_type, item_name, label}
+            let chartableOptions = [];
 
             function render(records) {
                 tiles.innerHTML = '';
@@ -124,14 +116,14 @@
                 }
             }
 
-            fetch(`/patients/${patientId}/medical_checks`)
-                .then(r => r.json())
-                .then(data => {
-                    const records = Array.isArray(data.records) ? data.records : [];
-                    // Build dropdown options from existing records
-                    buildChartOptions(records);
-                    populateTypeSelect();
-                    populateItemSelect(chartCheckType.value);
+            Promise.all([
+                fetch(`/patients/${patientId}/medical_checks`).then(r => r.json()).catch(() => ({records: []})),
+                fetch(`/patients/${patientId}/medical_checks/chartable_options`).then(r => r.json()).catch(() => ({records: []})),
+            ])
+                .then(([checksData, optionsData]) => {
+                    const records = Array.isArray(checksData.records) ? checksData.records : [];
+                    chartableOptions = Array.isArray(optionsData.records) ? optionsData.records : [];
+                    populateChartOptionSelect();
                     updateChartsControlsState();
                     render(records);
 
@@ -144,14 +136,10 @@
                     updateChartsControlsState(true);
                 });
 
-            // Redirect to specific add page based on selected type
+            // Redirect to generic add page based on selected template
             document.getElementById('addRecordBtn').addEventListener('click', () => {
-                const type = document.getElementById('checkType').value;
-                if (type === 'physicals') {
-                    window.location.href = `/patients/${patientId}/medical_checks/physicals/new`;
-                } else {
-                    alert(`Add page for type: ${type} is not implemented yet.`);
-                }
+                const selectedTemplateId = document.getElementById('checkType').value;
+                window.location.href = `/patients/${patientId}/medical_checks/new?template_id=${encodeURIComponent(selectedTemplateId)}`;
             });
 
             // --- Dynamic chart tiles ---
@@ -189,67 +177,23 @@
                 return { col, canvas, removeBtn };
             }
 
-            function buildChartOptions(records) {
-                itemsByType.clear();
-                for (const r of records) {
-                    const type = r.type || r.check_type || '';
-                    if (!type) continue;
-                    if (!itemsByType.has(type)) itemsByType.set(type, new Set());
-                    const set = itemsByType.get(type);
-                    const items = Array.isArray(r.medical_check_items) ? r.medical_check_items : [];
-                    for (const it of items) {
-                        if (it && typeof it.name === 'string' && it.name.trim().length) {
-                            set.add(it.name);
-                        }
-                    }
-                }
-            }
-
-            function populateTypeSelect() {
-                // Populate check types from itemsByType keys
-                const current = chartCheckType.value;
-                chartCheckType.innerHTML = '';
-                const types = Array.from(itemsByType.keys());
-                // If there are no types (no data), keep defaults minimal
-                if (types.length === 0) {
-                    // leave any existing static options; disable later
-                    return;
-                }
-                for (const t of types) {
+            function populateChartOptionSelect() {
+                const current = chartOption.value;
+                chartOption.innerHTML = '';
+                for (const o of chartableOptions) {
                     const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    chartCheckType.appendChild(opt);
+                    opt.value = JSON.stringify({ type: o.check_type, name: o.item_name });
+                    opt.textContent = o.label || `${o.check_type} -> ${o.item_name}`;
+                    chartOption.appendChild(opt);
                 }
-                // Try restore previous selection if still present
-                if (types.includes(current)) chartCheckType.value = current;
-            }
-
-            function populateItemSelect(type) {
-                chartItemName.innerHTML = '';
-                const names = Array.from(itemsByType.get(type || '') || []);
-                for (const n of names) {
-                    const opt = document.createElement('option');
-                    opt.value = n;
-                    opt.textContent = n;
-                    chartItemName.appendChild(opt);
-                }
-                // If none, leave empty
+                if (current) chartOption.value = current;
             }
 
             function updateChartsControlsState(forceDisable = false) {
-                const hasData = !forceDisable && itemsByType.size > 0;
-                chartCheckType.disabled = !hasData;
-                // item select depends on type presence and available items
-                const hasItems = hasData && (itemsByType.get(chartCheckType.value || '')?.size || 0) > 0;
-                chartItemName.disabled = !hasItems;
-                addChartTileBtn.disabled = !hasItems;
+                const hasOptions = !forceDisable && Array.isArray(chartableOptions) && chartableOptions.length > 0;
+                chartOption.disabled = !hasOptions;
+                addChartTileBtn.disabled = !hasOptions;
             }
-
-            chartCheckType.addEventListener('change', () => {
-                populateItemSelect(chartCheckType.value);
-                updateChartsControlsState();
-            });
 
             async function fetchSeries(type, name) {
                 const url = new URL(window.location.origin + `/patients/${patientId}/medical_checks/timeseries`);
@@ -326,13 +270,15 @@
             }
 
             async function addTile() {
-                const type = chartCheckType.value;
-                const name = chartItemName.value;
-                if (!type || !name) {
-                    alert('Please select check type and item name');
+                const raw = chartOption.value;
+                if (!raw) {
+                    alert('Please select a chart item');
                     return;
                 }
-                await addTileWith(type, name);
+                let parsed;
+                try { parsed = JSON.parse(raw); } catch { parsed = null; }
+                if (!parsed || !parsed.type || !parsed.name) return;
+                await addTileWith(parsed.type, parsed.name);
             }
 
             function removeTile(key) {
@@ -347,22 +293,17 @@
 
             function tryAutoAddDefaultPhysicalsCharts() {
                 const type = 'physicals';
-                const set = itemsByType.get(type);
-                if (!set || set.size === 0) return;
-                const available = Array.from(set);
+                const available = chartableOptions.filter(o => String(o.check_type).toLowerCase() === type);
+                if (available.length === 0) return;
                 const want = [
                     'weight',
                     'blood pressure (diastolic)',
                     'blood pressure (systolic)',
                     'heart rate',
                 ];
-                // Map desired names to actual casing from available set (case-insensitive)
                 for (const desired of want) {
-                    const match = available.find(n => String(n).trim().toLowerCase() === desired);
-                    if (match) {
-                        // fire and forget; no need to await sequentially
-                        addTileWith(type, match);
-                    }
+                    const match = available.find(o => String(o.item_name).trim().toLowerCase() === desired);
+                    if (match) addTileWith(match.check_type, match.item_name);
                 }
             }
         });

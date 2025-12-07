@@ -10,9 +10,41 @@ from src.dependencies import get_storage
 from src.models.enums import MedicalCheckType, MedicalCheckStatus
 from src.models.medical_check import MedicalCheck, MedicalChecks
 from src.models.medical_check_item import MedicalCheckItem
+from src.models.medical_check_template import MedicalCheckTemplate
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
+
+
+def _resolve_medical_check_type(raw: str) -> MedicalCheckType:
+    """Resolve a user-submitted check type string to a MedicalCheckType.
+
+    Accepts friendly names like "blood test" or "physical exam" and maps them
+    to enum values. Falls back to strict enum matching.
+    """
+    # Try strict match first
+    with suppress(Exception):
+        return MedicalCheckType(raw)
+
+    key = (raw or "").strip().lower()
+    # Normalize common separators
+    key_norm = key.replace("_", " ").replace("-", " ")
+    key_norm = " ".join(key_norm.split())  # collapse spaces
+
+    # Simple aliasing
+    if key_norm.startswith("physical") or key_norm == "physicals":
+        return MedicalCheckType.PHYSICALS
+    if "blood" in key_norm:
+        return MedicalCheckType.BLOOD
+    if "colonoscopy" in key_norm:
+        return MedicalCheckType.COLONOSCOPY
+
+    # Last attempt: match by exact token to enum values
+    for t in MedicalCheckType:
+        if key_norm == t.value:
+            return t
+
+    raise HTTPException(status_code=400, detail=f"Unknown medical check type: {raw}")
 
 
 @router.get("", response_model=MedicalChecks)
@@ -59,7 +91,7 @@ async def create_medical_check(
     mc = MedicalCheck(
         patient_id=patient_id,
         check_date=date,
-        type=MedicalCheckType(type),
+        type=_resolve_medical_check_type(type),
         status=MedicalCheckStatus(status),
         notes=notes,
         medical_check_items=medical_check_items,
@@ -92,6 +124,69 @@ async def new_physicals_check(request: Request, patient_id: int, storage: DbStor
     raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
 
+@router.get("/new", include_in_schema=False)
+async def new_medical_check(
+    request: Request,
+    patient_id: int,
+    template_id: int | None = None,
+    storage: DbStorage = Depends(get_storage),
+):
+    """Generalized new medical check page based on template items.
+
+    Query param:
+      - template_id: which template to use; if not provided, the first template (by name) is used.
+    """
+    if not (patient := storage.patients.get_patient(patient_id=patient_id)):
+        raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
+
+    available_templates: list[MedicalCheckTemplate] = storage.medical_check_templates.list_medical_check_templates()
+    if not available_templates:
+        raise HTTPException(status_code=404, detail="No medical check templates configured")
+
+    selected_template: MedicalCheckTemplate | None = None
+    if template_id is not None:
+        selected_template = storage.medical_check_templates.get_template(template_id=template_id)
+    if selected_template is None:
+        # fallback to first available
+        selected_template = storage.medical_check_templates.get_template(template_id=available_templates[0].template_id)  # type: ignore[arg-type]
+
+    if selected_template is None:
+        raise HTTPException(status_code=404, detail="Selected medical check template not found")
+
+    # Map template items to parameters expected by _medical_check_form.html
+    def map_input_type(t: str) -> tuple[str, str | None]:
+        t = (t or "").lower()
+        if t == "number":
+            return ("number", "1")
+        # Default to text for short/long text
+        return ("text", None)
+
+    parameters = []
+    for item in selected_template.items:
+        html_type, step = map_input_type(item.input_type)
+        parameters.append(
+            {
+                "name": item.name,
+                "units": item.units,
+                "input_type": html_type,
+                "step": step or "",
+                "pattern": "",
+                "placeholder": item.placeholder,
+            }
+        )
+
+    return templates.TemplateResponse(
+        "create_medical_check_generic.html",
+        {
+            "request": request,
+            "active_page": "patients",
+            "patient": patient,
+            "check_type": selected_template.template_name,
+            "parameters": parameters,
+        },
+    )
+
+
 @router.get("/timeseries", response_model=None)
 async def get_timeseries(
     patient_id: int,
@@ -110,6 +205,19 @@ async def get_timeseries(
     )
 
     return {"records": series}
+
+
+@router.get("/chartable_options", response_model=None)
+async def get_chartable_options(patient_id: int, storage: DbStorage = Depends(get_storage)):
+    """
+    Return list of chartable numeric options available for the patient.
+    Shape: {"records": [{"check_type": str, "item_name": str, "label": str}, ...]}
+    """
+    if not storage.patients.get_patient(patient_id=patient_id):
+        raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
+
+    rows = storage.medical_checks.get_chartable_options(patient_id=patient_id)
+    return {"records": rows}
 
 
 @router.get("/{check_id}", include_in_schema=False)

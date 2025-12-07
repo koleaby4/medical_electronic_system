@@ -15,6 +15,7 @@ Downgrade drops them in reverse dependency order.
 from __future__ import annotations
 
 from alembic import op
+import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
@@ -138,7 +139,6 @@ def upgrade() -> None:
             units TEXT,
             input_type TEXT,
             placeholder TEXT,
-            sort_order INTEGER NOT NULL,
             FOREIGN KEY(template_id)
                 REFERENCES medical_check_templates(template_id)
                 ON DELETE CASCADE ON UPDATE CASCADE
@@ -152,9 +152,7 @@ def upgrade() -> None:
         """
     )
 
-
 def downgrade() -> None:
-    # Drop in reverse dependency order
     op.execute("DROP INDEX IF EXISTS ix_mct_items_template_id;")
     op.execute("DROP TABLE IF EXISTS medical_check_template_items;")
 
