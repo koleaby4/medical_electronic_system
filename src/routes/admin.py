@@ -16,13 +16,12 @@ templates = Jinja2Templates(directory="src/templates")
 
 @router.get("/medical_check_templates", include_in_schema=False)
 async def medical_check_templates(request: Request, storage: DbStorage = Depends(get_storage)):
-    template_models = storage.medical_check_templates.list_medical_check_templates()
     return templates.TemplateResponse(
         "medical_check_templates.html",
         {
             "request": request,
             "active_page": "admin",
-            "templates": template_models,
+            "templates": storage.medical_check_templates.list_medical_check_names(),
         },
     )
 
@@ -69,7 +68,7 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
             MedicalCheckTemplateItem(
                 name=(item.get("name") or "").strip(),
                 units=(item.get("units") or "").strip(),
-                input_type=(item.get("input_type") or "short_text").strip(),
+                input_type=(item.get("input_type") or "number").strip(),
                 placeholder=(item.get("placeholder") or "").strip(),
             )
         )

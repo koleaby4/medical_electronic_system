@@ -21,12 +21,6 @@ class Sex(StrEnum):
     SPECIAL = "special"
 
 
-class MedicalCheckType(StrEnum):
-    PHYSICALS = "physicals"
-    BLOOD = "blood"
-    COLONOSCOPY = "colonoscopy"
-
-
 class MedicalCheckStatus(StrEnum):
     RED = "Red"
     AMBER = "Amber"

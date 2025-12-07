@@ -16,14 +16,14 @@ class MedicalCheckTemplateStorage(BaseStorage):
     def close(self) -> None:
         return None
 
-    def list_medical_check_templates(self) -> list[MedicalCheckTemplate]:
+    def list_medical_check_names(self) -> list[MedicalCheckTemplate]:
         cur = self.conn.cursor()
         try:
             cur.execute(
                 """
-                SELECT template_id, template_name
-                FROM medical_check_templates
-                ORDER BY template_name COLLATE NOCASE
+                SELECT medical_check_name_id AS template_id, medical_check_name AS template_name
+                FROM medical_check_names
+                ORDER BY medical_check_name COLLATE NOCASE
                 """
             )
             rows = self._fetch_all_dicts(cur)
@@ -44,9 +44,9 @@ class MedicalCheckTemplateStorage(BaseStorage):
         try:
             cur.execute(
                 """
-                SELECT template_id, template_name
-                FROM medical_check_templates
-                WHERE template_id = ?
+                SELECT medical_check_name_id AS template_id, medical_check_name AS template_name
+                FROM medical_check_names
+                WHERE medical_check_name_id = ?
                 """,
                 [template_id],
             )
@@ -58,7 +58,7 @@ class MedicalCheckTemplateStorage(BaseStorage):
                 """
                 SELECT name, units, input_type, placeholder
                 FROM medical_check_template_items
-                WHERE template_id = ?
+                WHERE medical_check_name_id = ?
                 ORDER BY rowid ASC
                 """,
                 [template_id],
@@ -90,10 +90,10 @@ class MedicalCheckTemplateStorage(BaseStorage):
     ) -> int:
         cur = self.conn.execute(
             """
-            INSERT INTO medical_check_templates (template_id, template_name)
-            VALUES (?, ?) ON CONFLICT(template_id) DO
+            INSERT INTO medical_check_names (medical_check_name_id, medical_check_name)
+            VALUES (?, ?) ON CONFLICT(medical_check_name_id) DO
             UPDATE SET
-                template_name = excluded.template_name
+                medical_check_name = excluded.medical_check_name
             """,
             [template_id, template_name],
         )
@@ -102,20 +102,19 @@ class MedicalCheckTemplateStorage(BaseStorage):
             template_id = int(cur.lastrowid)
 
         self.conn.execute(
-            "DELETE FROM medical_check_template_items WHERE template_id = ?",
+            "DELETE FROM medical_check_template_items WHERE medical_check_name_id = ?",
             [template_id],
         )
 
         for idx, item in enumerate(items):
-            # Pull values from model and normalize like existing code
             name = (item.name or "").strip()
             units = (item.units or "").strip()
-            input_type = (item.input_type or "short_text").strip()
+            input_type = (item.input_type or "number").strip()
             placeholder = (item.placeholder or "").strip()
 
             self.conn.execute(
                 """
-                INSERT INTO medical_check_template_items (template_id, name, units, input_type, placeholder)
+                INSERT INTO medical_check_template_items (medical_check_name_id, name, units, input_type, placeholder)
                 VALUES (?, ?, ?, ?, ?)
                 """,
                 [template_id, name, units, input_type, placeholder],

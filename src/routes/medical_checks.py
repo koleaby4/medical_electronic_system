@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
-from src.models.enums import MedicalCheckType, MedicalCheckStatus
+from src.models.enums import MedicalCheckStatus
 from src.models.medical_check import MedicalCheck, MedicalChecks
 from src.models.medical_check_item import MedicalCheckItem
 from src.models.medical_check_template import MedicalCheckTemplate
@@ -16,35 +16,31 @@ router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
 
 
-def _resolve_medical_check_type(raw: str) -> MedicalCheckType:
-    """Resolve a user-submitted check type string to a MedicalCheckType.
+# Todo: refactor this?
+def _resolve_medical_check_type(raw: str) -> str:
+    """Resolve a user-submitted check type to a canonical string.
 
-    Accepts friendly names like "blood test" or "physical exam" and maps them
-    to enum values. Falls back to strict enum matching.
+    - Maps common aliases to canonical strings: "physicals", "blood", "colonoscopy".
+    - Otherwise, returns the trimmed input to support custom names.
     """
-    # Try strict match first
-    with suppress(Exception):
-        return MedicalCheckType(raw)
+    key = (raw or "").strip()
+    key_lc = key.lower()
+    # Normalize common separators for aliasing
+    key_norm = key_lc.replace("_", " ").replace("-", " ")
+    key_norm = " ".join(key_norm.split())
 
-    key = (raw or "").strip().lower()
-    # Normalize common separators
-    key_norm = key.replace("_", " ").replace("-", " ")
-    key_norm = " ".join(key_norm.split())  # collapse spaces
-
-    # Simple aliasing
+    # Simple aliasing to common built-ins
     if key_norm.startswith("physical") or key_norm == "physicals":
-        return MedicalCheckType.PHYSICALS
+        return "physicals"
     if "blood" in key_norm:
-        return MedicalCheckType.BLOOD
+        return "blood"
     if "colonoscopy" in key_norm:
-        return MedicalCheckType.COLONOSCOPY
+        return "colonoscopy"
 
-    # Last attempt: match by exact token to enum values
-    for t in MedicalCheckType:
-        if key_norm == t.value:
-            return t
-
-    raise HTTPException(status_code=400, detail=f"Unknown medical check type: {raw}")
+    # Fallback: accept custom name
+    if key:
+        return key
+    raise HTTPException(status_code=400, detail="Check type is required")
 
 
 @router.get("", response_model=MedicalChecks)
@@ -91,7 +87,7 @@ async def create_medical_check(
     mc = MedicalCheck(
         patient_id=patient_id,
         check_date=date,
-        type=_resolve_medical_check_type(type),
+        type=_resolve_medical_check_type(type), # Todo: should this be medical_check_name_id?
         status=MedicalCheckStatus(status),
         notes=notes,
         medical_check_items=medical_check_items,
@@ -99,7 +95,7 @@ async def create_medical_check(
 
     storage.medical_checks.save(
         patient_id=patient_id,
-        check_type=mc.type.value,
+        check_type=mc.type,
         check_date=mc.check_date,
         status=mc.status.value,
         medical_check_items=mc.medical_check_items,
@@ -139,7 +135,7 @@ async def new_medical_check(
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
-    available_templates: list[MedicalCheckTemplate] = storage.medical_check_templates.list_medical_check_templates()
+    available_templates: list[MedicalCheckTemplate] = storage.medical_check_templates.list_medical_check_names()
     if not available_templates:
         raise HTTPException(status_code=404, detail="No medical check templates configured")
 
@@ -157,7 +153,8 @@ async def new_medical_check(
     def map_input_type(t: str) -> tuple[str, str | None]:
         t = (t or "").lower()
         if t == "number":
-            return ("number", "1")
+            # Allow both integers and decimals in numeric fields
+            return ("number", "any")
         # Default to text for short/long text
         return ("text", None)
 
