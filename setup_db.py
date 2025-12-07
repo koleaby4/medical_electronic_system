@@ -24,8 +24,7 @@ def _make_alembic_config(db_path: str) -> Config:
     return cfg
 
 
-def create_tables(db: str):
-    """Run Alembic migrations to create or upgrade the SQLite schema."""
+def create_tables(db: str) -> None:
     cfg = _make_alembic_config(db)
     logger.info("Applying Alembic migrations to %s", db)
     command.upgrade(cfg, "head")
