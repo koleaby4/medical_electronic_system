@@ -11,8 +11,6 @@ class MedicalCheckTemplateItem(BaseModel):
         description="Input type (e.g., number | short_text | long_text)",
     )
     placeholder: str = Field("", description="Placeholder example value")
-    # Optional: when populated, defines the display order within the template
-    sort_order: int | None = Field(default=None, description="Zero-based order in the template")
 
 
 class MedicalCheckTemplate(BaseModel):
