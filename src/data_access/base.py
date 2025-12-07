@@ -19,7 +19,7 @@ class BaseStorage:
         if not desc:
             return None
         cols: list[str] = [d[0] for d in desc]
-        row = cur.fetchone()
-        if not row:
-            return None
-        return dict(zip(cols, row))
+        if row := cur.fetchone():
+            return dict(zip(cols, row))
+
+        return None
