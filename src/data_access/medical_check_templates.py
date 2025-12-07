@@ -56,10 +56,10 @@ class MedicalCheckTemplateStorage(BaseStorage):
 
             cur.execute(
                 """
-                SELECT name, units, input_type, placeholder, sort_order
+                SELECT name, units, input_type, placeholder
                 FROM medical_check_template_items
                 WHERE template_id = ?
-                ORDER BY sort_order ASC, rowid ASC
+                ORDER BY rowid ASC
                 """,
                 [template_id],
             )
@@ -69,7 +69,6 @@ class MedicalCheckTemplateStorage(BaseStorage):
                     units=(r[1] or ""),
                     input_type=(r[2] or "short_text"),
                     placeholder=(r[3] or ""),
-                    sort_order=r[4],
                 )
                 for r in cur.fetchall()
             ]
@@ -116,10 +115,10 @@ class MedicalCheckTemplateStorage(BaseStorage):
 
             self.conn.execute(
                 """
-                INSERT INTO medical_check_template_items (template_id, name, units, input_type, placeholder, sort_order)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO medical_check_template_items (template_id, name, units, input_type, placeholder)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                [template_id, name, units, input_type, placeholder, idx],
+                [template_id, name, units, input_type, placeholder],
             )
 
         self.conn.commit()
