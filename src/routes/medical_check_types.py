@@ -1,13 +1,14 @@
 import re
+import sqlite3
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
-from src.models.medical_check_type import MedicalCheckTypeItem
+from src.models.medical_check_type import MedicalCheckType, MedicalCheckTypeItem
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -81,3 +82,85 @@ async def save_medical_check_type(request: Request, storage: DbStorage = Depends
     )
 
     return RedirectResponse(url="/admin/medical_check_types", status_code=303)
+
+
+# JSON API: create a medical check type
+@router.post("/medical_check_types")
+async def create_medical_check_type_json(request: Request, storage: DbStorage = Depends(get_storage)):
+    if "application/json" not in (request.headers.get("content-type") or ""):
+        raise HTTPException(status_code=415, detail="Content-Type must be application/json")
+    data = await request.json()
+    name = (data.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Field 'name' is required")
+
+    items_payload = data.get("items") or []
+    items: list[MedicalCheckTypeItem] = []
+    for i in items_payload:
+        items.append(
+            MedicalCheckTypeItem(
+                name=(i.get("name") or "").strip(),
+                units=(i.get("units") or "").strip(),
+                input_type=(i.get("input_type") or "number").strip(),
+                placeholder=(i.get("placeholder") or "").strip(),
+            )
+        )
+    type_id = storage.medical_check_types.upsert(template_id=None, check_name=name, items=items)
+    created = storage.medical_check_types.get_check_type(type_id=type_id)
+    headers = {"Location": f"/admin/medical_check_types/{type_id}"}
+    return JSONResponse(status_code=201, content=created.model_dump() if created else {}, headers=headers)
+
+
+# JSON API: get a medical check type by id
+@router.get("/medical_check_types/{type_id}")
+async def get_medical_check_type_json(type_id: int, storage: DbStorage = Depends(get_storage)) -> MedicalCheckType:
+    mct = storage.medical_check_types.get_check_type(type_id=type_id)
+    if not mct:
+        raise HTTPException(status_code=404, detail="Medical check type not found")
+    return mct
+
+
+# JSON API: update a medical check type (replace items)
+@router.put("/medical_check_types/{type_id}")
+async def update_medical_check_type_json(type_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
+    if "application/json" not in (request.headers.get("content-type") or ""):
+        raise HTTPException(status_code=415, detail="Content-Type must be application/json")
+    if not storage.medical_check_types.get_check_type(type_id=type_id):
+        raise HTTPException(status_code=404, detail="Medical check type not found")
+
+    data = await request.json()
+    name = (data.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Field 'name' is required")
+
+    items_payload = data.get("items", [])
+    items: list[MedicalCheckTypeItem] = []
+
+    for i in items_payload:
+        items.append(
+            MedicalCheckTypeItem(
+                name=(i.get("name") or "").strip(),
+                units=(i.get("units") or "").strip(),
+                input_type=(i.get("input_type") or "number").strip(),
+                placeholder=(i.get("placeholder") or "").strip(),
+            )
+        )
+    storage.medical_check_types.upsert(template_id=type_id, check_name=name, items=items)
+    updated = storage.medical_check_types.get_check_type(type_id=type_id)
+    return updated
+
+
+# JSON API: delete a medical check type
+@router.delete("/medical_check_types/{type_id}")
+async def delete_medical_check_type_json(type_id: int, storage: DbStorage = Depends(get_storage)):
+    if not storage.medical_check_types.get_check_type(type_id=type_id):
+        return JSONResponse(status_code=204, content=None)
+
+    try:
+        storage.medical_check_types.delete(type_id=type_id)
+    except sqlite3.IntegrityError:
+        return JSONResponse(
+            status_code=409,
+            content={"detail": f"{type_id=} is in use by existing medical checks and cannot be deleted"}
+        )
+    return JSONResponse(status_code=204, content=None)

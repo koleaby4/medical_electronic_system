@@ -121,3 +121,7 @@ class MedicalCheckTypesStorage(BaseStorage):
 
         self.conn.commit()
         return template_id
+
+    def delete(self, *, type_id: int) -> None:
+        self.conn.execute("DELETE FROM medical_check_types WHERE type_id = ?", [type_id])
+        self.conn.commit()

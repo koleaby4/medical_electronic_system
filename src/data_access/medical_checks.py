@@ -146,14 +146,27 @@ class MedicalChecksStorage(BaseStorage):
         )
         self.conn.commit()
 
+    def update_notes(self, *, check_id: int, notes: str | None) -> None:
+        self.conn.execute(
+            "UPDATE medical_checks SET notes = ? WHERE check_id = ?",
+            [notes, check_id],
+        )
+        self.conn.commit()
+
+    def delete(self, *, check_id: int) -> None:
+        # Ensure child rows are removed first due to FK constraints
+        self.conn.execute("DELETE FROM medical_check_items WHERE check_id = ?", [check_id])
+        self.conn.execute("DELETE FROM medical_checks WHERE check_id = ?", [check_id])
+        self.conn.commit()
+
     def get_chartable_options(self, *, patient_id: int) -> list[dict]:
         cur = self.conn.cursor()
         try:
             cur.execute(
                 """
-                SELECT n.name                                   AS check_type,
-                       ti.name                                   AS item_name,
-                       n.name || ' -> ' || ti.name               AS label
+                SELECT n.name AS check_type,
+                       ti.name  item_name,
+                       n.name || ' -> ' || ti.name  label
                 FROM medical_check_types n
                 JOIN medical_check_type_items ti
                       ON ti.type_id = n.type_id
