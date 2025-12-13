@@ -6,7 +6,7 @@ def test_physicals_new_page_renders(client: TestClient, create_patient):
 
     # Create a medical check type named "physicals" with a sample item "height"
     form = {
-        "template_name": "physicals",
+        "check_name": "physicals",
         "items[0][name]": "height",
         "items[0][units]": "cm",
         "items[0][input_type]": "number",

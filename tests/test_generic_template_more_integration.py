@@ -8,7 +8,7 @@ def _create_template(client: TestClient, name: str, items: list[dict]) -> None:
 
     items: list of dicts with keys: name, units, input_type, placeholder
     """
-    form: dict[str, str] = {"template_name": name}
+    form: dict[str, str] = {"check_name": name}
     for idx, item in enumerate(items):
         form[f"items[{idx}][name]"] = item.get("name", "")
         form[f"items[{idx}][units]"] = item.get("units", "")

@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 def _create_template(client: TestClient, name: str = "Vitals") -> None:
     """Create a simple template via admin endpoint with one numeric item 'weight'."""
     form = {
-        "template_name": name,
+        "check_name": name,
         "items[0][name]": "weight",
         "items[0][units]": "kg",
         "items[0][input_type]": "number",

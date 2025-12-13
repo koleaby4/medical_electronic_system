@@ -38,8 +38,8 @@ async def new_medical_check_type(request: Request):
 async def save_medical_check_type(request: Request, storage: DbStorage = Depends(get_storage)):
     form = await request.form()
 
-    template_name = form.get("template_name", "").strip()
-    if not template_name:
+    check_name = form.get("check_name", "").strip()
+    if not check_name:
         return templates.TemplateResponse(
             "upsert_medical_check_type.html",
             {
@@ -77,7 +77,7 @@ async def save_medical_check_type(request: Request, storage: DbStorage = Depends
 
     storage.medical_check_types.upsert(
         template_id=template_id,
-        template_name=template_name,
+        check_name=check_name,
         items=items,
     )
 

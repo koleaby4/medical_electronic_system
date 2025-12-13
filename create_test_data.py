@@ -315,7 +315,7 @@ def _seed_medical_check_templates(storage: DbStorage) -> None:
 
     new_id = storage.medical_check_types.upsert(
         template_id=None,
-        template_name="physicals",
+        check_name="physicals",
         items=items,
     )
     logger.info("Seeded/updated medical_check_template 'physicals' with id=%s", new_id)
@@ -336,7 +336,7 @@ def _seed_medical_check_template_blood(storage: DbStorage) -> None:
 
     new_id = storage.medical_check_types.upsert(
         template_id=None,
-        template_name="blood",
+        check_name="blood",
         items=items,
     )
     logger.info("Seeded/updated medical_check_template 'blood' with id=%s", new_id)

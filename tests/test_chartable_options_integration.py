@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 def _create_template_with_numeric(client: TestClient, name: str = "Vitals") -> None:
     form = {
-        "template_name": name,
+        "check_name": name,
         "items[0][name]": "weight",
         "items[0][units]": "kg",
         "items[0][input_type]": "number",

@@ -84,7 +84,7 @@ class MedicalCheckTypesStorage(BaseStorage):
         self,
         *,
         template_id: int | None,
-        template_name: str,
+        check_name: str,
         items: list[MedicalCheckTypeItem],
     ) -> int:
         cur = self.conn.execute(
@@ -94,7 +94,7 @@ class MedicalCheckTypesStorage(BaseStorage):
             UPDATE SET
                 name = excluded.name
             """,
-            [template_id, template_name],
+            [template_id, check_name],
         )
 
         if template_id is None:
