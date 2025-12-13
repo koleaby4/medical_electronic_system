@@ -105,21 +105,6 @@ async def create_medical_check(
     return RedirectResponse(url=f"/patients/{patient.patient_id}", status_code=303)
 
 
-@router.get("/physicals/new", include_in_schema=False)
-async def new_physicals_check(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
-    if patient := storage.patients.get_patient(patient_id=patient_id):
-        return templates.TemplateResponse(
-            "create_medical_check_physicals.html",
-            {
-                "request": request,
-                "active_page": "patients",
-                "patient": patient,
-                "check_type": "physicals",
-            },
-        )
-    raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
-
-
 @router.get("/new", include_in_schema=False)
 async def new_medical_check(
     request: Request,
