@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
-class MedicalCheckTemplateItem(BaseModel):
+class MedicalCheckTypeItem(BaseModel):
     name: str = Field("", description="Parameter name, e.g., height")
     units: str = Field("", description="Units for the parameter, e.g., cm")
     input_type: str = Field(
@@ -13,11 +13,11 @@ class MedicalCheckTemplateItem(BaseModel):
     placeholder: str = Field("", description="Placeholder example value")
 
 
-class MedicalCheckTemplate(BaseModel):
+class MedicalCheckType(BaseModel):
     """
-    Represents a medical check template consisting of a name and a set of items.
+    Represents a medical check type consisting of a name and a set of items.
     """
 
-    template_id: int | None = Field(default=None, description="DB identifier")
-    template_name: str = Field(..., description="Human-readable template name")
-    items: list[MedicalCheckTemplateItem] = Field(default_factory=list)
+    type_id: int | None = Field(default=None, description="DB identifier (medical_check_types.type_id)")
+    name: str = Field(..., description="Human-readable check type name")
+    items: list[MedicalCheckTypeItem] = Field(default_factory=list)

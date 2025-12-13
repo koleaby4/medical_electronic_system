@@ -6,8 +6,8 @@ This migration creates all tables required by the application:
 - addresses
 - medical_checks
 - medical_check_items
-- medical_check_names
-- medical_check_template_items
+- medical_check_types
+- medical_check_type_items
 
 Downgrade drops them in reverse dependency order.
 """
@@ -61,9 +61,9 @@ def upgrade() -> None:
 
     op.execute(
         """
-        CREATE TABLE IF NOT EXISTS medical_check_names (
-            medical_check_name_id INTEGER PRIMARY KEY,
-            medical_check_name TEXT NOT NULL
+        CREATE TABLE IF NOT EXISTS medical_check_types (
+            type_id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL
         );
         """
     )
@@ -73,7 +73,7 @@ def upgrade() -> None:
         CREATE TABLE IF NOT EXISTS medical_checks (
             check_id INTEGER PRIMARY KEY,
             patient_id INTEGER NOT NULL,
-            check_type INTEGER NOT NULL,
+            type_id INTEGER NOT NULL,
             check_date DATE NOT NULL,
             status TEXT NOT NULL,
             notes TEXT,
@@ -81,8 +81,8 @@ def upgrade() -> None:
                 REFERENCES patients(patient_id)
                 ON DELETE CASCADE ON UPDATE CASCADE
             ,
-            FOREIGN KEY(check_type)
-                REFERENCES medical_check_names(medical_check_name_id)
+            FOREIGN KEY(type_id)
+                REFERENCES medical_check_types(type_id)
                 ON UPDATE CASCADE
         );
         """
@@ -130,31 +130,31 @@ def upgrade() -> None:
 
     op.execute(
         """
-        CREATE TABLE IF NOT EXISTS medical_check_template_items (
-            medical_check_name_id INTEGER NOT NULL,
+        CREATE TABLE IF NOT EXISTS medical_check_type_items (
+            type_id INTEGER NOT NULL,
             name TEXT,
             units TEXT,
             input_type TEXT,
             placeholder TEXT,
-            FOREIGN KEY(medical_check_name_id)
-                REFERENCES medical_check_names(medical_check_name_id)
+            FOREIGN KEY(type_id)
+                REFERENCES medical_check_types(type_id)
                 ON DELETE CASCADE ON UPDATE CASCADE
         );
         """
     )
     op.execute(
         """
-        CREATE INDEX IF NOT EXISTS ix_mct_items_medical_check_name_id
-            ON medical_check_template_items(medical_check_name_id);
+        CREATE INDEX IF NOT EXISTS ix_mct_type_items_type_id
+            ON medical_check_type_items(type_id);
         """
     )
 
 
 def downgrade() -> None:
-    op.execute("DROP INDEX IF EXISTS ix_mct_items_medical_check_name_id;")
-    op.execute("DROP TABLE IF EXISTS medical_check_template_items;")
+    op.execute("DROP INDEX IF EXISTS ix_mct_type_items_type_id;")
+    op.execute("DROP TABLE IF EXISTS medical_check_type_items;")
 
-    op.execute("DROP TABLE IF EXISTS medical_check_names;")
+    op.execute("DROP TABLE IF EXISTS medical_check_types;")
 
     op.execute("DROP INDEX IF EXISTS ix_medical_check_items_name;")
     op.execute("DROP INDEX IF EXISTS ix_medical_check_items_check_id;")

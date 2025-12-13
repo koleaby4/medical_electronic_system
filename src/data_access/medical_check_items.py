@@ -60,9 +60,9 @@ class MedicalCheckItemsStorage(BaseStorage):
                     COALESCE(mci.units, '') AS units
                 FROM medical_check_items mci
                 JOIN medical_checks mc ON mci.check_id = mc.check_id
-                JOIN medical_check_names n ON n.medical_check_name_id = mc.check_type
+                JOIN medical_check_types n ON n.type_id = mc.type_id
                 WHERE mc.patient_id = ?
-                  AND n.medical_check_name = ? COLLATE NOCASE
+                  AND n.name = ? COLLATE NOCASE
                   AND mci.name = ?
                 ORDER BY mc.check_date, mc.check_id, mci.check_item_id
                 """,

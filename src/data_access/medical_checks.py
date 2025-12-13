@@ -25,16 +25,16 @@ class MedicalChecksStorage(BaseStorage):
             medical_check_items: list[MedicalCheckItem],
             notes: str | None = None,
     ) -> int:
-        # Resolve check_type to medical_check_name_id if provided as a string
+        # Resolve check_type to type_id (PK from medical_check_types) if provided as a string
         check_type_id: int
         if isinstance(check_type, int):
             check_type_id = check_type
         else:
             cur_lookup = self.conn.execute(
                 """
-                SELECT medical_check_name_id
-                FROM medical_check_names
-                WHERE medical_check_name = ? COLLATE NOCASE
+                SELECT type_id
+                FROM medical_check_types
+                WHERE name = ? COLLATE NOCASE
                 """,
                 [check_type],
             )
@@ -42,10 +42,10 @@ class MedicalChecksStorage(BaseStorage):
             if row := cur_lookup.fetchone():
                 check_type_id = int(row[0])
             else:
-                # Auto-insert missing medical_check_name for convenience
+                # Auto-insert missing medical_check_type for convenience
                 cur_ins = self.conn.execute(
                     """
-                    INSERT INTO medical_check_names (medical_check_name)
+                    INSERT INTO medical_check_types (name)
                     VALUES (?)
                     """,
                     [check_type],
@@ -54,7 +54,7 @@ class MedicalChecksStorage(BaseStorage):
 
         cur = self.conn.execute(
             """
-            INSERT INTO medical_checks (patient_id, check_type, check_date, status, notes)
+            INSERT INTO medical_checks (patient_id, type_id, check_date, status, notes)
             VALUES (?, ?, ?, ?, ?)
             """,
             [patient_id, check_type_id, check_date, status, notes],
@@ -69,17 +69,16 @@ class MedicalChecksStorage(BaseStorage):
     def get_medical_checks(self, patient_id: int) -> list[MedicalCheck]:
         cur = self.conn.cursor()
         try:
-            # Todo: rename mc.check_type into medical_check_name_id or medical_check_names into medical_check_types
             cur.execute(
                 """
                 SELECT mc.check_id,
                        mc.patient_id,
-                       n.medical_check_name AS check_type,
+                       n.name AS check_type,
                        mc.check_date,
                        mc.status,
                        mc.notes
                 FROM medical_checks mc
-                JOIN medical_check_names n ON n.medical_check_name_id = mc.check_type
+                JOIN medical_check_types n ON n.type_id = mc.type_id
                 WHERE mc.patient_id = ?
                 ORDER BY mc.check_date DESC, mc.check_id DESC
                 """,
@@ -113,12 +112,12 @@ class MedicalChecksStorage(BaseStorage):
                 """
                 SELECT mc.check_id,
                        mc.patient_id,
-                       n.medical_check_name AS check_type,
+                       n.name AS check_type,
                        mc.check_date,
                        mc.status,
                        mc.notes
                 FROM medical_checks mc
-                JOIN medical_check_names n ON n.medical_check_name_id = mc.check_type
+                JOIN medical_check_types n ON n.type_id = mc.type_id
                 WHERE mc.patient_id = ?
                   AND mc.check_id = ?
                 """,
@@ -155,20 +154,20 @@ class MedicalChecksStorage(BaseStorage):
         try:
             cur.execute(
                 """
-                SELECT n.medical_check_name                      AS check_type,
+                SELECT n.name                                   AS check_type,
                        ti.name                                   AS item_name,
-                       n.medical_check_name || ' -> ' || ti.name AS label
-                FROM medical_check_names n
-                JOIN medical_check_template_items ti
-                      ON ti.medical_check_name_id = n.medical_check_name_id
+                       n.name || ' -> ' || ti.name               AS label
+                FROM medical_check_types n
+                JOIN medical_check_type_items ti
+                      ON ti.type_id = n.type_id
                 JOIN medical_checks mc
-                      ON mc.check_type = n.medical_check_name_id
+                      ON mc.type_id = n.type_id
                 JOIN medical_check_items mci
                       ON mci.check_id = mc.check_id
                     AND mci.name = ti.name COLLATE NOCASE
                 WHERE mc.patient_id = ?
                     AND LOWER(ti.input_type) = 'number'
-                GROUP BY n.medical_check_name, ti.name
+                GROUP BY n.name, ti.name
                 ORDER BY label COLLATE NOCASE
                 """,
                 [patient_id],

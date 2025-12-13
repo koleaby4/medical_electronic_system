@@ -10,7 +10,7 @@ from src.dependencies import get_storage
 from src.models.enums import MedicalCheckStatus
 from src.models.medical_check import MedicalCheck, MedicalChecks
 from src.models.medical_check_item import MedicalCheckItem
-from src.models.medical_check_template import MedicalCheckTemplate
+from src.models.medical_check_type import MedicalCheckType
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -124,32 +124,32 @@ async def new_physicals_check(request: Request, patient_id: int, storage: DbStor
 async def new_medical_check(
     request: Request,
     patient_id: int,
-    template_id: int | None = None,
+    check_type_id: int | None = None,
     storage: DbStorage = Depends(get_storage),
 ):
-    """Generalized new medical check page based on template items.
+    """Generalized new medical check page based on medical check type items.
 
     Query param:
-      - template_id: which template to use; if not provided, the first template (by name) is used.
+      - check_type_id: which type to use; if not provided, the first type (by name) is used.
     """
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
-    available_templates: list[MedicalCheckTemplate] = storage.medical_check_templates.list_medical_check_names()
-    if not available_templates:
-        raise HTTPException(status_code=404, detail="No medical check templates configured")
+    available_check_types: list[MedicalCheckType] = storage.medical_check_types.list_medical_check_types()
+    if not available_check_types:
+        raise HTTPException(status_code=404, detail="No medical check types found")
 
-    selected_template: MedicalCheckTemplate | None = None
-    if template_id is not None:
-        selected_template = storage.medical_check_templates.get_template(template_id=template_id)
+    selected_template: MedicalCheckType | None = None
+    if check_type_id is not None:
+        selected_template = storage.medical_check_types.get_check_type(type_id=check_type_id)
     if selected_template is None:
         # fallback to first available
-        selected_template = storage.medical_check_templates.get_template(template_id=available_templates[0].template_id)  # type: ignore[arg-type]
+        selected_template = storage.medical_check_types.get_check_type(type_id=available_check_types[0].type_id)  # type: ignore[arg-type]
 
     if selected_template is None:
-        raise HTTPException(status_code=404, detail="Selected medical check template not found")
+        raise HTTPException(status_code=404, detail="Selected medical check type not found")
 
-    # Map template items to parameters expected by _medical_check_form.html
+    # Map type items to parameters expected by _medical_check_form.html
     def map_input_type(t: str) -> tuple[str, str | None]:
         t = (t or "").lower()
         if t == "number":
@@ -178,7 +178,7 @@ async def new_medical_check(
             "request": request,
             "active_page": "patients",
             "patient": patient,
-            "check_type": selected_template.template_name,
+            "check_type": selected_template.name,
             "parameters": parameters,
         },
     )

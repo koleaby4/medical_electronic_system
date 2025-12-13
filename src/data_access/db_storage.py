@@ -5,7 +5,7 @@ import sqlite3
 
 from src.data_access.patients import PatientsStorage
 from src.data_access.medical_checks import MedicalChecksStorage
-from src.data_access.medical_check_templates import MedicalCheckTemplateStorage
+from src.data_access.medical_check_templates import MedicalCheckTypesStorage
 
 
 @dataclass
@@ -15,7 +15,7 @@ class DbStorage:
         self._conn.execute("PRAGMA foreign_keys = ON;")
         self.patients = PatientsStorage(self._conn)
         self.medical_checks = MedicalChecksStorage(self._conn)
-        self.medical_check_templates = MedicalCheckTemplateStorage(self._conn)
+        self.medical_check_types = MedicalCheckTypesStorage(self._conn)
 
     def close(self) -> None:
         with suppress(Exception):
@@ -23,6 +23,6 @@ class DbStorage:
         with suppress(Exception):
             self.medical_checks.close()
         with suppress(Exception):
-            self.medical_check_templates.close()
+            self.medical_check_types.close()
         with suppress(Exception):
             self._conn.close()

@@ -10,7 +10,7 @@ from src.models.enums import Title, Sex, MedicalCheckStatus
 from src.models.patient import Patient
 from src.models.address import Address
 from src.models.medical_check_item import MedicalCheckItem
-from src.models.medical_check_template import MedicalCheckTemplateItem
+from src.models.medical_check_type import MedicalCheckTypeItem
 from faker import Faker
 
 fake = Faker()
@@ -194,14 +194,14 @@ def _generate_value_for_item(name: str, input_type: str, placeholder: str) -> st
     return values.get(param, f"{random.uniform(0, 100):.1f}")
 
 
-def _build_items_from_template(storage: DbStorage, template_name: str) -> list[MedicalCheckItem] | None:
+def _build_items_for_check_type(db: DbStorage, check_name: str) -> list[MedicalCheckItem] | None:
     try:
-        templates = storage.medical_check_templates.list_medical_check_names()
-        match_t = next((t for t in templates if t.template_name == template_name), None)
+        medical_check_types = db.medical_check_types.list_medical_check_types()
+        match_t = next((t for t in medical_check_types if t.name == check_name), None)
         if not match_t:
             return None
 
-        full = storage.medical_check_templates.get_template(template_id=match_t.template_id)
+        full = db.medical_check_types.get_check_type(type_id=match_t.type_id)
         if not full:
             return None
 
@@ -214,8 +214,8 @@ def _build_items_from_template(storage: DbStorage, template_name: str) -> list[M
         return None
 
 
-def _get_random_physicals_items(storage: DbStorage) -> list[MedicalCheckItem]:
-    templated = _build_items_from_template(storage, "physicals")
+def _get_random_physicals_items(db: DbStorage) -> list[MedicalCheckItem]:
+    templated = _build_items_for_check_type(db, "physicals")
     if templated is not None and len(templated) > 0:
         return templated
 
@@ -230,7 +230,7 @@ def _get_random_physicals_items(storage: DbStorage) -> list[MedicalCheckItem]:
 
 
 def _get_random_blood_items(storage: DbStorage) -> list[MedicalCheckItem]:
-    templated = _build_items_from_template(storage, "blood")
+    templated = _build_items_for_check_type(storage, "blood")
     if templated is not None and len(templated) > 0:
         return templated
 
@@ -277,8 +277,8 @@ def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
         "physicals": _get_random_physicals_items,
         "blood": _get_random_blood_items,
     }
-    templates = db.medical_check_templates.list_medical_check_names()
-    check_names = [t.template_name for t in templates]
+    medical_check_types = db.medical_check_types.list_medical_check_types()
+    check_names = [t.name for t in medical_check_types]
 
     for p in patients:
         for i in range(random.randint(5, 12)):
@@ -303,17 +303,17 @@ def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
 
 def _seed_medical_check_templates(storage: DbStorage) -> None:
     items = [
-        MedicalCheckTemplateItem(name="height", units="cm", input_type="number", placeholder="e.g. 180"),
-        MedicalCheckTemplateItem(name="weight", units="kg", input_type="number", placeholder="e.g. 75.5"),
-        MedicalCheckTemplateItem(
+        MedicalCheckTypeItem(name="height", units="cm", input_type="number", placeholder="e.g. 180"),
+        MedicalCheckTypeItem(name="weight", units="kg", input_type="number", placeholder="e.g. 75.5"),
+        MedicalCheckTypeItem(
             name="blood pressure (systolic)", units="mmHg", input_type="number", placeholder="e.g. 120"
         ),
-        MedicalCheckTemplateItem(
+        MedicalCheckTypeItem(
             name="blood pressure (diastolic)", units="mmHg", input_type="number", placeholder="e.g. 80"
         ),
     ]
 
-    new_id = storage.medical_check_templates.upsert(
+    new_id = storage.medical_check_types.upsert(
         template_id=None,
         template_name="physicals",
         items=items,
@@ -323,18 +323,18 @@ def _seed_medical_check_templates(storage: DbStorage) -> None:
 
 def _seed_medical_check_template_blood(storage: DbStorage) -> None:
     items = [
-        MedicalCheckTemplateItem(name="Hemoglobin", units="g/dL", input_type="number", placeholder="e.g. 14.2"),
-        MedicalCheckTemplateItem(
+        MedicalCheckTypeItem(name="Hemoglobin", units="g/dL", input_type="number", placeholder="e.g. 14.2"),
+        MedicalCheckTypeItem(
             name="White Blood Cell Count (WBC)", units="×10^9/L", input_type="number", placeholder="e.g. 6.5"
         ),
-        MedicalCheckTemplateItem(name="Platelet Count", units="×10^9/L", input_type="number", placeholder="e.g. 250"),
-        MedicalCheckTemplateItem(
+        MedicalCheckTypeItem(name="Platelet Count", units="×10^9/L", input_type="number", placeholder="e.g. 250"),
+        MedicalCheckTypeItem(
             name="Blood Glucose (fasting)", units="mmol/L", input_type="number", placeholder="e.g. 5.2"
         ),
-        MedicalCheckTemplateItem(name="Total Cholesterol", units="mmol/L", input_type="number", placeholder="e.g. 4.8"),
+        MedicalCheckTypeItem(name="Total Cholesterol", units="mmol/L", input_type="number", placeholder="e.g. 4.8"),
     ]
 
-    new_id = storage.medical_check_templates.upsert(
+    new_id = storage.medical_check_types.upsert(
         template_id=None,
         template_name="blood",
         items=items,

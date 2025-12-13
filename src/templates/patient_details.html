@@ -16,7 +16,7 @@
                         <div class="col-auto">
                             <label for="chartOption" class="form-label">Chart item</label>
                             <select id="chartOption" class="form-select">
-                                <!-- options populated dynamically as: template_name -> item_name -->
+                                <!-- options populated dynamically as: name -> item_name -->
                             </select>
                         </div>
                         <div class="col-auto">
@@ -42,7 +42,7 @@
                     <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
                         <select id="checkType" class="form-select" style="max-width: 320px;">
                             {% for t in templates or [] %}
-                                <option value="{{ t.template_id }}">{{ t.template_name }}</option>
+                                <option value="{{ t.type_id }}">{{ t.name }}</option>
                             {% endfor %}
                         </select>
                         <button id="addRecordBtn" class="btn btn-primary">Add Record</button>
@@ -136,10 +136,10 @@
                     updateChartsControlsState(true);
                 });
 
-            // Redirect to generic add page based on selected template
+            // Redirect to generic add page based on selected type
             document.getElementById('addRecordBtn').addEventListener('click', () => {
                 const selectedTemplateId = document.getElementById('checkType').value;
-                window.location.href = `/patients/${patientId}/medical_checks/new?template_id=${encodeURIComponent(selectedTemplateId)}`;
+                window.location.href = `/patients/${patientId}/medical_checks/new?check_type_id=${encodeURIComponent(selectedTemplateId)}`;
             });
 
             // --- Dynamic chart tiles ---
