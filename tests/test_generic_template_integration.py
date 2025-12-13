@@ -17,7 +17,7 @@ def _create_template(client: TestClient, name: str = "Vitals") -> None:
     assert resp.status_code in (303, 307)
 
 
-def test_generic_new_page_renders_with_numeric_step_any(client: TestClient, create_patient):
+def test_generic_new_page_renders_with_numeric_step_0_1(client: TestClient, create_patient):
     patient_id = create_patient()
     _create_template(client, name="Vitals")
 
@@ -28,11 +28,11 @@ def test_generic_new_page_renders_with_numeric_step_any(client: TestClient, crea
     # Header reflects template name chosen (first by name)
     assert "Add Vitals check" in html
 
-    # Numeric inputs rendered from template should allow decimals (step="any")
+    # Numeric inputs rendered from template should allow 1-decimal values (step="0.1")
     # and use type="number"
     assert 'id="param_0"' in html
     assert 'type="number"' in html
-    assert 'step="any"' in html
+    assert 'step="0.1"' in html
 
 
 def test_generic_post_accepts_decimal_and_persists(client: TestClient, create_patient):

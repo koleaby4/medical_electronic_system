@@ -135,24 +135,25 @@ async def new_medical_check(
         raise HTTPException(status_code=404, detail="Selected medical check type not found")
 
     # Map type items to parameters expected by _medical_check_form.html
-    def map_input_type(t: str) -> tuple[str, str | None]:
+    def map_input_type(t: str) -> tuple[str, str | None, str | None]:
         t = (t or "").lower()
         if t == "number":
-            # Allow both integers and decimals in numeric fields
-            return ("number", "any")
-        # Default to text for short/long text
-        return ("text", None)
+            # Allow integers and floats with up to 1 decimal
+            return ("number", "0.1", r"^-?\d+(?:[\.,]\d)?$")
+
+        # fallback to text
+        return ("text", None, None)
 
     parameters = []
     for item in selected_template.items:
-        html_type, step = map_input_type(item.input_type)
+        html_type, step, pattern = map_input_type(item.input_type)
         parameters.append(
             {
                 "name": item.name,
                 "units": item.units,
                 "input_type": html_type,
                 "step": step or "",
-                "pattern": "",
+                "pattern": pattern or "",
                 "placeholder": item.placeholder,
             }
         )

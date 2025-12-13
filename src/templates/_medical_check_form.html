@@ -41,7 +41,7 @@
                                 <input type="hidden" name="param_units_{{ loop.index0 }}" value="{{ p.units or '' }}">
                             </td>
                             <td>
-                                <input class="form-control" id="param_{{ loop.index0 }}" name="param_value_{{ loop.index0 }}" type="{{ p.input_type or 'text' }}" step="{{ p.step or '1' }}" pattern="{{ p.pattern or '' }}" placeholder="{{ p.placeholder or '' }}">
+                                <input class="form-control" id="param_{{ loop.index0 }}" name="param_value_{{ loop.index0 }}" type="{{ p.input_type or 'text' }}"{% if p.step %} step="{{ p.step }}"{% endif %}{% if p.pattern %} pattern="{{ p.pattern }}"{% endif %} placeholder="{{ p.placeholder or '' }}">
                             </td>
                         </tr>
                     {% endfor %}
