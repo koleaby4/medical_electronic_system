@@ -8,9 +8,6 @@ class MedicalCheckItemsStorage(BaseStorage):
     def __init__(self, conn: sqlite3.Connection):
         super().__init__(conn)
 
-    def close(self) -> None:
-        return None
-
     def insert_items(self, *, check_id: int, medical_check_items: list[MedicalCheckItem]) -> None:
         for mci in medical_check_items:
             check_item_id = mci.check_item_id or str(uuid.uuid4())

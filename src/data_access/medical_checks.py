@@ -12,9 +12,6 @@ class MedicalChecksStorage(BaseStorage):
         super().__init__(conn)
         self.items = MedicalCheckItemsStorage(conn)
 
-    def close(self) -> None:
-        return None
-
     def save(
             self,
             *,

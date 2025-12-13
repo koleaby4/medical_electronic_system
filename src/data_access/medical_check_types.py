@@ -13,9 +13,6 @@ class MedicalCheckTypesStorage(BaseStorage):
     def __init__(self, conn: sqlite3.Connection):
         super().__init__(conn)
 
-    def close(self) -> None:
-        return None
-
     def list_medical_check_types(self) -> list[MedicalCheckType]:
         cur = self.conn.cursor()
         try:

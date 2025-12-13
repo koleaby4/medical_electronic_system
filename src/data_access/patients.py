@@ -2,20 +2,16 @@ from typing import Any
 import sqlite3
 
 from src.data_access.base import BaseStorage
-from src.data_access.interfaces import IPatientsStorage
 from src.data_access.addresses import AddressesStorage
 from src.models.patient import Patient
 from src.models.address import Address
 from src.models.address_utils import build_address
 
 
-class PatientsStorage(BaseStorage, IPatientsStorage):
+class PatientsStorage(BaseStorage):
     def __init__(self, conn: sqlite3.Connection):
         super().__init__(conn)
         self._addresses = AddressesStorage(conn)
-
-    def close(self) -> None:
-        return None
 
     def save(self, patient: Patient) -> Patient:
         cur = self.conn.execute(
