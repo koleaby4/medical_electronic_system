@@ -11,8 +11,8 @@ uv sync
 
 echo.
 
-echo Applying database migrations (Alembic upgrade head)...
-uv run alembic upgrade head
+echo Applying database migrations (SQLite runner)...
+uv run python .\setup_db.py
 
 echo.
 
