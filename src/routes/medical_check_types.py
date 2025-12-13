@@ -84,6 +84,17 @@ async def save_medical_check_type(request: Request, storage: DbStorage = Depends
     return RedirectResponse(url="/admin/medical_check_types", status_code=303)
 
 
+@router.get("/medical_check_types/{type_id}/edit", include_in_schema=False)
+async def edit_medical_check_type(type_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
+    if mct := storage.medical_check_types.get_check_type(type_id=type_id):
+        return templates.TemplateResponse(
+            "upsert_medical_check_type.html",
+            {"request": request, "active_page": "admin", "template": mct},
+        )
+
+    raise HTTPException(status_code=404, detail="Medical check type not found")
+
+
 # JSON API: create a medical check type
 @router.post("/medical_check_types")
 async def create_medical_check_type_json(request: Request, storage: DbStorage = Depends(get_storage)):

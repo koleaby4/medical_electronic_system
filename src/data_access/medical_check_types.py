@@ -18,24 +18,51 @@ class MedicalCheckTypesStorage(BaseStorage):
         try:
             cur.execute(
                 """
-                SELECT type_id,
-                       name
-                FROM medical_check_types
-                ORDER BY name COLLATE NOCASE
+                SELECT
+                    t.type_id                         AS type_id,
+                    t.name                            AS type_name,
+                    i.name                            AS item_name,
+                    i.units                           AS item_units,
+                    i.input_type                      AS item_input_type,
+                    i.placeholder                     AS item_placeholder
+                FROM medical_check_types t
+                LEFT JOIN medical_check_type_items i ON i.type_id = t.type_id
+                ORDER BY t.name COLLATE NOCASE ASC, t.type_id ASC, i.rowid ASC
                 """
             )
-            rows = self._fetch_all_dicts(cur)
+
+            check_types_by_id: dict[int, MedicalCheckType] = {}
+
+            for (
+                type_id,
+                type_name,
+                item_name,
+                item_units,
+                item_input_type,
+                item_placeholder,
+            ) in cur.fetchall():
+                tid = int(type_id)
+                if tid not in check_types_by_id:
+                    check_types_by_id[tid] = MedicalCheckType(
+                        type_id=tid,
+                        name=type_name,
+                        items=[],
+                    )
+
+                # When there is no item (LEFT JOIN miss), item_name will be None
+                if item_name:
+                    check_types_by_id[tid].items.append(
+                        MedicalCheckTypeItem(
+                            name=(item_name or ""),
+                            units=(item_units or ""),
+                            input_type=(item_input_type or "number"),
+                            placeholder=(item_placeholder or ""),
+                        )
+                    )
         finally:
             cur.close()
 
-        return [
-            MedicalCheckType(
-                type_id=r.get("type_id"),
-                name=r.get("name"),
-                items=[],
-            )
-            for r in rows
-        ]
+        return list(check_types_by_id.values())
 
     def get_check_type(self, *, type_id: int) -> MedicalCheckType | None:
         cur = self.conn.cursor()
@@ -66,7 +93,7 @@ class MedicalCheckTypesStorage(BaseStorage):
                 MedicalCheckTypeItem(
                     name=(r[0] or ""),
                     units=(r[1] or ""),
-                    input_type=(r[2] or "short_text"),
+                    input_type=(r[2] or "number"),
                     placeholder=(r[3] or ""),
                 )
                 for r in cur.fetchall()

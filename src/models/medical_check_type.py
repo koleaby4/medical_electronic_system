@@ -7,8 +7,8 @@ class MedicalCheckTypeItem(BaseModel):
     name: str = Field("", description="Parameter name, e.g., height")
     units: str = Field("", description="Units for the parameter, e.g., cm")
     input_type: str = Field(
-        "short_text",
-        description="Input type (e.g., number | short_text | long_text)",
+        "number",
+        description="Input type (e.g., number | short_text )",
     )
     placeholder: str = Field("", description="Placeholder example value")
 

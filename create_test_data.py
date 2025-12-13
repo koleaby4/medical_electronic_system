@@ -204,7 +204,7 @@ def _build_items_for_check_type(db: DbStorage, check_name: str) -> list[MedicalC
 
         items: list[MedicalCheckItem] = []
         for ti in full.items:
-            value = _generate_value_for_item(ti.name, (ti.input_type or "short_text").lower(), ti.placeholder)
+            value = _generate_value_for_item(ti.name, (ti.input_type or "number").lower(), ti.placeholder)
             items.append(MedicalCheckItem(name=ti.name, units=ti.units, value=str(value)))
         return items
     except Exception:

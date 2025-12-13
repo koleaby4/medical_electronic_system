@@ -2,41 +2,66 @@
 {% set page_title = "Medical Check Types" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h4 mb-0">Medical Check Types</h1>
-    <a href="/admin/medical_check_types/new" class="btn btn-primary">
-        + New Check Type
-    </a>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Medical Check Types</h2>
+    <a href="/admin/medical_check_types/new" class="btn btn-primary">+ New Check Type</a>
   </div>
 
-<div class="card">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-striped table-hover mb-0">
-        <thead class="table-light">
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col" class="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-        {% if types and types|length > 0 %}
-          {% for t in types %}
-          <tr>
+  <input type="text" id="searchInput" class="form-control" placeholder="Search types...">
+
+  <div class="table-responsive mt-3">
+    <table id="typesTable" class="table table-striped table-hover align-middle">
+      <thead class="table-primary">
+      <tr>
+        <th>Name</th>
+        <th>Fields</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% if types and types|length > 0 %}
+        {% for t in types %}
+          <tr data-href="/admin/medical_check_types/{{ t.type_id }}/edit" style="cursor: pointer;">
             <td>{{ t.name }}</td>
-            <td class="text-end">
-              <a href="#" class="btn btn-sm btn-outline-secondary">Edit</a>
+            <td>
+              {# Show comma-separated parameter names #}
+              {% if t.items and t.items|length > 0 %}
+                {{ t.items | map(attribute='name') | join(', ') }}
+              {% else %}
+                <span class="text-muted">No fields</span>
+              {% endif %}
             </td>
           </tr>
-          {% endfor %}
-        {% else %}
-          <tr>
-            <td colspan="2" class="text-center text-muted py-4">No check types yet.</td>
-          </tr>
-        {% endif %}
-        </tbody>
-      </table>
-    </div>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="2" class="text-center text-muted py-4">No check types yet.</td>
+        </tr>
+      {% endif %}
+      </tbody>
+    </table>
   </div>
-</div>
+
+  <script>
+    document.getElementById("searchInput").addEventListener("input", function () {
+      const query = this.value.toLowerCase();
+      const rows = document.querySelectorAll("#typesTable tbody tr");
+      rows.forEach(row => {
+        const visible = Array.from(row.children).some(td =>
+          td.textContent.toLowerCase().includes(query)
+        );
+        row.style.display = visible ? "" : "none";
+      });
+    });
+
+    // Make rows clickable to open edit page; ignore clicks on links/buttons (if any appear in future)
+    document.querySelector('#typesTable tbody').addEventListener('click', function (e) {
+      if (e.target.closest('a, button')) {
+        return;
+      }
+      const row = e.target.closest('tr[data-href]');
+      if (row) {
+        window.location.href = row.getAttribute('data-href');
+      }
+    });
+  </script>
 {% endblock %}
