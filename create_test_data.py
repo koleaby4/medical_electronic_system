@@ -6,14 +6,12 @@ from datetime import date, timedelta
 
 from settings import Settings
 from src.data_access.db_storage import DbStorage
-from src.models.enums import Title, Sex, MedicalCheckStatus
-from src.models.patient import Patient
 from src.models.address import Address
+from src.models.enums import MedicalCheckStatus, Sex, Title
 from src.models.medical_check_item import MedicalCheckItem
 from src.models.medical_check_type import MedicalCheckTypeItem
-from faker import Faker
+from src.models.patient import Patient
 
-fake = Faker()
 logger = logging.getLogger(__name__)
 
 
@@ -246,7 +244,9 @@ def _get_check_status(medical_check_items: list[MedicalCheckItem]) -> MedicalChe
         status = (
             MedicalCheckStatus.RED
             if w < 40 or w > 120
-            else MedicalCheckStatus.AMBER if w < 50 or w > 100 else MedicalCheckStatus.GREEN
+            else MedicalCheckStatus.AMBER
+            if w < 50 or w > 100
+            else MedicalCheckStatus.GREEN
         )
         overall = worse(overall, status)
 
@@ -270,7 +270,9 @@ def _get_check_status(medical_check_items: list[MedicalCheckItem]) -> MedicalChe
         status = (
             MedicalCheckStatus.RED
             if bmi < 18.5 or bmi >= 40
-            else MedicalCheckStatus.AMBER if bmi >= 30 else MedicalCheckStatus.GREEN
+            else MedicalCheckStatus.AMBER
+            if bmi >= 30
+            else MedicalCheckStatus.GREEN
         )
         overall = worse(overall, status)
 
@@ -350,69 +352,271 @@ def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
 
         if group == 0:
             # Stable Green: keep within normal ranges with small variations.
-            add_check(p.patient_id, "physicals", 90, _physicals_items(175, 48.0, 118, 78), "Physicals - underweight but BP normal (Amber)")
-            add_check(p.patient_id, "physicals", 60, _physicals_items(175, 70.0, 116, 76), "Routine physicals - normal (Green)")
+            add_check(
+                p.patient_id,
+                "physicals",
+                90,
+                _physicals_items(175, 48.0, 118, 78),
+                "Physicals - underweight but BP normal (Amber)",
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                60,
+                _physicals_items(175, 70.0, 116, 76),
+                "Routine physicals - normal (Green)",
+            )
             add_check(p.patient_id, "physicals", 30, _physicals_items(175, 71.0, 120, 78), "Physicals - normal (Green)")
-            add_check(p.patient_id, "physicals", 10, _physicals_items(175, 72.0, 124, 80), "Physicals - stable normal (Green)")
+            add_check(
+                p.patient_id, "physicals", 10, _physicals_items(175, 72.0, 124, 80), "Physicals - stable normal (Green)"
+            )
 
-            add_check(p.patient_id, "blood", 75, _blood_items(hb=13.6, wbc=6.0, plt=240, glu=5.5, chol=5.1), "Blood - borderline lipids (Amber)")
-            add_check(p.patient_id, "blood", 45, _blood_items(hb=14.0, wbc=6.3, plt=250, glu=5.1, chol=4.6), "Blood - normal (Green)")
-            add_check(p.patient_id, "blood", 5, _blood_items(hb=14.1, wbc=6.4, plt=255, glu=4.9, chol=4.7), "Blood - stable normal (Green)")
+            add_check(
+                p.patient_id,
+                "blood",
+                75,
+                _blood_items(hb=13.6, wbc=6.0, plt=240, glu=5.5, chol=5.1),
+                "Blood - borderline lipids (Amber)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                45,
+                _blood_items(hb=14.0, wbc=6.3, plt=250, glu=5.1, chol=4.6),
+                "Blood - normal (Green)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                5,
+                _blood_items(hb=14.1, wbc=6.4, plt=255, glu=4.9, chol=4.7),
+                "Blood - stable normal (Green)",
+            )
 
         elif group == 1:
             # Stable Amber: avoid any Red; mild hypertension persists.
-            add_check(p.patient_id, "physicals", 90, _physicals_items(175, 50.0, 118, 78), "Physicals - low-normal weight (Green)")
-            add_check(p.patient_id, "physicals", 60, _physicals_items(175, 72.0, 135, 86), "Physicals - high-normal BP (Green)")
-            add_check(p.patient_id, "physicals", 30, _physicals_items(175, 70.0, 142, 91), "Physicals - elevated BP (Amber)")
-            add_check(p.patient_id, "physicals", 10, _physicals_items(175, 71.0, 150, 95), "Physicals - persistent hypertension (Amber)")
+            add_check(
+                p.patient_id,
+                "physicals",
+                90,
+                _physicals_items(175, 50.0, 118, 78),
+                "Physicals - low-normal weight (Green)",
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                60,
+                _physicals_items(175, 72.0, 135, 86),
+                "Physicals - high-normal BP (Green)",
+            )
+            add_check(
+                p.patient_id, "physicals", 30, _physicals_items(175, 70.0, 142, 91), "Physicals - elevated BP (Amber)"
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                10,
+                _physicals_items(175, 71.0, 150, 95),
+                "Physicals - persistent hypertension (Amber)",
+            )
 
-            add_check(p.patient_id, "blood", 75, _blood_items(hb=13.9, wbc=6.1, plt=230, glu=5.6, chol=5.3), "Blood - borderline (Amber)")
-            add_check(p.patient_id, "blood", 45, _blood_items(hb=14.2, wbc=6.6, plt=255, glu=5.2, chol=4.7), "Blood - normal (Green)")
-            add_check(p.patient_id, "blood", 5, _blood_items(hb=14.0, wbc=6.4, plt=250, glu=5.8, chol=5.4), "Blood - mild dyslipidemia (Amber)")
+            add_check(
+                p.patient_id,
+                "blood",
+                75,
+                _blood_items(hb=13.9, wbc=6.1, plt=230, glu=5.6, chol=5.3),
+                "Blood - borderline (Amber)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                45,
+                _blood_items(hb=14.2, wbc=6.6, plt=255, glu=5.2, chol=4.7),
+                "Blood - normal (Green)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                5,
+                _blood_items(hb=14.0, wbc=6.4, plt=250, glu=5.8, chol=5.4),
+                "Blood - mild dyslipidemia (Amber)",
+            )
 
         elif group == 2:
             # Improving to Green: early Red -> later Green.
-            add_check(p.patient_id, "physicals", 90, _physicals_items(175, 125.0, 170, 110), "Physicals - obesity & stage-2 HTN (Red)")
-            add_check(p.patient_id, "physicals", 60, _physicals_items(175, 105.0, 145, 95), "Physicals - improving BP/weight (Amber)")
-            add_check(p.patient_id, "physicals", 30, _physicals_items(175, 95.0, 136, 88), "Physicals - near-normal BP (Green)")
-            add_check(p.patient_id, "physicals", 10, _physicals_items(175, 90.0, 124, 80), "Physicals - controlled (Green)")
+            add_check(
+                p.patient_id,
+                "physicals",
+                90,
+                _physicals_items(175, 125.0, 170, 110),
+                "Physicals - obesity & stage-2 HTN (Red)",
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                60,
+                _physicals_items(175, 105.0, 145, 95),
+                "Physicals - improving BP/weight (Amber)",
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                30,
+                _physicals_items(175, 95.0, 136, 88),
+                "Physicals - near-normal BP (Green)",
+            )
+            add_check(
+                p.patient_id, "physicals", 10, _physicals_items(175, 90.0, 124, 80), "Physicals - controlled (Green)"
+            )
 
-            add_check(p.patient_id, "blood", 75, _blood_items(hb=10.8, wbc=12.2, plt=120, glu=7.2, chol=6.7), "Blood - multiple abnormalities (Red)")
-            add_check(p.patient_id, "blood", 45, _blood_items(hb=12.2, wbc=11.5, plt=160, glu=5.9, chol=5.3), "Blood - improving (Amber)")
-            add_check(p.patient_id, "blood", 5, _blood_items(hb=13.8, wbc=6.8, plt=220, glu=5.1, chol=4.6), "Blood - normalized (Green)")
+            add_check(
+                p.patient_id,
+                "blood",
+                75,
+                _blood_items(hb=10.8, wbc=12.2, plt=120, glu=7.2, chol=6.7),
+                "Blood - multiple abnormalities (Red)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                45,
+                _blood_items(hb=12.2, wbc=11.5, plt=160, glu=5.9, chol=5.3),
+                "Blood - improving (Amber)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                5,
+                _blood_items(hb=13.8, wbc=6.8, plt=220, glu=5.1, chol=4.6),
+                "Blood - normalized (Green)",
+            )
 
         elif group == 3:
             # Improving to Amber: early Red -> later Amber (no Red at latest).
-            add_check(p.patient_id, "physicals", 90, _physicals_items(175, 122.0, 182, 121), "Physicals - hypertensive crisis (Red)")
-            add_check(p.patient_id, "physicals", 60, _physicals_items(175, 110.0, 160, 100), "Physicals - improving but high (Amber)")
-            add_check(p.patient_id, "physicals", 30, _physicals_items(175, 100.0, 142, 92), "Physicals - stage-1 HTN (Amber)")
-            add_check(p.patient_id, "physicals", 10, _physicals_items(175, 98.0, 145, 95), "Physicals - persistent stage-1 HTN (Amber)")
+            add_check(
+                p.patient_id,
+                "physicals",
+                90,
+                _physicals_items(175, 122.0, 182, 121),
+                "Physicals - hypertensive crisis (Red)",
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                60,
+                _physicals_items(175, 110.0, 160, 100),
+                "Physicals - improving but high (Amber)",
+            )
+            add_check(
+                p.patient_id, "physicals", 30, _physicals_items(175, 100.0, 142, 92), "Physicals - stage-1 HTN (Amber)"
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                10,
+                _physicals_items(175, 98.0, 145, 95),
+                "Physicals - persistent stage-1 HTN (Amber)",
+            )
 
-            add_check(p.patient_id, "blood", 75, _blood_items(hb=10.9, wbc=12.0, plt=130, glu=7.1, chol=6.6), "Blood - severe abnormalities (Red)")
-            add_check(p.patient_id, "blood", 45, _blood_items(hb=12.1, wbc=11.3, plt=155, glu=5.9, chol=5.4), "Blood - improving (Amber)")
-            add_check(p.patient_id, "blood", 5, _blood_items(hb=12.4, wbc=10.8, plt=170, glu=5.7, chol=5.2), "Blood - stable borderline (Amber)")
+            add_check(
+                p.patient_id,
+                "blood",
+                75,
+                _blood_items(hb=10.9, wbc=12.0, plt=130, glu=7.1, chol=6.6),
+                "Blood - severe abnormalities (Red)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                45,
+                _blood_items(hb=12.1, wbc=11.3, plt=155, glu=5.9, chol=5.4),
+                "Blood - improving (Amber)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                5,
+                _blood_items(hb=12.4, wbc=10.8, plt=170, glu=5.7, chol=5.2),
+                "Blood - stable borderline (Amber)",
+            )
 
         elif group == 4:
             # Worsening to Amber: start Green, end Amber (avoid Red latest).
             add_check(p.patient_id, "physicals", 90, _physicals_items(175, 72.0, 120, 78), "Physicals - normal (Green)")
-            add_check(p.patient_id, "physicals", 60, _physicals_items(175, 80.0, 130, 86), "Physicals - high-normal (Green)")
-            add_check(p.patient_id, "physicals", 30, _physicals_items(175, 92.0, 140, 90), "Physicals - elevated BP (Amber)")
-            add_check(p.patient_id, "physicals", 10, _physicals_items(175, 95.0, 150, 96), "Physicals - worsening hypertension (Amber)")
+            add_check(
+                p.patient_id, "physicals", 60, _physicals_items(175, 80.0, 130, 86), "Physicals - high-normal (Green)"
+            )
+            add_check(
+                p.patient_id, "physicals", 30, _physicals_items(175, 92.0, 140, 90), "Physicals - elevated BP (Amber)"
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                10,
+                _physicals_items(175, 95.0, 150, 96),
+                "Physicals - worsening hypertension (Amber)",
+            )
 
-            add_check(p.patient_id, "blood", 75, _blood_items(hb=13.8, wbc=6.0, plt=230, glu=5.0, chol=4.6), "Blood - normal (Green)")
-            add_check(p.patient_id, "blood", 45, _blood_items(hb=13.7, wbc=7.5, plt=225, glu=5.5, chol=4.9), "Blood - borderline (Green)")
-            add_check(p.patient_id, "blood", 5, _blood_items(hb=13.5, wbc=11.5, plt=160, glu=5.8, chol=5.4), "Blood - trending worse (Amber)")
+            add_check(
+                p.patient_id,
+                "blood",
+                75,
+                _blood_items(hb=13.8, wbc=6.0, plt=230, glu=5.0, chol=4.6),
+                "Blood - normal (Green)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                45,
+                _blood_items(hb=13.7, wbc=7.5, plt=225, glu=5.5, chol=4.9),
+                "Blood - borderline (Green)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                5,
+                _blood_items(hb=13.5, wbc=11.5, plt=160, glu=5.8, chol=5.4),
+                "Blood - trending worse (Amber)",
+            )
 
         else:  # group == 5
             # Worsening to Red: start Green, end Red.
             add_check(p.patient_id, "physicals", 90, _physicals_items(175, 70.0, 118, 78), "Physicals - normal (Green)")
-            add_check(p.patient_id, "physicals", 60, _physicals_items(175, 85.0, 136, 88), "Physicals - high-normal (Green)")
-            add_check(p.patient_id, "physicals", 30, _physicals_items(175, 96.0, 152, 96), "Physicals - stage-1 HTN (Amber)")
-            add_check(p.patient_id, "physicals", 10, _physicals_items(175, 102.0, 182, 121), "Physicals - hypertensive crisis (Red)")
+            add_check(
+                p.patient_id, "physicals", 60, _physicals_items(175, 85.0, 136, 88), "Physicals - high-normal (Green)"
+            )
+            add_check(
+                p.patient_id, "physicals", 30, _physicals_items(175, 96.0, 152, 96), "Physicals - stage-1 HTN (Amber)"
+            )
+            add_check(
+                p.patient_id,
+                "physicals",
+                10,
+                _physicals_items(175, 102.0, 182, 121),
+                "Physicals - hypertensive crisis (Red)",
+            )
 
-            add_check(p.patient_id, "blood", 75, _blood_items(hb=14.0, wbc=6.4, plt=250, glu=5.1, chol=4.7), "Blood - normal (Green)")
-            add_check(p.patient_id, "blood", 45, _blood_items(hb=13.2, wbc=7.8, plt=220, glu=5.6, chol=5.1), "Blood - borderline (Amber)")
-            add_check(p.patient_id, "blood", 5, _blood_items(hb=10.5, wbc=12.5, plt=120, glu=7.4, chol=6.8), "Blood - abnormalities detected (Red)")
+            add_check(
+                p.patient_id,
+                "blood",
+                75,
+                _blood_items(hb=14.0, wbc=6.4, plt=250, glu=5.1, chol=4.7),
+                "Blood - normal (Green)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                45,
+                _blood_items(hb=13.2, wbc=7.8, plt=220, glu=5.6, chol=5.1),
+                "Blood - borderline (Amber)",
+            )
+            add_check(
+                p.patient_id,
+                "blood",
+                5,
+                _blood_items(hb=10.5, wbc=12.5, plt=120, glu=7.4, chol=6.8),
+                "Blood - abnormalities detected (Red)",
+            )
 
 
 def _seed_medical_check_templates(storage: DbStorage) -> None:

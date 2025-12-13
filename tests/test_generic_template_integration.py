@@ -50,9 +50,7 @@ def test_generic_post_accepts_decimal_and_persists(client: TestClient, create_pa
         "param_value_0": "75.5",
     }
 
-    resp_post = client.post(
-        f"/patients/{patient_id}/medical_checks", data=form, follow_redirects=False
-    )
+    resp_post = client.post(f"/patients/{patient_id}/medical_checks", data=form, follow_redirects=False)
     assert resp_post.status_code in (303, 307)
 
     # Read back via API and verify item value is persisted as provided

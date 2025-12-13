@@ -87,7 +87,7 @@ async def create_medical_check(
     mc = MedicalCheck(
         patient_id=patient_id,
         check_date=date,
-        type=_resolve_medical_check_type(type), # Todo: should this be medical_check_name_id?
+        type=_resolve_medical_check_type(type),  # Todo: should this be medical_check_name_id?
         status=MedicalCheckStatus(status),
         notes=notes,
         medical_check_items=medical_check_items,

@@ -1,7 +1,8 @@
 from datetime import date
+
 from pydantic import BaseModel, Field
 
-from src.models.enums import AllergySeverity, AllergyStatus, AllergyCategory
+from src.models.enums import AllergyCategory, AllergySeverity, AllergyStatus
 
 
 class Allergy(BaseModel):

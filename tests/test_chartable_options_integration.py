@@ -40,7 +40,7 @@ def test_chartable_options_happy_path(client: TestClient, create_patient):
     assert isinstance(data.get("records"), list)
     labels = [r.get("label") for r in data["records"]]
     # Should contain our Vitals -> weight option
-    assert any(l and "Vitals -> weight" in l for l in labels)
+    assert any("Vitals -> weight" in label for label in labels)
 
 
 def test_chartable_options_empty_when_no_items(client: TestClient, create_patient):

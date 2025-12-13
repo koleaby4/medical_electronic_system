@@ -1,15 +1,15 @@
 from datetime import date
 
-from fastapi import APIRouter, Request, Form, Depends, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
-from src.models.enums import Title, Sex
-from src.models.patient import Patient
 from src.models.address import Address
 from src.models.address_utils import build_address
+from src.models.enums import Sex, Title
+from src.models.patient import Patient
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")

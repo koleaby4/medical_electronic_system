@@ -12,7 +12,7 @@ uv sync
 echo.
 
 echo Applying database migrations (SQLite runner)...
-uv run python .\setup_db.py
+uv run python .\migrate.py
 
 echo.
 

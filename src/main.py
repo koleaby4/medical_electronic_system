@@ -1,12 +1,12 @@
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from settings import Settings
 from src.data_access.db_storage import DbStorage
-from src.routes import root, patients, medical_checks, medical_check_types
-import uvicorn
+from src.routes import medical_check_types, medical_checks, patients, root
 
 
 @asynccontextmanager

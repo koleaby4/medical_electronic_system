@@ -13,14 +13,14 @@ class MedicalChecksStorage(BaseStorage):
         self.items = MedicalCheckItemsStorage(conn)
 
     def save(
-            self,
-            *,
-            patient_id: int,
-            check_type: int | str,
-            check_date,
-            status: str,
-            medical_check_items: list[MedicalCheckItem],
-            notes: str | None = None,
+        self,
+        *,
+        patient_id: int,
+        check_type: int | str,
+        check_date,
+        status: str,
+        medical_check_items: list[MedicalCheckItem],
+        notes: str | None = None,
     ) -> int:
         # Resolve check_type to type_id (PK from medical_check_types) if provided as a string
         check_type_id: int

@@ -1,11 +1,11 @@
+import re
 from collections.abc import Generator
 from pathlib import Path
-import re
 
 import pytest
 from fastapi.testclient import TestClient
 
-from setup_db import create_tables
+from migrate import apply_migrations
 from src.main import create_app
 
 
@@ -18,7 +18,7 @@ def temp_db_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 @pytest.fixture()
 def migrated_db(temp_db_path: Path) -> Path:
-    create_tables(str(temp_db_path))
+    apply_migrations(str(temp_db_path))
     return temp_db_path
 
 

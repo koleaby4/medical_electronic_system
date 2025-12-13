@@ -1,10 +1,10 @@
+import sqlite3
 from contextlib import suppress
 from pathlib import Path
-import sqlite3
 
-from src.data_access.patients import PatientsStorage
-from src.data_access.medical_checks import MedicalChecksStorage
 from src.data_access.medical_check_types import MedicalCheckTypesStorage
+from src.data_access.medical_checks import MedicalChecksStorage
+from src.data_access.patients import PatientsStorage
 
 
 class DbStorage:

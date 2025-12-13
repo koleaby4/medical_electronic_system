@@ -1,8 +1,9 @@
 from datetime import date
+
 from pydantic import BaseModel, field_validator
 
-from src.models.enums import Title, Sex
 from src.models.address import Address
+from src.models.enums import Sex, Title
 
 
 class Patient(BaseModel):

@@ -1,6 +1,7 @@
 from datetime import date
 
 from pydantic import BaseModel, Field, field_validator
+
 from src.models.enums import MedicalCheckStatus
 from src.models.medical_check_item import MedicalCheckItem
 

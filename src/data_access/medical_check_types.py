@@ -4,8 +4,8 @@ import sqlite3
 
 from src.data_access.base import BaseStorage
 from src.models.medical_check_type import (
-    MedicalCheckTypeItem,
     MedicalCheckType,
+    MedicalCheckTypeItem,
 )
 
 

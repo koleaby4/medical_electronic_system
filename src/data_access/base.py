@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
 import sqlite3
+from typing import Any
 
 
 class BaseStorage:

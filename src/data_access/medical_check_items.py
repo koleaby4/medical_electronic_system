@@ -1,7 +1,8 @@
 import sqlite3
+import uuid
+
 from src.data_access.base import BaseStorage
 from src.models.medical_check_item import MedicalCheckItem
-import uuid
 
 
 class MedicalCheckItemsStorage(BaseStorage):

@@ -1,10 +1,9 @@
 import re
 from typing import Any
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_storage
