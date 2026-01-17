@@ -19,7 +19,7 @@ templates = Jinja2Templates(directory="src/templates")
 async def list_patients(
     request: Request,
     storage: DbStorage = Depends(get_storage),
-    format: str = "html",  # Optional legacy param: ?format=json for API
+    format: str = "html"
 ):
     patients = storage.patients.get_all_patients()
 
