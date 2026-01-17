@@ -31,7 +31,7 @@ class MedicalCheckTemplatesStorage(BaseStorage):
                 """
             )
 
-            check_types_by_id: dict[int, MedicalCheckTemplate] = {}
+            check_templates_by_id: dict[int, MedicalCheckTemplate] = {}
 
             for (
                 type_id,
@@ -42,8 +42,8 @@ class MedicalCheckTemplatesStorage(BaseStorage):
                 item_placeholder,
             ) in cur.fetchall():
                 tid = int(type_id)
-                if tid not in check_types_by_id:
-                    check_types_by_id[tid] = MedicalCheckTemplate(
+                if tid not in check_templates_by_id:
+                    check_templates_by_id[tid] = MedicalCheckTemplate(
                         type_id=tid,
                         name=type_name,
                         items=[],
@@ -51,7 +51,7 @@ class MedicalCheckTemplatesStorage(BaseStorage):
 
                 # When there is no item (LEFT JOIN miss), item_name will be None
                 if item_name:
-                    check_types_by_id[tid].items.append(
+                    check_templates_by_id[tid].items.append(
                         MedicalCheckTemplateItem(
                             name=(item_name or ""),
                             units=(item_units or ""),
@@ -62,9 +62,9 @@ class MedicalCheckTemplatesStorage(BaseStorage):
         finally:
             cur.close()
 
-        return list(check_types_by_id.values())
+        return list(check_templates_by_id.values())
 
-    def get_check_type(self, *, type_id: int) -> MedicalCheckTemplate | None:
+    def get_template(self, *, type_id: int) -> MedicalCheckTemplate | None:
         cur = self.conn.cursor()
         try:
             cur.execute(

@@ -190,27 +190,6 @@ def _generate_value_for_item(name: str, input_type: str, placeholder: str) -> st
 
     return values.get(param, f"{random.uniform(0, 100):.1f}")
 
-
-def _build_items_for_check_type(db: DbStorage, check_name: str) -> list[MedicalCheckItem] | None:
-    try:
-        medical_check_templates = db.medical_check_templates.list_medical_check_templates()
-        match_t = next((t for t in medical_check_templates if t.name == check_name), None)
-        if not match_t:
-            return None
-
-        full = db.medical_check_templates.get_check_type(type_id=match_t.type_id)
-        if not full:
-            return None
-
-        items: list[MedicalCheckItem] = []
-        for ti in full.items:
-            value = _generate_value_for_item(ti.name, (ti.input_type or "number").lower(), ti.placeholder)
-            items.append(MedicalCheckItem(name=ti.name, units=ti.units, value=str(value)))
-        return items
-    except Exception:
-        return None
-
-
 def _physicals_items(height_cm: int, weight_kg: float, systolic: int, diastolic: int) -> list[MedicalCheckItem]:
     return [
         MedicalCheckItem(name="height", units="cm", value=str(height_cm)),
@@ -330,11 +309,11 @@ def _get_check_status(medical_check_items: list[MedicalCheckItem]) -> MedicalChe
 def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
     today = date.today()
 
-    def add_check(patient_id: int, check_type: str, offset_days: int, items: list[MedicalCheckItem], notes: str):
+    def add_check(patient_id: int, check_template: str, offset_days: int, items: list[MedicalCheckItem], notes: str):
         status = _get_check_status(items)
         db.medical_checks.save(
             patient_id=patient_id,
-            check_type=check_type,
+            check_template=check_template,
             check_date=today - timedelta(days=offset_days),
             status=status.value,
             medical_check_items=items,

@@ -10,7 +10,7 @@ class MedicalCheck(BaseModel):
     check_id: int | None = Field(default=None, description="DB identifier")
     patient_id: int | None = Field(default=None, description="Patient identifier", exclude=True)
     check_date: date = Field(..., description="Date of the medical check")
-    type: str = Field(..., description="Type of medical check (e.g., blood, physicals, colonoscopy, etc.)")
+    template_name: str = Field(..., description="Name of the medical check template (e.g., blood, physicals, colonoscopy, etc.)")
     status: MedicalCheckStatus = Field(..., description="Clinical status of the check outcome (Red | Amber | Green)")
     notes: str | None = Field(None, description="Optional notes about the check")
     medical_check_items: list[MedicalCheckItem] = Field(default_factory=list)

@@ -89,7 +89,7 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
 
 @router.get("/medical_check_templates/{type_id}/view", include_in_schema=False)
 async def view_medical_check_template(type_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
-    if mct := storage.medical_check_templates.get_check_type(type_id=type_id):
+    if mct := storage.medical_check_templates.get_template(type_id=type_id):
         return templates.TemplateResponse(
             "upsert_medical_check_template.html",
             {"request": request, "active_page": "admin", "template": mct},
@@ -120,7 +120,7 @@ async def create_medical_check_template_json(request: Request, storage: DbStorag
             )
         )
     type_id = storage.medical_check_templates.upsert(template_id=None, check_name=name, items=items)
-    created = storage.medical_check_templates.get_check_type(type_id=type_id)
+    created = storage.medical_check_templates.get_template(type_id=type_id)
     headers = {"Location": f"/admin/medical_check_templates/{type_id}"}
     return JSONResponse(status_code=201, content=created.model_dump() if created else {}, headers=headers)
 
@@ -130,7 +130,7 @@ async def create_medical_check_template_json(request: Request, storage: DbStorag
 async def get_medical_check_template_json(
     type_id: int, storage: DbStorage = Depends(get_storage)
 ) -> MedicalCheckTemplate:
-    mct = storage.medical_check_templates.get_check_type(type_id=type_id)
+    mct = storage.medical_check_templates.get_template(type_id=type_id)
     if not mct:
         raise HTTPException(status_code=404, detail="Medical check template not found")
     return mct
@@ -145,7 +145,7 @@ async def update_medical_check_template_json(type_id: int, request: Request, sto
 # JSON API: delete a medical check template
 @router.delete("/medical_check_templates/{type_id}")
 async def delete_medical_check_template_json(type_id: int, storage: DbStorage = Depends(get_storage)):
-    if not storage.medical_check_templates.get_check_type(type_id=type_id):
+    if not storage.medical_check_templates.get_template(type_id=type_id):
         return JSONResponse(status_code=204, content=None)
 
     try:

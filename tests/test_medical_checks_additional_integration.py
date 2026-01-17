@@ -81,7 +81,7 @@ def test_timeseries_unknown_item_returns_empty_records(client: TestClient, creat
 
     resp = client.get(
         f"/patients/{patient_id}/medical_checks/timeseries",
-        params={"check_type": "physicals", "item_name": "height"},
+        params={"check_template": "physicals", "item_name": "height"},
     )
     assert resp.status_code == 200
     data = resp.json()

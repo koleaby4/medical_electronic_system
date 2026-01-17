@@ -16,16 +16,16 @@ class MedicalChecksStorage(BaseStorage):
         self,
         *,
         patient_id: int,
-        check_type: int | str,
+        check_template: int | str,
         check_date,
         status: str,
         medical_check_items: list[MedicalCheckItem],
         notes: str | None = None,
     ) -> int:
-        # Resolve check_type to type_id (PK from medical_check_templates) if provided as a string
-        check_type_id: int
-        if isinstance(check_type, int):
-            check_type_id = check_type
+        # Resolve check_template to template_id (PK from medical_check_templates) if provided as a string
+        template_id: int
+        if isinstance(check_template, int):
+            template_id = check_template
         else:
             cur_lookup = self.conn.execute(
                 """
@@ -33,11 +33,11 @@ class MedicalChecksStorage(BaseStorage):
                 FROM medical_check_templates
                 WHERE name = ? COLLATE NOCASE
                 """,
-                [check_type],
+                [check_template],
             )
 
             if row := cur_lookup.fetchone():
-                check_type_id = int(row[0])
+                template_id = int(row[0])
             else:
                 # Auto-insert missing medical_check_template for convenience
                 cur_ins = self.conn.execute(
@@ -45,16 +45,16 @@ class MedicalChecksStorage(BaseStorage):
                     INSERT INTO medical_check_templates (name)
                     VALUES (?)
                     """,
-                    [check_type],
+                    [check_template],
                 )
-                check_type_id = int(cur_ins.lastrowid)
+                template_id = int(cur_ins.lastrowid)
 
         cur = self.conn.execute(
             """
             INSERT INTO medical_checks (patient_id, type_id, check_date, status, notes)
             VALUES (?, ?, ?, ?, ?)
             """,
-            [patient_id, check_type_id, check_date, status, notes],
+            [patient_id, template_id, check_date, status, notes],
         )
 
         check_id = int(cur.lastrowid)
@@ -70,7 +70,7 @@ class MedicalChecksStorage(BaseStorage):
                 """
                 SELECT mc.check_id,
                        mc.patient_id,
-                       n.name AS check_type,
+                       n.name AS check_template,
                        mc.check_date,
                        mc.status,
                        mc.notes
@@ -93,7 +93,7 @@ class MedicalChecksStorage(BaseStorage):
                 check_id=r.get("check_id"),
                 patient_id=r.get("patient_id"),
                 check_date=r.get("check_date"),
-                type=r.get("check_type"),
+                template_name=r.get("check_template"),
                 status=MedicalCheckStatus(r.get("status")),
                 notes=r.get("notes"),
                 medical_check_items=items,
@@ -109,7 +109,7 @@ class MedicalChecksStorage(BaseStorage):
                 """
                 SELECT mc.check_id,
                        mc.patient_id,
-                       n.name AS check_type,
+                       n.name AS check_template,
                        mc.check_date,
                        mc.status,
                        mc.notes
@@ -132,7 +132,7 @@ class MedicalChecksStorage(BaseStorage):
             check_id=r.get("check_id"),
             patient_id=r.get("patient_id"),
             check_date=r.get("check_date"),
-            type=r.get("check_type"),
+            template_name=r.get("check_template"),
             status=MedicalCheckStatus(r.get("status")),
             notes=r.get("notes"),
             medical_check_items=items,
@@ -164,7 +164,7 @@ class MedicalChecksStorage(BaseStorage):
         try:
             cur.execute(
                 """
-                SELECT n.name AS check_type,
+                SELECT n.name AS check_template,
                        ti.name  item_name,
                        n.name || ' -> ' || ti.name  label
                 FROM medical_check_templates n

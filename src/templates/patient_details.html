@@ -69,7 +69,7 @@
             const chartOption = document.getElementById('chartOption');
 
             // Hold available options for current patient (from backend)
-            // Array of {check_type, item_name, label}
+            // Array of {check_template, item_name, label}
             let chartableOptions = [];
 
             function render(records) {
@@ -93,9 +93,9 @@
                         card.title = 'View details';
                     }
 
-                    const type = document.createElement('div');
-                    type.className = 'fw-bold text-truncate';
-                    type.textContent = r.type || '';
+                    const templateName = document.createElement('div');
+                    templateName.className = 'fw-bold text-truncate';
+                    templateName.textContent = r.template_name || '';
 
                     const date = document.createElement('div');
                     date.className = 'fw-bold ms-3';
@@ -110,7 +110,7 @@
                         card.classList.add('bg-success', 'text-white');
                     }
 
-                    card.append(type, date);
+                    card.append(templateName, date);
                     col.appendChild(card);
                     tiles.appendChild(col);
                 }
@@ -139,7 +139,7 @@
             // Redirect to generic add page based on selected type
             document.getElementById('addRecordBtn').addEventListener('click', () => {
                 const selectedTemplateId = document.getElementById('checkType').value;
-                window.location.href = `/patients/${patientId}/medical_checks/new?check_type_id=${encodeURIComponent(selectedTemplateId)}`;
+                window.location.href = `/patients/${patientId}/medical_checks/new?check_template_id=${encodeURIComponent(selectedTemplateId)}`;
             });
 
             // --- Dynamic chart tiles ---
@@ -182,8 +182,8 @@
                 chartOption.innerHTML = '';
                 for (const o of chartableOptions) {
                     const opt = document.createElement('option');
-                    opt.value = JSON.stringify({ type: o.check_type, name: o.item_name });
-                    opt.textContent = o.label || `${o.check_type} -> ${o.item_name}`;
+                    opt.value = JSON.stringify({ type: o.check_template, name: o.item_name });
+                    opt.textContent = o.label || `${o.check_template} -> ${o.item_name}`;
                     chartOption.appendChild(opt);
                 }
                 if (current) chartOption.value = current;
@@ -197,7 +197,7 @@
 
             async function fetchSeries(type, name) {
                 const url = new URL(window.location.origin + `/patients/${patientId}/medical_checks/timeseries`);
-                url.searchParams.set('check_type', type);
+                url.searchParams.set('check_template', type);
                 url.searchParams.set('item_name', name);
                 const resp = await fetch(url);
                 if (!resp.ok) throw new Error('Failed to load time series');
@@ -293,7 +293,7 @@
 
             function tryAutoAddDefaultPhysicalsCharts() {
                 const type = 'physicals';
-                const available = chartableOptions.filter(o => String(o.check_type).toLowerCase() === type);
+                const available = chartableOptions.filter(o => String(o.check_template).toLowerCase() === type);
                 if (available.length === 0) return;
                 const want = [
                     'weight',
@@ -303,7 +303,7 @@
                 ];
                 for (const desired of want) {
                     const match = available.find(o => String(o.item_name).trim().toLowerCase() === desired);
-                    if (match) addTileWith(match.check_type, match.item_name);
+                    if (match) addTileWith(match.check_template, match.item_name);
                 }
             }
         });

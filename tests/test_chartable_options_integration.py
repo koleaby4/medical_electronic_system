@@ -15,9 +15,9 @@ def _create_template_with_numeric(client: TestClient, name: str = "Vitals") -> N
     assert resp.status_code in (303, 307)
 
 
-def _create_check_with_item(client: TestClient, patient_id: int, check_type: str = "Vitals") -> None:
+def _create_check_with_item(client: TestClient, patient_id: int, check_template: str = "Vitals") -> None:
     form = {
-        "type": check_type,
+        "type": check_template,
         "date": date.today().isoformat(),
         "status": "Green",
         "param_count": 1,

@@ -3,9 +3,9 @@
 <form id="medicalCheckForm" class="vstack gap-3" method="post" action="/patients/{{ patient.patient_id }}/medical_checks">
     <div class="row g-2 align-items-center">
         <div class="col-sm-4">
-            <label for="checkType" class="form-label mb-0">Check type</label>
-            <input id="checkType" class="form-control" value="{{ check_type }}" disabled>
-            <input type="hidden" name="type" value="{{ check_type }}">
+            <label for="checkType" class="form-label mb-0">Check template</label>
+            <input id="checkType" class="form-control" value="{{ check_template }}" disabled>
+            <input type="hidden" name="type" value="{{ check_template }}">
         </div>
         <div class="col-sm-4">
             <label for="checkDate" class="form-label mb-0">Date</label>

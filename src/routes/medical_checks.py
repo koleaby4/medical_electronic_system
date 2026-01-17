@@ -17,8 +17,8 @@ templates = Jinja2Templates(directory="src/templates")
 
 
 # Todo: refactor this?
-def _resolve_medical_check_type(raw: str) -> str:
-    """Resolve a user-submitted check type to a canonical string.
+def _resolve_medical_check_template(raw: str) -> str:
+    """Resolve a user-submitted check template to a canonical string.
 
     - Maps common aliases to canonical strings: "physicals", "blood", "colonoscopy".
     - Otherwise, returns the trimmed input to support custom names.
@@ -77,7 +77,7 @@ async def create_medical_check(
             mc = MedicalCheck(
                 patient_id=patient_id,
                 check_date=data.get("observed_at") or data.get("check_date") or date,
-                type=_resolve_medical_check_type(str(data.get("type") or data.get("type_id") or type)),
+                template_name=_resolve_medical_check_template(str(data.get("type") or data.get("type_id") or type)),
                 status=MedicalCheckStatus(str(data.get("status") or status)),
                 notes=data.get("notes"),
                 medical_check_items=medical_check_items,
@@ -87,7 +87,7 @@ async def create_medical_check(
 
         check_id = storage.medical_checks.save(
             patient_id=patient_id,
-            check_type=mc.type,
+            check_template=mc.template_name,
             check_date=mc.check_date,
             status=mc.status.value,
             medical_check_items=mc.medical_check_items,
@@ -119,7 +119,7 @@ async def create_medical_check(
     mc = MedicalCheck(
         patient_id=patient_id,
         check_date=date,
-        type=_resolve_medical_check_type(type),
+        template_name=_resolve_medical_check_template(type),
         status=MedicalCheckStatus(status),
         notes=notes,
         medical_check_items=medical_check_items,
@@ -127,7 +127,7 @@ async def create_medical_check(
 
     storage.medical_checks.save(
         patient_id=patient_id,
-        check_type=mc.type,
+        check_template=mc.template_name,
         check_date=mc.check_date,
         status=mc.status.value,
         medical_check_items=mc.medical_check_items,
@@ -141,27 +141,27 @@ async def create_medical_check(
 async def new_medical_check(
     request: Request,
     patient_id: int,
-    check_type_id: int | None = None,
+    check_template_id: int | None = None,
     storage: DbStorage = Depends(get_storage),
 ):
     """Generalized new medical check page based on medical check type items.
 
     Query param:
-      - check_type_id: which type to use; if not provided, the first type (by name) is used.
+      - check_template_id: which type to use; if not provided, the first type (by name) is used.
     """
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
-    available_check_types: list[MedicalCheckTemplate] = storage.medical_check_templates.list_medical_check_templates()
-    if not available_check_types:
-        raise HTTPException(status_code=404, detail="No medical check types found")
+    available_templates: list[MedicalCheckTemplate] = storage.medical_check_templates.list_medical_check_templates()
+    if not available_templates:
+        raise HTTPException(status_code=404, detail="No medical check templates found")
 
     selected_template: MedicalCheckTemplate | None = None
-    if check_type_id is not None:
-        selected_template = storage.medical_check_templates.get_check_type(type_id=check_type_id)
+    if check_template_id is not None:
+        selected_template = storage.medical_check_templates.get_template(type_id=check_template_id)
     if selected_template is None:
         # fallback to first available
-        selected_template = storage.medical_check_templates.get_check_type(type_id=available_check_types[0].type_id)  # type: ignore[arg-type]
+        selected_template = storage.medical_check_templates.get_template(type_id=available_templates[0].type_id)  # type: ignore[arg-type]
 
     if selected_template is None:
         raise HTTPException(status_code=404, detail="Selected medical check type not found")
@@ -194,9 +194,8 @@ async def new_medical_check(
         "create_medical_check_generic.html",
         {
             "request": request,
-            "active_page": "patients",
             "patient": patient,
-            "check_type": selected_template.name,
+            "check_template": selected_template.name,
             "parameters": parameters,
         },
     )
@@ -205,7 +204,7 @@ async def new_medical_check(
 @router.get("/timeseries", response_model=None)
 async def get_timeseries(
     patient_id: int,
-    check_type: str,
+    check_template: str,
     item_name: str,
     storage: DbStorage = Depends(get_storage),
 ):
@@ -216,7 +215,7 @@ async def get_timeseries(
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
     series = storage.medical_checks.items.get_time_series(
-        patient_id=patient_id, check_type=check_type, item_name=item_name
+        patient_id=patient_id, check_template=check_template, item_name=item_name
     )
 
     return {"records": series}
@@ -226,7 +225,7 @@ async def get_timeseries(
 async def get_chartable_options(patient_id: int, storage: DbStorage = Depends(get_storage)):
     """
     Return list of chartable numeric options available for the patient.
-    Shape: {"records": [{"check_type": str, "item_name": str, "label": str}, ...]}
+    Shape: {"records": [{"check_template": str, "item_name": str, "label": str}, ...]}
     """
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")

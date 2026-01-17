@@ -44,9 +44,9 @@ class MedicalCheckItemsStorage(BaseStorage):
         finally:
             cur.close()
 
-    def get_time_series(self, *, patient_id: int, check_type: str, item_name: str) -> list[dict]:
+    def get_time_series(self, *, patient_id: int, check_template: str, item_name: str) -> list[dict]:
         """
-        Return a time series for the given patient, check_type and item name.
+        Return a time series for the given patient, check_template and item name.
         Each item: {date: YYYY-MM-DD, value: str, units: str}
         """
         cur = self.conn.cursor()
@@ -64,7 +64,7 @@ class MedicalCheckItemsStorage(BaseStorage):
                   AND mci.name = ?
                 ORDER BY mc.check_date, mc.check_id, mci.check_item_id
                 """,
-                [patient_id, check_type, item_name],
+                [patient_id, check_template, item_name],
             )
             return self._fetch_all_dicts(cur)
         finally:

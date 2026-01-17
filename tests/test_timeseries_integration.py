@@ -34,7 +34,7 @@ def test_timeseries_happy_path_returns_sorted_values(client: TestClient, create_
 
     resp = client.get(
         f"/patients/{patient_id}/medical_checks/timeseries",
-        params={"check_type": "physicals", "item_name": "weight"},
+        params={"check_template": "physicals", "item_name": "weight"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -58,7 +58,7 @@ def test_timeseries_happy_path_returns_sorted_values(client: TestClient, create_
 def test_timeseries_patient_not_found_returns_404(client: TestClient):
     resp = client.get(
         "/patients/9999/medical_checks/timeseries",
-        params={"check_type": "physicals", "item_name": "weight"},
+        params={"check_template": "physicals", "item_name": "weight"},
     )
     assert resp.status_code == 404
     body = resp.json()
