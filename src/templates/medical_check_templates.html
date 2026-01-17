@@ -20,7 +20,7 @@
       <tbody>
       {% if types and types|length > 0 %}
         {% for t in types %}
-          <tr data-href="/admin/medical_check_templates/{{ t.type_id }}/edit" style="cursor: pointer;">
+          <tr data-href="/admin/medical_check_templates/{{ t.type_id }}/view" style="cursor: pointer;">
             <td>{{ t.name }}</td>
             <td>
               {# Show comma-separated parameter names #}
@@ -53,7 +53,7 @@
       });
     });
 
-    // Make rows clickable to open edit page; ignore clicks on links/buttons (if any appear in future)
+    // Make rows clickable to open view page; ignore clicks on links/buttons (if any appear in future)
     document.querySelector('#typesTable tbody').addEventListener('click', function (e) {
       if (e.target.closest('a, button')) {
         return;

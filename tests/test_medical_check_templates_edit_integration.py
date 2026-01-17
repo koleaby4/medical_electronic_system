@@ -27,50 +27,49 @@ def test_edit_page_prefilled_and_update_via_html_form(client: TestClient):
         ],
     )
 
-    # Act: open edit page (HTML)
-    resp_edit = client.get(f"/admin/medical_check_templates/{type_id}/edit")
+    # Act: open view page (HTML)
+    resp_edit = client.get(f"/admin/medical_check_templates/{type_id}/view")
     assert resp_edit.status_code == 200
     html = resp_edit.text
 
     # Assert: form is prefilled
-    assert "Edit Medical Check Template" in html
-    assert 'name="check_name"' in html and 'value="Vitals"' in html
+    assert "View Medical Check Template" in html
+    assert "Vitals" in html
+    assert "form-control-plaintext" in html
+    assert "Cancel" not in html
     # Items rendered as rows with correct values
-    assert 'name="items[0][name]"' in html and 'value="weight"' in html
-    assert 'name="items[1][name]"' in html and 'value="note"' in html
+    assert "weight" in html
+    assert "note" in html
+    assert "kg" in html
+    assert "75.5" in html
+    assert "short_text" in html
 
-    # Act: submit HTML form to update name and replace items (remove second, change first)
+    # Act: submit HTML form to update name (should fail with 403)
     form = {
         "template_id": str(type_id),
         "check_name": "Vitals Updated",
-        # Keep only one item and change its properties
         "items[0][name]": "weight",
         "items[0][units]": "kg",
         "items[0][input_type]": "number",
         "items[0][placeholder]": "80.0",
     }
     resp_post = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
-    assert resp_post.status_code in (303, 307)
+    assert resp_post.status_code == 403
 
-    # Assert: JSON GET reflects updates and items are replaced (only one remains)
+    # Assert: JSON GET reflects NO updates
     resp_get = client.get(f"/admin/medical_check_templates/{type_id}")
     assert resp_get.status_code == 200
     data = resp_get.json()
-    assert data["name"] == "Vitals Updated"
-    items = data.get("items") or []
-    assert len(items) == 1
-    assert items[0]["name"] == "weight"
-    assert items[0]["units"] == "kg"
-    assert items[0]["input_type"] == "number"
-    assert items[0]["placeholder"] == "80.0"
+    assert data["name"] == "Vitals"
 
     # Assert: listing page shows updated comma-separated fields
     resp_list = client.get("/admin/medical_check_templates")
     assert resp_list.status_code == 200
     list_html = resp_list.text
-    # Name and single field visible in the table
-    assert "Vitals Updated" in list_html
-    assert ">weight<" in list_html or "weight" in list_html
+    # Name and items visible in the table
+    assert "Vitals" in list_html
+    assert "weight" in list_html
+    assert "note" in list_html
 
 
 def test_edit_replacing_with_more_items_and_order_preserved(client: TestClient):
@@ -83,7 +82,7 @@ def test_edit_replacing_with_more_items_and_order_preserved(client: TestClient):
         ],
     )
 
-    # Update via HTML form to have two items; ensure order is preserved as submitted
+    # Update via HTML form to have two items (should fail with 403)
     form = {
         "template_id": str(type_id),
         "check_name": "Exam",
@@ -97,10 +96,10 @@ def test_edit_replacing_with_more_items_and_order_preserved(client: TestClient):
         "items[1][placeholder]": "80",
     }
     resp_post = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
-    assert resp_post.status_code in (303, 307)
+    assert resp_post.status_code == 403
 
-    # Read back via JSON and verify two items in the order submitted
+    # Read back via JSON and verify items have NOT changed
     resp_get = client.get(f"/admin/medical_check_templates/{type_id}")
     assert resp_get.status_code == 200
     items = resp_get.json().get("items") or []
-    assert [i["name"] for i in items] == ["systolic", "diastolic"]
+    assert [i["name"] for i in items] == ["height"]

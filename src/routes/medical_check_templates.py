@@ -75,6 +75,9 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
     raw_id = (form.get("template_id") or "").strip()
     template_id = int(raw_id) if raw_id.isdigit() else None
 
+    if template_id is not None:
+        raise HTTPException(status_code=403, detail="Medical check templates are immutable and cannot be updated")
+
     storage.medical_check_templates.upsert(
         template_id=template_id,
         check_name=check_name,
@@ -84,8 +87,8 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
     return RedirectResponse(url="/admin/medical_check_templates", status_code=303)
 
 
-@router.get("/medical_check_templates/{type_id}/edit", include_in_schema=False)
-async def edit_medical_check_template(type_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
+@router.get("/medical_check_templates/{type_id}/view", include_in_schema=False)
+async def view_medical_check_template(type_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
     if mct := storage.medical_check_templates.get_check_type(type_id=type_id):
         return templates.TemplateResponse(
             "upsert_medical_check_template.html",
@@ -134,31 +137,7 @@ async def get_medical_check_template_json(type_id: int, storage: DbStorage = Dep
 # JSON API: update a medical check template (replace items)
 @router.put("/medical_check_templates/{type_id}")
 async def update_medical_check_template_json(type_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
-    if "application/json" not in (request.headers.get("content-type") or ""):
-        raise HTTPException(status_code=415, detail="Content-Type must be application/json")
-    if not storage.medical_check_templates.get_check_type(type_id=type_id):
-        raise HTTPException(status_code=404, detail="Medical check template not found")
-
-    data = await request.json()
-    name = (data.get("name") or "").strip()
-    if not name:
-        raise HTTPException(status_code=422, detail="Field 'name' is required")
-
-    items_payload = data.get("items", [])
-    items: list[MedicalCheckTemplateItem] = []
-
-    for i in items_payload:
-        items.append(
-            MedicalCheckTemplateItem(
-                name=(i.get("name") or "").strip(),
-                units=(i.get("units") or "").strip(),
-                input_type=(i.get("input_type") or "number").strip(),
-                placeholder=(i.get("placeholder") or "").strip(),
-            )
-        )
-    storage.medical_check_templates.upsert(template_id=type_id, check_name=name, items=items)
-    updated = storage.medical_check_templates.get_check_type(type_id=type_id)
-    return updated
+    raise HTTPException(status_code=403, detail="Medical check templates are immutable and cannot be updated")
 
 
 # JSON API: delete a medical check template

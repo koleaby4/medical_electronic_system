@@ -1,6 +1,6 @@
 {% extends '_base.html' %}
 {% if template %}
-  {% set page_title = "Edit Medical Check Template" %}
+  {% set page_title = "View Medical Check Template" %}
 {% else %}
   {% set page_title = "Create Medical Check Template" %}
 {% endif %}
@@ -16,9 +16,15 @@
 
   <div class="card">
     <div class="card-body">
-      <div class="mb-0">
-        <label for="checkName" class="form-label">Template name</label>
-        <input type="text" class="form-control" id="checkName" name="check_name" placeholder="e.g. Physical Examination" value="{{ template.name if template else '' }}" required />
+      <div class="row align-items-center">
+        <label for="checkName" class="col-sm-auto mb-0">Template name</label>
+        <div class="col">
+          {% if template %}
+            <span class="form-control-plaintext">{{ template.name }}</span>
+          {% else %}
+            <input type="text" class="form-control" id="checkName" name="check_name" placeholder="e.g. Physical Examination" value="" required />
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
@@ -36,7 +42,9 @@
               <th style="width: 18%">Units</th>
               <th style="width: 18%">Input type</th>
               <th style="width: 28%">Placeholder</th>
-              <th style="width: 8%" class="text-end">Actions</th>
+              {% if not template %}
+              <th style="width: 8%" class="text-center">Delete</th>
+              {% endif %}
             </tr>
           </thead>
           <tbody>
@@ -44,27 +52,16 @@
               {% for it in template.items %}
               <tr>
                 <td>
-                  <input type="text" class="form-control" name="items[{{ loop.index0 }}][name]" value="{{ it.name }}" placeholder="e.g. height" />
+                  {{ it.name }}
                 </td>
                 <td>
-                  <input type="text" class="form-control" name="items[{{ loop.index0 }}][units]" value="{{ it.units }}" placeholder="e.g. cm" />
+                  {{ it.units }}
                 </td>
                 <td>
-                  <select class="form-select" name="items[{{ loop.index0 }}][input_type]">
-                    {% if it.input_type == 'number' %}
-                      <option value="number" selected>number</option>
-                      <option value="short_text">short text</option>
-                    {% else %}
-                      <option value="number">number</option>
-                      <option value="short_text" selected>short text</option>
-                    {% endif %}
-                  </select>
+                  {{ it.input_type }}
                 </td>
                 <td>
-                  <input type="text" class="form-control" name="items[{{ loop.index0 }}][placeholder]" value="{{ it.placeholder }}" placeholder="e.g. 180" />
-                </td>
-                <td class="text-end">
-                  <button type="button" class="btn btn-sm btn-outline-danger remove-row" aria-label="Delete row">&times;</button>
+                  {{ it.placeholder }}
                 </td>
               </tr>
               {% endfor %}
@@ -86,7 +83,7 @@
                 <td>
                   <input type="text" class="form-control" name="items[0][placeholder]" placeholder="e.g. 180" />
                 </td>
-                <td class="text-end">
+                <td class="text-center">
                   <button type="button" class="btn btn-sm btn-outline-danger remove-row" aria-label="Delete row">&times;</button>
                 </td>
               </tr>
@@ -96,16 +93,20 @@
       </div>
     </div>
     <div class="card-footer d-flex justify-content-between align-items-center">
+      {% if not template %}
       <small class="text-muted">Use the + Add Row button to add parameters.</small>
       <div class="d-flex gap-2">
         <button id="addRowBtnBottom" type="button" class="btn btn-sm btn-outline-primary" aria-label="Add row">+ Add Row</button>
       </div>
+      {% endif %}
     </div>
   </div>
 
   <div class="d-flex gap-2">
+    {% if not template %}
     <button type="submit" class="btn btn-primary">Save</button>
     <a href="/admin/medical_check_templates" class="btn btn-outline-secondary">Cancel</a>
+    {% endif %}
   </div>
 </form>
 
@@ -114,6 +115,8 @@
     const table = document.getElementById('paramsTable');
     const tbody = table.querySelector('tbody');
     const addBottom = document.getElementById('addRowBtnBottom');
+
+    if (!addBottom) return;
 
     function nextIndex() {
       // Determine next index based on current rows
@@ -141,7 +144,7 @@
           </select>
         </td>
         <td><input type="text" class="form-control" name="items[${idx}][placeholder]" placeholder="" /></td>
-        <td class="text-end">
+        <td class="text-center">
           <button type="button" class="btn btn-sm btn-outline-danger remove-row" aria-label="Delete row">&times;</button>
         </td>`;
       return tr;
