@@ -2,18 +2,9 @@
 
 <form id="medicalCheckForm" class="vstack gap-3" method="post" action="/patients/{{ patient.patient_id }}/medical_checks">
     <div class="row g-2 align-items-center">
-        <div class="col-sm-4">
-            <label for="checkType" class="form-label mb-0">Check template</label>
-            <input id="checkType" class="form-control" value="{{ check_template }}" disabled>
-            <input type="hidden" name="type" value="{{ check_template }}">
-        </div>
-        <div class="col-sm-4">
-            <label for="checkDate" class="form-label mb-0">Date</label>
-            <input id="checkDate" name="date" type="date" class="form-control" required>
-        </div>
-        <div class="col-sm-4">
-            <label for="status" class="form-label mb-0">Status</label>
-            {{ status_select('status', 'status') }}
+        <input type="hidden" name="type" value="{{ check_template }}">
+        <div class="col-sm-12">
+            <input id="checkDate" name="date" type="date" class="form-control" placeholder="Date" required>
         </div>
     </div>
 
@@ -54,6 +45,10 @@
     <div>
         <label for="notes" class="form-label">Notes</label>
         <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+    </div>
+
+    <div>
+        {{ status_select('status', 'status') }}
     </div>
 
     {# Provide param_count to assist server-side parsing #}
