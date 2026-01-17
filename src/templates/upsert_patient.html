@@ -16,80 +16,66 @@
         {% if patient %}
             <input type="hidden" name="_method" value="PUT">
         {% endif %}
-        <div class="mb-3">
-            <label for="title" class="form-label">Title</label>
-            <select name="title" id="title" class="form-select" required>
-                <option value="">Select...</option>
-                {% for t in title_options %}
-                    <option value="{{ t.value }}"
-                            {% if patient and patient.title == t.value %}selected{% endif %}>{{ t.value }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="first_name" class="form-label">First Name</label>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="title" class="form-label visually-hidden">Title</label>
+                <select name="title" id="title" class="form-select" required>
+                    <option value="">Title...</option>
+                    {% for t in title_options %}
+                        <option value="{{ t.value }}"
+                                {% if patient and patient.title == t.value %}selected{% endif %}>{{ t.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="first_name" class="form-label visually-hidden">First Name</label>
                 <input type="text" name="first_name" id="first_name" class="form-control"
-                       value="{{ patient.first_name if patient else '' }}" required>
+                       value="{{ patient.first_name if patient else '' }}" placeholder="First Name" required>
             </div>
-            <div class="col-md-6 mb-3">
-                <label for="middle_name" class="form-label">Middle Name</label>
+            <div class="col-md-3">
+                <label for="middle_name" class="form-label visually-hidden">Middle Name</label>
                 <input type="text" name="middle_name" id="middle_name" class="form-control"
-                       value="{{ patient.middle_name if patient and patient.middle_name else '' }}">
+                       value="{{ patient.middle_name if patient and patient.middle_name else '' }}" placeholder="Middle Name">
+            </div>
+            <div class="col-md-3">
+                <label for="last_name" class="form-label visually-hidden">Last Name</label>
+                <input type="text" name="last_name" id="last_name" class="form-control"
+                       value="{{ patient.last_name if patient else '' }}" placeholder="Last Name" required>
+            </div>
+
+            <div class="col-md-3">
+                <label for="sex" class="form-label visually-hidden">Sex</label>
+                <select name="sex" id="sex" class="form-select" required>
+                    <option value="">Sex...</option>
+                    {% for s in sex_options %}
+                        <option value="{{ s.value }}"
+                                {% if patient and patient.sex == s.value %}selected{% endif %}>{{ s.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="dob" class="form-label visually-hidden">Date of Birth</label>
+                <input type="date" name="dob" id="dob" class="form-control" value="{{ patient.dob if patient else '' }}"
+                       placeholder="Date of Birth" required title="Date of Birth">
+            </div>
+            <div class="col-md-3">
+                <label for="email" class="form-label visually-hidden">Email</label>
+                <input type="email" name="email" id="email" class="form-control"
+                       value="{{ patient.email if patient else '' }}" placeholder="Email" required>
+            </div>
+            <div class="col-md-3">
+                <label for="phone" class="form-label visually-hidden">Phone</label>
+                <input type="text" name="phone" id="phone" class="form-control"
+                       value="{{ patient.phone if patient else '' }}" placeholder="Phone" required>
             </div>
         </div>
 
-        <div class="mb-3">
-            <label for="last_name" class="form-label">Last Name</label>
-            <input type="text" name="last_name" id="last_name" class="form-control"
-                   value="{{ patient.last_name if patient else '' }}" required>
-        </div>
-
-        <div class="mb-3">
-            <label for="sex" class="form-label">Sex</label>
-            <select name="sex" id="sex" class="form-select" required>
-                <option value="">Select...</option>
-                {% for s in sex_options %}
-                    <option value="{{ s.value }}"
-                            {% if patient and patient.sex == s.value %}selected{% endif %}>{{ s.value }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="dob" class="form-label">Date of Birth</label>
-            <input type="date" name="dob" id="dob" class="form-control" value="{{ patient.dob if patient else '' }}"
-                   required>
-        </div>
-
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" name="email" id="email" class="form-control"
-                   value="{{ patient.email if patient else '' }}" required>
-        </div>
-
-        <div class="mb-3">
-            <label for="phone" class="form-label">Phone</label>
-            <input type="text" name="phone" id="phone" class="form-control"
-                   value="{{ patient.phone if patient else '' }}" required>
-        </div>
-
-        <div class="accordion mb-3" id="addressAccordion">
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="addressHeading">
-                    <button class="accordion-button {% if patient %}collapsed{% endif %}" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#addressCollapse"
-                            aria-expanded="{{ 'false' if patient else 'true' }}" aria-controls="addressCollapse">
-                        Address
-                    </button>
-                </h2>
-                <div id="addressCollapse" class="accordion-collapse collapse {% if not patient %}show{% endif %}"
-                     aria-labelledby="addressHeading" data-bs-parent="#addressAccordion">
-                    <div class="accordion-body">
-                        {% include '_address_form.html' %}
-                    </div>
-                </div>
+        <div class="card mt-4 mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Address Details</h5>
+            </div>
+            <div class="card-body">
+                {% include '_address_form.html' %}
             </div>
         </div>
 
