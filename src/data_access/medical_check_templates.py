@@ -160,7 +160,3 @@ class MedicalCheckTemplatesStorage(BaseStorage):
             [1 if is_active else 0, template_id],
         )
         self.conn.commit()
-
-    def delete(self, *, template_id: int) -> None:
-        self.conn.execute("DELETE FROM medical_check_templates WHERE template_id = ?", [template_id])
-        self.conn.commit()

@@ -275,8 +275,6 @@ async def get_patient(
             "patient": patient,
             "age": _get_age(patient.dob),
             # Provide available medical check types for UI dropdown
-            "templates": [
-                t for t in storage.medical_check_templates.list_medical_check_templates() if t.is_active
-            ],
+            "templates": [t for t in storage.medical_check_templates.list_medical_check_templates() if t.is_active],
         },
     )

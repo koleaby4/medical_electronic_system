@@ -190,6 +190,7 @@ def _generate_value_for_item(name: str, input_type: str, placeholder: str) -> st
 
     return values.get(param, f"{random.uniform(0, 100):.1f}")
 
+
 def _physicals_items(height_cm: int, weight_kg: float, systolic: int, diastolic: int) -> list[MedicalCheckItem]:
     return [
         MedicalCheckItem(name="height", units="cm", value=str(height_cm)),

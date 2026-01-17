@@ -5,18 +5,22 @@ def test_physicals_new_page_renders(client: TestClient, create_patient):
     patient_id = create_patient()
 
     # Create a medical check type named "physicals" with a sample item "height"
-    form = {
-        "check_name": "physicals",
-        "items[0][name]": "height",
-        "items[0][units]": "cm",
-        "items[0][input_type]": "number",
-        "items[0][placeholder]": "e.g. 180",
-    }
-    resp_admin = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
-    assert resp_admin.status_code in (303, 307)
+    resp_admin = client.post(
+        "/admin/medical_check_templates",
+        json={
+            "name": "physicals",
+            "items": [
+                {"name": "height", "units": "cm", "input_type": "number", "placeholder": "e.g. 180"},
+            ],
+        },
+    )
+    assert resp_admin.status_code == 201
+    template_id = resp_admin.json()["template_id"]
 
-    # Use the generic new page (it will select the first available type, which is the one we created)
-    resp = client.get(f"/patients/{patient_id}/medical_checks/new", follow_redirects=True)
+    # Use the generic new page with template_id
+    resp = client.get(
+        f"/patients/{patient_id}/medical_checks/new?check_template_id={template_id}", follow_redirects=True
+    )
     html = resp.text
 
     assert "Add physicals check" in html

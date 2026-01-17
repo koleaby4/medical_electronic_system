@@ -3,25 +3,26 @@ from datetime import date
 from fastapi.testclient import TestClient
 
 
-def _create_template(client: TestClient, name: str = "Vitals") -> None:
+def _create_template(client: TestClient, name: str = "Vitals") -> int:
     """Create a simple template via admin endpoint with one numeric item 'weight'."""
-    form = {
-        "check_name": name,
-        "items[0][name]": "weight",
-        "items[0][units]": "kg",
-        "items[0][input_type]": "number",
-        "items[0][placeholder]": "e.g. 75.5",
-    }
-    resp = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
-    # Redirect back to templates list
-    assert resp.status_code in (303, 307)
+    resp = client.post(
+        "/admin/medical_check_templates",
+        json={
+            "name": name,
+            "items": [
+                {"name": "weight", "units": "kg", "input_type": "number", "placeholder": "75.5"},
+            ],
+        },
+    )
+    assert resp.status_code == 201
+    return resp.json()["template_id"]
 
 
 def test_generic_new_page_renders_with_numeric_step_0_1(client: TestClient, create_patient):
     patient_id = create_patient()
-    _create_template(client, name="Vitals")
+    template_id = _create_template(client, name="Vitals")
 
-    resp = client.get(f"/patients/{patient_id}/medical_checks/new")
+    resp = client.get(f"/patients/{patient_id}/medical_checks/new?check_template_id={template_id}")
     assert resp.status_code == 200
     html = resp.text
 
@@ -65,7 +66,7 @@ def test_generic_post_accepts_decimal_and_persists(client: TestClient, create_pa
 
 
 def test_generic_new_page_patient_not_found_returns_404(client: TestClient):
-    resp = client.get("/patients/999999/medical_checks/new")
+    resp = client.get("/patients/999999/medical_checks/new?check_template_id=1")
     assert resp.status_code == 404
     body = resp.json()
     assert "detail" in body

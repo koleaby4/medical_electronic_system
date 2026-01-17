@@ -119,8 +119,10 @@ async def activate_medical_check_template(template_id: int, storage: DbStorage =
 async def create_medical_check_template_json(request: Request, storage: DbStorage = Depends(get_storage)):
     if "application/json" not in (request.headers.get("content-type") or ""):
         raise HTTPException(status_code=415, detail="Content-Type must be application/json")
+
     data = await request.json()
     name = (data.get("name") or "").strip()
+
     if not name:
         raise HTTPException(status_code=422, detail="Field 'name' is required")
 
@@ -146,29 +148,7 @@ async def create_medical_check_template_json(request: Request, storage: DbStorag
 async def get_medical_check_template_json(
     template_id: int, storage: DbStorage = Depends(get_storage)
 ) -> MedicalCheckTemplate:
-    mct = storage.medical_check_templates.get_template(template_id=template_id)
-    if not mct:
-        raise HTTPException(status_code=404, detail="Medical check template not found")
-    return mct
+    if mct := storage.medical_check_templates.get_template(template_id=template_id):
+        return mct
 
-
-# JSON API: update a medical check template (replace items)
-@router.put("/medical_check_templates/{template_id}")
-async def update_medical_check_template_json(template_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
-    raise HTTPException(status_code=403, detail="Medical check templates are immutable and cannot be updated")
-
-
-# JSON API: delete a medical check template
-@router.delete("/medical_check_templates/{template_id}")
-async def delete_medical_check_template_json(template_id: int, storage: DbStorage = Depends(get_storage)):
-    if not storage.medical_check_templates.get_template(template_id=template_id):
-        return JSONResponse(status_code=204, content=None)
-
-    try:
-        storage.medical_check_templates.delete(template_id=template_id)
-    except sqlite3.IntegrityError:
-        return JSONResponse(
-            status_code=409,
-            content={"detail": f"{template_id=} is in use by existing medical checks and cannot be deleted"},
-        )
-    return JSONResponse(status_code=204, content=None)
+    raise HTTPException(status_code=404, detail="Medical check template not found")

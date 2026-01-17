@@ -3,54 +3,58 @@ from datetime import date
 from fastapi.testclient import TestClient
 
 
-def _create_template(client: TestClient, name: str, items: list[dict]) -> None:
-    """Create a template via admin endpoint.
-
-    items: list of dicts with keys: name, units, input_type, placeholder
-    """
-    form: dict[str, str] = {"check_name": name}
-    for idx, item in enumerate(items):
-        form[f"items[{idx}][name]"] = item.get("name", "")
-        form[f"items[{idx}][units]"] = item.get("units", "")
-        form[f"items[{idx}][input_type]"] = item.get("input_type", "number")
-        form[f"items[{idx}][placeholder]"] = item.get("placeholder", "")
-
-    resp = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
-    assert resp.status_code in (303, 307)
+def _create_template(client: TestClient, name: str, items: list[dict]) -> int:
+    """Create a template via JSON API."""
+    resp = client.post(
+        "/admin/medical_check_templates",
+        json={
+            "name": name,
+            "items": items,
+        },
+    )
+    assert resp.status_code == 201
+    return resp.json()["template_id"]
 
 
-def test_generic_new_uses_first_template_by_name(client: TestClient, create_patient):
+def test_generic_new_requires_template_id(client: TestClient, create_patient):
     patient_id = create_patient()
 
-    # Create two templates; page should pick the first by name (alphabetical, case-insensitive)
-    _create_template(
+    # Create two templates
+    tid_z = _create_template(
         client,
         name="Z Second",
         items=[{"name": "weight", "units": "kg", "input_type": "number", "placeholder": "e.g. 75.5"}],
     )
-    _create_template(
+    tid_a = _create_template(
         client,
         name="A First",
         items=[{"name": "systolic", "units": "mmHg", "input_type": "number", "placeholder": "e.g. 120"}],
     )
 
-    resp = client.get(f"/patients/{patient_id}/medical_checks/new")
+    # Request with tid_a
+    resp = client.get(f"/patients/{patient_id}/medical_checks/new?check_template_id={tid_a}")
     assert resp.status_code == 200
-    html = resp.text
+    assert "Add A First check" in resp.text
 
-    # Header reflects the first-by-name template
-    assert "Add A First check" in html
+    # Request with tid_z
+    resp = client.get(f"/patients/{patient_id}/medical_checks/new?check_template_id={tid_z}")
+    assert resp.status_code == 200
+    assert "Add Z Second check" in resp.text
+
+    # Request without template_id should fail with 422
+    resp = client.get(f"/patients/{patient_id}/medical_checks/new")
+    assert resp.status_code == 422
 
 
 def test_generic_new_renders_text_input_and_placeholder(client: TestClient, create_patient):
     patient_id = create_patient()
-    _create_template(
+    template_id = _create_template(
         client,
         name="Notes",
         items=[{"name": "note", "units": "", "input_type": "short_text", "placeholder": "enter note"}],
     )
 
-    resp = client.get(f"/patients/{patient_id}/medical_checks/new")
+    resp = client.get(f"/patients/{patient_id}/medical_checks/new?check_template_id={template_id}")
     assert resp.status_code == 200
     html = resp.text
 
