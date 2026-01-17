@@ -5,7 +5,7 @@ def test_medical_check_404_not_found(client: TestClient, create_patient):
     patient_id = create_patient()
 
     # 404 for patient not found
-    resp = client.get(f"/patients/9999/medical_checks/1")
+    resp = client.get("/patients/9999/medical_checks/1")
     assert resp.status_code == 404
     assert "Patient with patient_id=9999 not found" in resp.json()["detail"]
 
