@@ -16,11 +16,7 @@ templates = Jinja2Templates(directory="src/templates")
 
 
 @router.get("", include_in_schema=False)
-async def list_patients(
-    request: Request,
-    storage: DbStorage = Depends(get_storage),
-    format: str = "html"
-):
+async def list_patients(request: Request, storage: DbStorage = Depends(get_storage), format: str = "html"):
     patients = storage.patients.get_all_patients()
 
     # Prefer Accept header, keep query param for convenience

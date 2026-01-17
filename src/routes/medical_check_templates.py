@@ -127,7 +127,9 @@ async def create_medical_check_template_json(request: Request, storage: DbStorag
 
 # JSON API: get a medical check template by id
 @router.get("/medical_check_templates/{type_id}")
-async def get_medical_check_template_json(type_id: int, storage: DbStorage = Depends(get_storage)) -> MedicalCheckTemplate:
+async def get_medical_check_template_json(
+    type_id: int, storage: DbStorage = Depends(get_storage)
+) -> MedicalCheckTemplate:
     mct = storage.medical_check_templates.get_check_type(type_id=type_id)
     if not mct:
         raise HTTPException(status_code=404, detail="Medical check template not found")
@@ -151,6 +153,6 @@ async def delete_medical_check_template_json(type_id: int, storage: DbStorage = 
     except sqlite3.IntegrityError:
         return JSONResponse(
             status_code=409,
-            content={"detail": f"{type_id=} is in use by existing medical checks and cannot be deleted"}
+            content={"detail": f"{type_id=} is in use by existing medical checks and cannot be deleted"},
         )
     return JSONResponse(status_code=204, content=None)
