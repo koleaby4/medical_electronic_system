@@ -67,8 +67,9 @@ def _create_addresses(conn: sqlite3.Connection) -> None:
 def _create_medical_check_templates(conn: sqlite3.Connection) -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS medical_check_templates (
-            type_id INTEGER PRIMARY KEY,
-            name    TEXT    NOT NULL
+            template_id INTEGER PRIMARY KEY,
+            name    TEXT    NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 1
 );
         """)
 
@@ -79,7 +80,7 @@ def _create_medical_checks(conn: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS medical_checks (
             check_id   INTEGER PRIMARY KEY,
             patient_id INTEGER NOT NULL,
-            type_id    INTEGER NOT NULL,
+            template_id    INTEGER NOT NULL,
             check_date DATE    NOT NULL,
             status     TEXT    NOT NULL,
             notes      TEXT,
@@ -87,8 +88,8 @@ def _create_medical_checks(conn: sqlite3.Connection) -> None:
                 REFERENCES patients (patient_id)
                 ON DELETE CASCADE
                 ON UPDATE CASCADE,
-            FOREIGN KEY (type_id)
-                REFERENCES medical_check_templates (type_id)
+            FOREIGN KEY (template_id)
+                REFERENCES medical_check_templates (template_id)
                 ON UPDATE CASCADE
         );
         """)
@@ -141,13 +142,13 @@ def _create_medical_check_items(conn: sqlite3.Connection) -> None:
 def _create_medical_check_template_items(conn: sqlite3.Connection) -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS medical_check_template_items (
-            type_id     INTEGER NOT NULL,
+            template_id     INTEGER NOT NULL,
             name        TEXT,
             units       TEXT,
             input_type  TEXT,
             placeholder TEXT,
-            FOREIGN KEY (type_id)
-                REFERENCES medical_check_templates (type_id)
+            FOREIGN KEY (template_id)
+                REFERENCES medical_check_templates (template_id)
                 ON DELETE CASCADE
                 ON UPDATE CASCADE
         );
@@ -155,8 +156,8 @@ def _create_medical_check_template_items(conn: sqlite3.Connection) -> None:
         """)
     conn.execute(
         """
-        CREATE INDEX IF NOT EXISTS ix_mct_template_items_type_id
-            ON medical_check_template_items(type_id);
+        CREATE INDEX IF NOT EXISTS ix_mct_template_items_template_id
+            ON medical_check_template_items(template_id);
         """
     )
 

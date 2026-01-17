@@ -18,6 +18,7 @@ class MedicalCheckTemplate(BaseModel):
     Represents a medical check type consisting of a name and a set of items.
     """
 
-    type_id: int | None = Field(default=None, description="DB identifier (medical_check_templates.type_id)")
+    template_id: int | None = Field(default=None, description="DB identifier (medical_check_templates.template_id)")
     name: str = Field(..., description="Human-readable check type name")
+    is_active: bool = Field(default=True, description="Whether the template is active")
     items: list[MedicalCheckTemplateItem] = Field(default_factory=list)

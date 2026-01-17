@@ -42,7 +42,7 @@
                     <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
                         <select id="checkType" class="form-select" style="max-width: 320px;">
                             {% for t in templates or [] %}
-                                <option value="{{ t.type_id }}">{{ t.name }}</option>
+                                <option value="{{ t.template_id }}">{{ t.name }}</option>
                             {% endfor %}
                         </select>
                         <button id="addRecordBtn" class="btn btn-primary">Add Record</button>

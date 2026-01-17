@@ -19,33 +19,36 @@ class MedicalCheckTemplatesStorage(BaseStorage):
             cur.execute(
                 """
                 SELECT
-                    t.type_id                         AS type_id,
+                    t.template_id                         AS template_id,
                     t.name                            AS type_name,
+                    t.is_active                       AS is_active,
                     i.name                            AS item_name,
                     i.units                           AS item_units,
                     i.input_type                      AS item_input_type,
                     i.placeholder                     AS item_placeholder
                 FROM medical_check_templates t
-                LEFT JOIN medical_check_template_items i ON i.type_id = t.type_id
-                ORDER BY t.name COLLATE NOCASE ASC, t.type_id ASC, i.rowid ASC
+                LEFT JOIN medical_check_template_items i ON i.template_id = t.template_id
+                ORDER BY t.name COLLATE NOCASE ASC, t.template_id ASC, i.rowid ASC
                 """
             )
 
             check_templates_by_id: dict[int, MedicalCheckTemplate] = {}
 
             for (
-                type_id,
+                template_id,
                 type_name,
+                is_active,
                 item_name,
                 item_units,
                 item_input_type,
                 item_placeholder,
             ) in cur.fetchall():
-                tid = int(type_id)
+                tid = int(template_id)
                 if tid not in check_templates_by_id:
                     check_templates_by_id[tid] = MedicalCheckTemplate(
-                        type_id=tid,
+                        template_id=tid,
                         name=type_name,
+                        is_active=bool(is_active),
                         items=[],
                     )
 
@@ -64,17 +67,18 @@ class MedicalCheckTemplatesStorage(BaseStorage):
 
         return list(check_templates_by_id.values())
 
-    def get_template(self, *, type_id: int) -> MedicalCheckTemplate | None:
+    def get_template(self, *, template_id: int) -> MedicalCheckTemplate | None:
         cur = self.conn.cursor()
         try:
             cur.execute(
                 """
-                SELECT type_id,
-                       name
+                SELECT template_id,
+                       name,
+                       is_active
                 FROM medical_check_templates
-                WHERE type_id = ?
+                WHERE template_id = ?
                 """,
-                [type_id],
+                [template_id],
             )
             header = self._fetch_one_dict(cur)
             if not header:
@@ -84,10 +88,10 @@ class MedicalCheckTemplatesStorage(BaseStorage):
                 """
                 SELECT name, units, input_type, placeholder
                 FROM medical_check_template_items
-                WHERE type_id = ?
+                WHERE template_id = ?
                 ORDER BY rowid ASC
                 """,
-                [type_id],
+                [template_id],
             )
             items = [
                 MedicalCheckTemplateItem(
@@ -102,8 +106,9 @@ class MedicalCheckTemplatesStorage(BaseStorage):
             cur.close()
 
         return MedicalCheckTemplate(
-            type_id=header.get("type_id"),
+            template_id=header.get("template_id"),
             name=header.get("name"),
+            is_active=bool(header.get("is_active")),
             items=items,
         )
 
@@ -116,8 +121,8 @@ class MedicalCheckTemplatesStorage(BaseStorage):
     ) -> int:
         cur = self.conn.execute(
             """
-            INSERT INTO medical_check_templates (type_id, name)
-            VALUES (?, ?) ON CONFLICT(type_id) DO
+            INSERT INTO medical_check_templates (template_id, name)
+            VALUES (?, ?) ON CONFLICT(template_id) DO
             UPDATE SET
                 name = excluded.name
             """,
@@ -128,7 +133,7 @@ class MedicalCheckTemplatesStorage(BaseStorage):
             template_id = int(cur.lastrowid)
 
         self.conn.execute(
-            "DELETE FROM medical_check_template_items WHERE type_id = ?",
+            "DELETE FROM medical_check_template_items WHERE template_id = ?",
             [template_id],
         )
 
@@ -140,7 +145,7 @@ class MedicalCheckTemplatesStorage(BaseStorage):
 
             self.conn.execute(
                 """
-                INSERT INTO medical_check_template_items (type_id, name, units, input_type, placeholder)
+                INSERT INTO medical_check_template_items (template_id, name, units, input_type, placeholder)
                 VALUES (?, ?, ?, ?, ?)
                 """,
                 [template_id, name, units, input_type, placeholder],
@@ -149,6 +154,13 @@ class MedicalCheckTemplatesStorage(BaseStorage):
         self.conn.commit()
         return template_id
 
-    def delete(self, *, type_id: int) -> None:
-        self.conn.execute("DELETE FROM medical_check_templates WHERE type_id = ?", [type_id])
+    def set_active_status(self, *, template_id: int, is_active: bool) -> None:
+        self.conn.execute(
+            "UPDATE medical_check_templates SET is_active = ? WHERE template_id = ?",
+            [1 if is_active else 0, template_id],
+        )
+        self.conn.commit()
+
+    def delete(self, *, template_id: int) -> None:
+        self.conn.execute("DELETE FROM medical_check_templates WHERE template_id = ?", [template_id])
         self.conn.commit()

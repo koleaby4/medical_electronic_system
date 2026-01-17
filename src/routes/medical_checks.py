@@ -77,7 +77,7 @@ async def create_medical_check(
             mc = MedicalCheck(
                 patient_id=patient_id,
                 check_date=data.get("observed_at") or data.get("check_date") or date,
-                template_name=_resolve_medical_check_template(str(data.get("type") or data.get("type_id") or type)),
+                template_name=_resolve_medical_check_template(str(data.get("type") or data.get("template_id") or type)),
                 status=MedicalCheckStatus(str(data.get("status") or status)),
                 notes=data.get("notes"),
                 medical_check_items=medical_check_items,
@@ -141,7 +141,7 @@ async def create_medical_check(
 async def new_medical_check(
     request: Request,
     patient_id: int,
-    check_template_id: int | None = None,
+    check_template_id: int | None = None,    # Todo: this is mandatory
     storage: DbStorage = Depends(get_storage),
 ):
     """Generalized new medical check page based on medical check type items.
@@ -157,11 +157,11 @@ async def new_medical_check(
         raise HTTPException(status_code=404, detail="No medical check templates found")
 
     selected_template: MedicalCheckTemplate | None = None
-    if check_template_id is not None:
-        selected_template = storage.medical_check_templates.get_template(type_id=check_template_id)
+    if check_template_id is not None:   # Todo: this is unnecessary
+        selected_template = storage.medical_check_templates.get_template(template_id=check_template_id)
     if selected_template is None:
         # fallback to first available
-        selected_template = storage.medical_check_templates.get_template(type_id=available_templates[0].type_id)  # type: ignore[arg-type]
+        selected_template = storage.medical_check_templates.get_template(template_id=available_templates[0].template_id)  # type: ignore[arg-type]
 
     if selected_template is None:
         raise HTTPException(status_code=404, detail="Selected medical check type not found")

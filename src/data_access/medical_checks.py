@@ -29,7 +29,7 @@ class MedicalChecksStorage(BaseStorage):
         else:
             cur_lookup = self.conn.execute(
                 """
-                SELECT type_id
+                SELECT template_id
                 FROM medical_check_templates
                 WHERE name = ? COLLATE NOCASE
                 """,
@@ -51,7 +51,7 @@ class MedicalChecksStorage(BaseStorage):
 
         cur = self.conn.execute(
             """
-            INSERT INTO medical_checks (patient_id, type_id, check_date, status, notes)
+            INSERT INTO medical_checks (patient_id, template_id, check_date, status, notes)
             VALUES (?, ?, ?, ?, ?)
             """,
             [patient_id, template_id, check_date, status, notes],
@@ -75,7 +75,7 @@ class MedicalChecksStorage(BaseStorage):
                        mc.status,
                        mc.notes
                 FROM medical_checks mc
-                JOIN medical_check_templates n ON n.type_id = mc.type_id
+                JOIN medical_check_templates n ON n.template_id = mc.template_id
                 WHERE mc.patient_id = ?
                 ORDER BY mc.check_date DESC, mc.check_id DESC
                 """,
@@ -114,7 +114,7 @@ class MedicalChecksStorage(BaseStorage):
                        mc.status,
                        mc.notes
                 FROM medical_checks mc
-                JOIN medical_check_templates n ON n.type_id = mc.type_id
+                JOIN medical_check_templates n ON n.template_id = mc.template_id
                 WHERE mc.patient_id = ?
                   AND mc.check_id = ?
                 """,
@@ -169,9 +169,9 @@ class MedicalChecksStorage(BaseStorage):
                        n.name || ' -> ' || ti.name  label
                 FROM medical_check_templates n
                 JOIN medical_check_template_items ti
-                      ON ti.type_id = n.type_id
+                      ON ti.template_id = n.template_id
                 JOIN medical_checks mc
-                      ON mc.type_id = n.type_id
+                      ON mc.template_id = n.template_id
                 JOIN medical_check_items mci
                       ON mci.check_id = mc.check_id
                     AND mci.name = ti.name COLLATE NOCASE
