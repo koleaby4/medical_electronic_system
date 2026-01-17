@@ -10,7 +10,7 @@ from src.dependencies import get_storage
 from src.models.enums import MedicalCheckStatus
 from src.models.medical_check import MedicalCheck, MedicalChecks
 from src.models.medical_check_item import MedicalCheckItem
-from src.models.medical_check_type import MedicalCheckType
+from src.models.medical_check_template import MedicalCheckTemplate
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -152,16 +152,16 @@ async def new_medical_check(
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
-    available_check_types: list[MedicalCheckType] = storage.medical_check_types.list_medical_check_types()
+    available_check_types: list[MedicalCheckTemplate] = storage.medical_check_templates.list_medical_check_templates()
     if not available_check_types:
         raise HTTPException(status_code=404, detail="No medical check types found")
 
-    selected_template: MedicalCheckType | None = None
+    selected_template: MedicalCheckTemplate | None = None
     if check_type_id is not None:
-        selected_template = storage.medical_check_types.get_check_type(type_id=check_type_id)
+        selected_template = storage.medical_check_templates.get_check_type(type_id=check_type_id)
     if selected_template is None:
         # fallback to first available
-        selected_template = storage.medical_check_types.get_check_type(type_id=available_check_types[0].type_id)  # type: ignore[arg-type]
+        selected_template = storage.medical_check_templates.get_check_type(type_id=available_check_types[0].type_id)  # type: ignore[arg-type]
 
     if selected_template is None:
         raise HTTPException(status_code=404, detail="Selected medical check type not found")

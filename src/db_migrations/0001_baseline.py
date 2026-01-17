@@ -64,9 +64,9 @@ def _create_addresses(conn: sqlite3.Connection) -> None:
 
 
 @with_logging
-def _create_medical_check_types(conn: sqlite3.Connection) -> None:
+def _create_medical_check_templates(conn: sqlite3.Connection) -> None:
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS medical_check_types (
+        CREATE TABLE IF NOT EXISTS medical_check_templates (
             type_id INTEGER PRIMARY KEY,
             name    TEXT    NOT NULL
 );
@@ -88,7 +88,7 @@ def _create_medical_checks(conn: sqlite3.Connection) -> None:
                 ON DELETE CASCADE
                 ON UPDATE CASCADE,
             FOREIGN KEY (type_id)
-                REFERENCES medical_check_types (type_id)
+                REFERENCES medical_check_templates (type_id)
                 ON UPDATE CASCADE
         );
         """)
@@ -138,16 +138,16 @@ def _create_medical_check_items(conn: sqlite3.Connection) -> None:
 
 
 @with_logging
-def _create_medical_check_type_items(conn: sqlite3.Connection) -> None:
+def _create_medical_check_template_items(conn: sqlite3.Connection) -> None:
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS medical_check_type_items (
+        CREATE TABLE IF NOT EXISTS medical_check_template_items (
             type_id     INTEGER NOT NULL,
             name        TEXT,
             units       TEXT,
             input_type  TEXT,
             placeholder TEXT,
             FOREIGN KEY (type_id)
-                REFERENCES medical_check_types (type_id)
+                REFERENCES medical_check_templates (type_id)
                 ON DELETE CASCADE
                 ON UPDATE CASCADE
         );
@@ -155,8 +155,8 @@ def _create_medical_check_type_items(conn: sqlite3.Connection) -> None:
         """)
     conn.execute(
         """
-        CREATE INDEX IF NOT EXISTS ix_mct_type_items_type_id
-            ON medical_check_type_items(type_id);
+        CREATE INDEX IF NOT EXISTS ix_mct_template_items_type_id
+            ON medical_check_template_items(type_id);
         """
     )
 
@@ -165,10 +165,10 @@ def upgrade(conn):
     _pragma_foreign_keys_on(conn)
     _create_patients(conn)
     _create_addresses(conn)
-    _create_medical_check_types(conn)
+    _create_medical_check_templates(conn)
     _create_medical_checks(conn)
     _create_medical_check_items(conn)
-    _create_medical_check_type_items(conn)
+    _create_medical_check_template_items(conn)
 
 
 @with_logging
@@ -176,10 +176,10 @@ def downgrade(conn):
     conn.executescript(
         """
         PRAGMA foreign_keys=OFF;
-        DROP TABLE IF EXISTS medical_check_type_items;
+        DROP TABLE IF EXISTS medical_check_template_items;
         DROP TABLE IF EXISTS medical_check_items;
         DROP TABLE IF EXISTS medical_checks;
-        DROP TABLE IF EXISTS medical_check_types;
+        DROP TABLE IF EXISTS medical_check_templates;
         DROP TABLE IF EXISTS addresses;
         DROP TABLE IF EXISTS patients;
         PRAGMA foreign_keys=ON;

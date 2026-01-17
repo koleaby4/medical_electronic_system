@@ -15,7 +15,7 @@ def _create_template(client: TestClient, name: str, items: list[dict]) -> None:
         form[f"items[{idx}][input_type]"] = item.get("input_type", "number")
         form[f"items[{idx}][placeholder]"] = item.get("placeholder", "")
 
-    resp = client.post("/admin/medical_check_types/new", data=form, follow_redirects=False)
+    resp = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
     assert resp.status_code in (303, 307)
 
 

@@ -1,13 +1,13 @@
 {% extends '_base.html' %}
-{% set page_title = "Medical Check Types" %}
+{% set page_title = "Medical Check Templates" %}
 
 {% block content %}
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Medical Check Types</h2>
-    <a href="/admin/medical_check_types/new" class="btn btn-primary">+ New Check Type</a>
+    <h2 class="mb-0">Medical Check Templates</h2>
+    <a href="/admin/medical_check_templates/new" class="btn btn-primary">+ New Check Template</a>
   </div>
 
-  <input type="text" id="searchInput" class="form-control" placeholder="Search types...">
+  <input type="text" id="searchInput" class="form-control" placeholder="Search templates...">
 
   <div class="table-responsive mt-3">
     <table id="typesTable" class="table table-striped table-hover align-middle">
@@ -20,7 +20,7 @@
       <tbody>
       {% if types and types|length > 0 %}
         {% for t in types %}
-          <tr data-href="/admin/medical_check_types/{{ t.type_id }}/edit" style="cursor: pointer;">
+          <tr data-href="/admin/medical_check_templates/{{ t.type_id }}/edit" style="cursor: pointer;">
             <td>{{ t.name }}</td>
             <td>
               {# Show comma-separated parameter names #}

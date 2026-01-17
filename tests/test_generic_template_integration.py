@@ -12,7 +12,7 @@ def _create_template(client: TestClient, name: str = "Vitals") -> None:
         "items[0][input_type]": "number",
         "items[0][placeholder]": "e.g. 75.5",
     }
-    resp = client.post("/admin/medical_check_types/new", data=form, follow_redirects=False)
+    resp = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
     # Redirect back to templates list
     assert resp.status_code in (303, 307)
 

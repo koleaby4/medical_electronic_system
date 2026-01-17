@@ -2,7 +2,7 @@ import sqlite3
 from contextlib import suppress
 from pathlib import Path
 
-from src.data_access.medical_check_types import MedicalCheckTypesStorage
+from src.data_access.medical_check_templates import MedicalCheckTemplatesStorage
 from src.data_access.medical_checks import MedicalChecksStorage
 from src.data_access.patients import PatientsStorage
 
@@ -13,7 +13,7 @@ class DbStorage:
         self._conn.execute("PRAGMA foreign_keys = ON;")
         self.patients = PatientsStorage(self._conn)
         self.medical_checks = MedicalChecksStorage(self._conn)
-        self.medical_check_types = MedicalCheckTypesStorage(self._conn)
+        self.medical_check_templates = MedicalCheckTemplatesStorage(self._conn)
 
     def close(self) -> None:
         with suppress(Exception):

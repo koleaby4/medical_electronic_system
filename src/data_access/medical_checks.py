@@ -22,7 +22,7 @@ class MedicalChecksStorage(BaseStorage):
         medical_check_items: list[MedicalCheckItem],
         notes: str | None = None,
     ) -> int:
-        # Resolve check_type to type_id (PK from medical_check_types) if provided as a string
+        # Resolve check_type to type_id (PK from medical_check_templates) if provided as a string
         check_type_id: int
         if isinstance(check_type, int):
             check_type_id = check_type
@@ -30,7 +30,7 @@ class MedicalChecksStorage(BaseStorage):
             cur_lookup = self.conn.execute(
                 """
                 SELECT type_id
-                FROM medical_check_types
+                FROM medical_check_templates
                 WHERE name = ? COLLATE NOCASE
                 """,
                 [check_type],
@@ -39,10 +39,10 @@ class MedicalChecksStorage(BaseStorage):
             if row := cur_lookup.fetchone():
                 check_type_id = int(row[0])
             else:
-                # Auto-insert missing medical_check_type for convenience
+                # Auto-insert missing medical_check_template for convenience
                 cur_ins = self.conn.execute(
                     """
-                    INSERT INTO medical_check_types (name)
+                    INSERT INTO medical_check_templates (name)
                     VALUES (?)
                     """,
                     [check_type],
@@ -75,7 +75,7 @@ class MedicalChecksStorage(BaseStorage):
                        mc.status,
                        mc.notes
                 FROM medical_checks mc
-                JOIN medical_check_types n ON n.type_id = mc.type_id
+                JOIN medical_check_templates n ON n.type_id = mc.type_id
                 WHERE mc.patient_id = ?
                 ORDER BY mc.check_date DESC, mc.check_id DESC
                 """,
@@ -114,7 +114,7 @@ class MedicalChecksStorage(BaseStorage):
                        mc.status,
                        mc.notes
                 FROM medical_checks mc
-                JOIN medical_check_types n ON n.type_id = mc.type_id
+                JOIN medical_check_templates n ON n.type_id = mc.type_id
                 WHERE mc.patient_id = ?
                   AND mc.check_id = ?
                 """,
@@ -167,8 +167,8 @@ class MedicalChecksStorage(BaseStorage):
                 SELECT n.name AS check_type,
                        ti.name  item_name,
                        n.name || ' -> ' || ti.name  label
-                FROM medical_check_types n
-                JOIN medical_check_type_items ti
+                FROM medical_check_templates n
+                JOIN medical_check_template_items ti
                       ON ti.type_id = n.type_id
                 JOIN medical_checks mc
                       ON mc.type_id = n.type_id

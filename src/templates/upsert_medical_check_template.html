@@ -1,15 +1,15 @@
 {% extends '_base.html' %}
 {% if template %}
-  {% set page_title = "Edit Medical Check Type" %}
+  {% set page_title = "Edit Medical Check Template" %}
 {% else %}
-  {% set page_title = "Create Medical Check Type" %}
+  {% set page_title = "Create Medical Check Template" %}
 {% endif %}
 
 {% block content %}
-<form method="post" action="/admin/medical_check_types/new" class="vstack gap-3">
+<form method="post" action="/admin/medical_check_templates/new" class="vstack gap-3">
   <div class="d-flex justify-content-between align-items-center mb-1">
     <h1 class="h5 mb-0">{{ page_title }}</h1>
-    <a href="/admin/medical_check_types" class="btn btn-outline-secondary">Back to Types</a>
+    <a href="/admin/medical_check_templates" class="btn btn-outline-secondary">Back to Templates</a>
   </div>
 
   <input type="hidden" name="template_id" value="{{ template.type_id if template else '' }}">
@@ -17,7 +17,7 @@
   <div class="card">
     <div class="card-body">
       <div class="mb-0">
-        <label for="checkName" class="form-label">Check name</label>
+        <label for="checkName" class="form-label">Template name</label>
         <input type="text" class="form-control" id="checkName" name="check_name" placeholder="e.g. Physical Examination" value="{{ template.name if template else '' }}" required />
       </div>
     </div>
@@ -25,7 +25,7 @@
 
   <div class="card">
     <div class="card-header">
-      <span>Type Parameters</span>
+      <span>Template Parameters</span>
     </div>
     <div class="card-body p-0">
       <div class="table-responsive">
@@ -105,7 +105,7 @@
 
   <div class="d-flex gap-2">
     <button type="submit" class="btn btn-primary">Save</button>
-    <a href="/admin/medical_check_types" class="btn btn-outline-secondary">Cancel</a>
+    <a href="/admin/medical_check_templates" class="btn btn-outline-secondary">Cancel</a>
   </div>
 </form>
 

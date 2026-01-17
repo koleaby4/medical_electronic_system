@@ -9,7 +9,7 @@ from src.data_access.db_storage import DbStorage
 from src.models.address import Address
 from src.models.enums import MedicalCheckStatus, Sex, Title
 from src.models.medical_check_item import MedicalCheckItem
-from src.models.medical_check_type import MedicalCheckTypeItem
+from src.models.medical_check_template import MedicalCheckTemplateItem
 from src.models.patient import Patient
 
 logger = logging.getLogger(__name__)
@@ -193,12 +193,12 @@ def _generate_value_for_item(name: str, input_type: str, placeholder: str) -> st
 
 def _build_items_for_check_type(db: DbStorage, check_name: str) -> list[MedicalCheckItem] | None:
     try:
-        medical_check_types = db.medical_check_types.list_medical_check_types()
-        match_t = next((t for t in medical_check_types if t.name == check_name), None)
+        medical_check_templates = db.medical_check_templates.list_medical_check_templates()
+        match_t = next((t for t in medical_check_templates if t.name == check_name), None)
         if not match_t:
             return None
 
-        full = db.medical_check_types.get_check_type(type_id=match_t.type_id)
+        full = db.medical_check_templates.get_check_type(type_id=match_t.type_id)
         if not full:
             return None
 
@@ -621,17 +621,17 @@ def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
 
 def _seed_medical_check_templates(storage: DbStorage) -> None:
     items = [
-        MedicalCheckTypeItem(name="height", units="cm", input_type="number", placeholder="e.g. 180"),
-        MedicalCheckTypeItem(name="weight", units="kg", input_type="number", placeholder="e.g. 75.5"),
-        MedicalCheckTypeItem(
+        MedicalCheckTemplateItem(name="height", units="cm", input_type="number", placeholder="e.g. 180"),
+        MedicalCheckTemplateItem(name="weight", units="kg", input_type="number", placeholder="e.g. 75.5"),
+        MedicalCheckTemplateItem(
             name="blood pressure (systolic)", units="mmHg", input_type="number", placeholder="e.g. 120"
         ),
-        MedicalCheckTypeItem(
+        MedicalCheckTemplateItem(
             name="blood pressure (diastolic)", units="mmHg", input_type="number", placeholder="e.g. 80"
         ),
     ]
 
-    new_id = storage.medical_check_types.upsert(
+    new_id = storage.medical_check_templates.upsert(
         template_id=None,
         check_name="physicals",
         items=items,
@@ -641,18 +641,18 @@ def _seed_medical_check_templates(storage: DbStorage) -> None:
 
 def _seed_medical_check_template_blood(storage: DbStorage) -> None:
     items = [
-        MedicalCheckTypeItem(name="Hemoglobin", units="g/dL", input_type="number", placeholder="e.g. 14.2"),
-        MedicalCheckTypeItem(
+        MedicalCheckTemplateItem(name="Hemoglobin", units="g/dL", input_type="number", placeholder="e.g. 14.2"),
+        MedicalCheckTemplateItem(
             name="White Blood Cell Count (WBC)", units="×10^9/L", input_type="number", placeholder="e.g. 6.5"
         ),
-        MedicalCheckTypeItem(name="Platelet Count", units="×10^9/L", input_type="number", placeholder="e.g. 250"),
-        MedicalCheckTypeItem(
+        MedicalCheckTemplateItem(name="Platelet Count", units="×10^9/L", input_type="number", placeholder="e.g. 250"),
+        MedicalCheckTemplateItem(
             name="Blood Glucose (fasting)", units="mmol/L", input_type="number", placeholder="e.g. 5.2"
         ),
-        MedicalCheckTypeItem(name="Total Cholesterol", units="mmol/L", input_type="number", placeholder="e.g. 4.8"),
+        MedicalCheckTemplateItem(name="Total Cholesterol", units="mmol/L", input_type="number", placeholder="e.g. 4.8"),
     ]
 
-    new_id = storage.medical_check_types.upsert(
+    new_id = storage.medical_check_templates.upsert(
         template_id=None,
         check_name="blood",
         items=items,

@@ -11,7 +11,7 @@ def _create_template_with_numeric(client: TestClient, name: str = "Vitals") -> N
         "items[0][input_type]": "number",
         "items[0][placeholder]": "e.g. 75.5",
     }
-    resp = client.post("/admin/medical_check_types/new", data=form, follow_redirects=False)
+    resp = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
     assert resp.status_code in (303, 307)
 
 

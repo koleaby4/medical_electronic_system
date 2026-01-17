@@ -3,17 +3,17 @@ from __future__ import annotations
 import sqlite3
 
 from src.data_access.base import BaseStorage
-from src.models.medical_check_type import (
-    MedicalCheckType,
-    MedicalCheckTypeItem,
+from src.models.medical_check_template import (
+    MedicalCheckTemplate,
+    MedicalCheckTemplateItem,
 )
 
 
-class MedicalCheckTypesStorage(BaseStorage):
+class MedicalCheckTemplatesStorage(BaseStorage):
     def __init__(self, conn: sqlite3.Connection):
         super().__init__(conn)
 
-    def list_medical_check_types(self) -> list[MedicalCheckType]:
+    def list_medical_check_templates(self) -> list[MedicalCheckTemplate]:
         cur = self.conn.cursor()
         try:
             cur.execute(
@@ -25,13 +25,13 @@ class MedicalCheckTypesStorage(BaseStorage):
                     i.units                           AS item_units,
                     i.input_type                      AS item_input_type,
                     i.placeholder                     AS item_placeholder
-                FROM medical_check_types t
-                LEFT JOIN medical_check_type_items i ON i.type_id = t.type_id
+                FROM medical_check_templates t
+                LEFT JOIN medical_check_template_items i ON i.type_id = t.type_id
                 ORDER BY t.name COLLATE NOCASE ASC, t.type_id ASC, i.rowid ASC
                 """
             )
 
-            check_types_by_id: dict[int, MedicalCheckType] = {}
+            check_types_by_id: dict[int, MedicalCheckTemplate] = {}
 
             for (
                 type_id,
@@ -43,7 +43,7 @@ class MedicalCheckTypesStorage(BaseStorage):
             ) in cur.fetchall():
                 tid = int(type_id)
                 if tid not in check_types_by_id:
-                    check_types_by_id[tid] = MedicalCheckType(
+                    check_types_by_id[tid] = MedicalCheckTemplate(
                         type_id=tid,
                         name=type_name,
                         items=[],
@@ -52,7 +52,7 @@ class MedicalCheckTypesStorage(BaseStorage):
                 # When there is no item (LEFT JOIN miss), item_name will be None
                 if item_name:
                     check_types_by_id[tid].items.append(
-                        MedicalCheckTypeItem(
+                        MedicalCheckTemplateItem(
                             name=(item_name or ""),
                             units=(item_units or ""),
                             input_type=(item_input_type or "number"),
@@ -64,14 +64,14 @@ class MedicalCheckTypesStorage(BaseStorage):
 
         return list(check_types_by_id.values())
 
-    def get_check_type(self, *, type_id: int) -> MedicalCheckType | None:
+    def get_check_type(self, *, type_id: int) -> MedicalCheckTemplate | None:
         cur = self.conn.cursor()
         try:
             cur.execute(
                 """
                 SELECT type_id,
                        name
-                FROM medical_check_types
+                FROM medical_check_templates
                 WHERE type_id = ?
                 """,
                 [type_id],
@@ -83,14 +83,14 @@ class MedicalCheckTypesStorage(BaseStorage):
             cur.execute(
                 """
                 SELECT name, units, input_type, placeholder
-                FROM medical_check_type_items
+                FROM medical_check_template_items
                 WHERE type_id = ?
                 ORDER BY rowid ASC
                 """,
                 [type_id],
             )
             items = [
-                MedicalCheckTypeItem(
+                MedicalCheckTemplateItem(
                     name=(r[0] or ""),
                     units=(r[1] or ""),
                     input_type=(r[2] or "number"),
@@ -101,7 +101,7 @@ class MedicalCheckTypesStorage(BaseStorage):
         finally:
             cur.close()
 
-        return MedicalCheckType(
+        return MedicalCheckTemplate(
             type_id=header.get("type_id"),
             name=header.get("name"),
             items=items,
@@ -112,11 +112,11 @@ class MedicalCheckTypesStorage(BaseStorage):
         *,
         template_id: int | None,
         check_name: str,
-        items: list[MedicalCheckTypeItem],
+        items: list[MedicalCheckTemplateItem],
     ) -> int:
         cur = self.conn.execute(
             """
-            INSERT INTO medical_check_types (type_id, name)
+            INSERT INTO medical_check_templates (type_id, name)
             VALUES (?, ?) ON CONFLICT(type_id) DO
             UPDATE SET
                 name = excluded.name
@@ -128,7 +128,7 @@ class MedicalCheckTypesStorage(BaseStorage):
             template_id = int(cur.lastrowid)
 
         self.conn.execute(
-            "DELETE FROM medical_check_type_items WHERE type_id = ?",
+            "DELETE FROM medical_check_template_items WHERE type_id = ?",
             [template_id],
         )
 
@@ -140,7 +140,7 @@ class MedicalCheckTypesStorage(BaseStorage):
 
             self.conn.execute(
                 """
-                INSERT INTO medical_check_type_items (type_id, name, units, input_type, placeholder)
+                INSERT INTO medical_check_template_items (type_id, name, units, input_type, placeholder)
                 VALUES (?, ?, ?, ?, ?)
                 """,
                 [template_id, name, units, input_type, placeholder],
@@ -150,5 +150,5 @@ class MedicalCheckTypesStorage(BaseStorage):
         return template_id
 
     def delete(self, *, type_id: int) -> None:
-        self.conn.execute("DELETE FROM medical_check_types WHERE type_id = ?", [type_id])
+        self.conn.execute("DELETE FROM medical_check_templates WHERE type_id = ?", [type_id])
         self.conn.commit()

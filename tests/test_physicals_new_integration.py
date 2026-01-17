@@ -12,7 +12,7 @@ def test_physicals_new_page_renders(client: TestClient, create_patient):
         "items[0][input_type]": "number",
         "items[0][placeholder]": "e.g. 180",
     }
-    resp_admin = client.post("/admin/medical_check_types/new", data=form, follow_redirects=False)
+    resp_admin = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
     assert resp_admin.status_code in (303, 307)
 
     # Use the generic new page (it will select the first available type, which is the one we created)

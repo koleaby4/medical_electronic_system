@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 def _create_type_json(client: TestClient, name: str, items: list[dict]) -> int:
     resp = client.post(
-        "/admin/medical_check_types",
+        "/admin/medical_check_templates",
         json={
             "name": name,
             "items": items,
@@ -28,12 +28,12 @@ def test_edit_page_prefilled_and_update_via_html_form(client: TestClient):
     )
 
     # Act: open edit page (HTML)
-    resp_edit = client.get(f"/admin/medical_check_types/{type_id}/edit")
+    resp_edit = client.get(f"/admin/medical_check_templates/{type_id}/edit")
     assert resp_edit.status_code == 200
     html = resp_edit.text
 
     # Assert: form is prefilled
-    assert "Edit Medical Check Type" in html
+    assert "Edit Medical Check Template" in html
     assert 'name="check_name"' in html and 'value="Vitals"' in html
     # Items rendered as rows with correct values
     assert 'name="items[0][name]"' in html and 'value="weight"' in html
@@ -49,11 +49,11 @@ def test_edit_page_prefilled_and_update_via_html_form(client: TestClient):
         "items[0][input_type]": "number",
         "items[0][placeholder]": "80.0",
     }
-    resp_post = client.post("/admin/medical_check_types/new", data=form, follow_redirects=False)
+    resp_post = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
     assert resp_post.status_code in (303, 307)
 
     # Assert: JSON GET reflects updates and items are replaced (only one remains)
-    resp_get = client.get(f"/admin/medical_check_types/{type_id}")
+    resp_get = client.get(f"/admin/medical_check_templates/{type_id}")
     assert resp_get.status_code == 200
     data = resp_get.json()
     assert data["name"] == "Vitals Updated"
@@ -65,7 +65,7 @@ def test_edit_page_prefilled_and_update_via_html_form(client: TestClient):
     assert items[0]["placeholder"] == "80.0"
 
     # Assert: listing page shows updated comma-separated fields
-    resp_list = client.get("/admin/medical_check_types")
+    resp_list = client.get("/admin/medical_check_templates")
     assert resp_list.status_code == 200
     list_html = resp_list.text
     # Name and single field visible in the table
@@ -96,11 +96,11 @@ def test_edit_replacing_with_more_items_and_order_preserved(client: TestClient):
         "items[1][input_type]": "number",
         "items[1][placeholder]": "80",
     }
-    resp_post = client.post("/admin/medical_check_types/new", data=form, follow_redirects=False)
+    resp_post = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
     assert resp_post.status_code in (303, 307)
 
     # Read back via JSON and verify two items in the order submitted
-    resp_get = client.get(f"/admin/medical_check_types/{type_id}")
+    resp_get = client.get(f"/admin/medical_check_templates/{type_id}")
     assert resp_get.status_code == 200
     items = resp_get.json().get("items") or []
     assert [i["name"] for i in items] == ["systolic", "diastolic"]
