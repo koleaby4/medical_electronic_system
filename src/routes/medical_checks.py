@@ -180,9 +180,9 @@ async def new_medical_check(
         )
 
     return templates.TemplateResponse(
+        request,
         "create_medical_check_generic.html",
         {
-            "request": request,
             "patient": patient,
             "check_template": selected_template.name,
             "parameters": parameters,
@@ -235,9 +235,9 @@ async def medical_check_details(
         if "application/json" in (request.headers.get("accept") or ""):
             return mc
         return templates.TemplateResponse(
+            request,
             "medical_check_details.html",
             {
-                "request": request,
                 "active_page": "patients",
                 "patient": patient,
                 "check": mc,

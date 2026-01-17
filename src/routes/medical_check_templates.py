@@ -19,9 +19,9 @@ async def medical_check_templates(request: Request, storage: DbStorage = Depends
     active_templates = [t for t in all_templates if t.is_active]
     deactivated_templates = [t for t in all_templates if not t.is_active]
     return templates.TemplateResponse(
+        request,
         "medical_check_templates.html",
         {
-            "request": request,
             "active_page": "admin",
             "active_templates": active_templates,
             "deactivated_types": deactivated_templates,
@@ -32,8 +32,9 @@ async def medical_check_templates(request: Request, storage: DbStorage = Depends
 @router.get("/medical_check_templates/new", include_in_schema=False)
 async def new_medical_check_template(request: Request):
     return templates.TemplateResponse(
+        request,
         "upsert_medical_check_template.html",
-        {"request": request, "active_page": "admin"},
+        {"active_page": "admin"},
     )
 
 
@@ -44,9 +45,9 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
     check_name = form.get("check_name", "").strip()
     if not check_name:
         return templates.TemplateResponse(
+            request,
             "upsert_medical_check_template.html",
             {
-                "request": request,
                 "active_page": "admin",
                 "error": "Type name is required",
             },
@@ -94,8 +95,9 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
 async def view_medical_check_template(template_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
     if mct := storage.medical_check_templates.get_template(template_id=template_id):
         return templates.TemplateResponse(
+            request,
             "upsert_medical_check_template.html",
-            {"request": request, "active_page": "admin", "template": mct},
+            {"active_page": "admin", "template": mct},
         )
 
     raise HTTPException(status_code=404, detail="Medical check template not found")
