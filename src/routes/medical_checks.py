@@ -10,7 +10,6 @@ from src.dependencies import get_storage
 from src.models.enums import MedicalCheckStatus
 from src.models.medical_check import MedicalCheck, MedicalChecks
 from src.models.medical_check_item import MedicalCheckItem
-from src.models.medical_check_template import MedicalCheckTemplate
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")

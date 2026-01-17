@@ -1,5 +1,4 @@
 import re
-import sqlite3
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
