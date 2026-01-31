@@ -1,6 +1,6 @@
 {% extends '_base.html' %}
 {% if template %}
-  {% set page_title = "View Medical Check Template" %}
+  {% set page_title = "Edit Medical Check Template" %}
 {% else %}
   {% set page_title = "Create Medical Check Template" %}
 {% endif %}
@@ -19,11 +19,7 @@
       <div class="row align-items-center">
         <label for="checkName" class="col-sm-auto mb-0">Template name</label>
         <div class="col">
-          {% if template %}
-            <span class="form-control-plaintext">{{ template.name }}</span>
-          {% else %}
-            <input type="text" class="form-control" id="checkName" name="check_name" placeholder="e.g. Physical Examination" value="" required />
-          {% endif %}
+          <input type="text" class="form-control" id="checkName" name="check_name" placeholder="e.g. Physical Examination" value="{{ template.name if template else '' }}" required />
         </div>
       </div>
     </div>
@@ -103,10 +99,8 @@
   </div>
 
   <div class="d-flex gap-2">
-    {% if not template %}
     <button type="submit" class="btn btn-primary">Save</button>
     <a href="/admin/medical_check_templates" class="btn btn-outline-secondary">Cancel</a>
-    {% endif %}
   </div>
 </form>
 

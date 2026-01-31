@@ -21,7 +21,7 @@
       <tbody>
       {% if active_templates and active_templates|length > 0 %}
         {% for t in active_templates %}
-          <tr data-href="/admin/medical_check_templates/{{ t.template_id }}/view" style="cursor: pointer;">
+          <tr data-href="/admin/medical_check_templates/{{ t.template_id }}/edit" style="cursor: pointer;">
             <td>{{ t.name }}</td>
             <td>
               {# Show comma-separated parameter names #}
@@ -64,7 +64,7 @@
           <tbody>
           {% if deactivated_types and deactivated_types|length > 0 %}
             {% for t in deactivated_types %}
-              <tr data-href="/admin/medical_check_templates/{{ t.template_id }}/view" style="cursor: pointer;">
+            <tr data-href="/admin/medical_check_templates/{{ t.template_id }}/edit" style="cursor: pointer;">
                 <td>{{ t.name }}</td>
                 <td>
                   {% if t.items and t.items|length > 0 %}

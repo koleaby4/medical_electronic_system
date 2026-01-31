@@ -49,12 +49,11 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
             "upsert_medical_check_template.html",
             {
                 "active_page": "admin",
-                "error": "Type name is required",
+                "error": "check_name is required",
             },
             status_code=400,
         )
 
-    # Parse items like items[0][name], items[0][units], etc.
     items_by_idx: dict[int, dict[str, Any]] = {}
     pattern = re.compile(r"^items\[(\d+)\]\[(name|units|input_type|placeholder)\]$")
     for key, value in form.multi_items():
@@ -75,12 +74,16 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
             )
         )
 
-    # template_id is optional (for future edit use)
     raw_id = (form.get("template_id") or "").strip()
     template_id = int(raw_id) if raw_id.isdigit() else None
 
     if template_id is not None:
-        raise HTTPException(status_code=403, detail="Medical check templates are immutable and cannot be updated")
+        existing = storage.medical_check_templates.get_template(template_id=template_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="Template not found")
+
+        # For editing, we only update the name and keep existing items
+        items = existing.items
 
     storage.medical_check_templates.upsert(
         template_id=template_id,
@@ -91,8 +94,8 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
     return RedirectResponse(url="/admin/medical_check_templates", status_code=303)
 
 
-@router.get("/medical_check_templates/{template_id}/view", include_in_schema=False)
-async def view_medical_check_template(template_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
+@router.get("/medical_check_templates/{template_id}/edit", include_in_schema=False)
+async def edit_medical_check_template(template_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
     if mct := storage.medical_check_templates.get_template(template_id=template_id):
         return templates.TemplateResponse(
             request,
