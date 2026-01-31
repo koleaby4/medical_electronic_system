@@ -263,20 +263,20 @@ dev = [
 requires-dist = [
     { name = "fastapi" },
     { name = "jinja2" },
-    { name = "pydantic", specifier = ">=2.12.4" },
-    { name = "pydantic-settings", specifier = ">=2.11.0" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "python-multipart" },
     { name = "uvicorn", extras = ["standard"] },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "faker", specifier = ">=38.2.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pytest-asyncio", specifier = ">=1.2.0" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-    { name = "ruff", specifier = ">=0.14.4" },
+    { name = "faker" },
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
 ]
 
 [[package]]

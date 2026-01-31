@@ -9,18 +9,18 @@ dependencies = [
     "uvicorn[standard]",
     "python-multipart",
     "jinja2",
-    "pydantic>=2.12.4",
-    "pydantic-settings>=2.11.0",
+    "pydantic",
+    "pydantic-settings",
 ]
 
 [dependency-groups]
 dev = [
-    "faker>=38.2.0",
-    "httpx>=0.28.1",
-    "pytest>=8.4.2",
-    "pytest-asyncio>=1.2.0",
-    "pytest-cov>=7.0.0",
-    "ruff>=0.14.4",
+    "faker",
+    "httpx",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "ruff",
 ]
 
 [tool.pytest.ini_options]
