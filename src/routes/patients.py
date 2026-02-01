@@ -1,3 +1,4 @@
+import json
 from datetime import date
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -5,11 +6,12 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
-from src.dependencies import get_storage
+from src.dependencies import get_ai_service, get_storage
 from src.models.address import Address
 from src.models.address_utils import build_address
 from src.models.enums import Sex, Title
 from src.models.patient import Patient
+from src.services.ai_service import AiService
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -54,6 +56,25 @@ async def edit_patient_form(request: Request, patient_id: int, storage: DbStorag
             },
         )
     raise HTTPException(status_code=404, detail=f"Patient with {patient_id=} not found")
+
+
+@router.post("/{patient_id}/send_to_ai")
+async def send_to_ai(
+    request: Request,
+    patient_id: int,
+    ai_service: AiService = Depends(get_ai_service),
+):
+    try:
+        _, ai_resp = await ai_service.prepare_and_send_request(patient_id)
+        if "application/json" in (request.headers.get("accept") or ""):
+            if ai_resp:
+                return json.loads(ai_resp.response_json)
+            return {"error": "No response from AI"}
+        return RedirectResponse(url=f"/patients/{patient_id}?ai_success=1", status_code=303)
+    except Exception as e:
+        if "application/json" in (request.headers.get("accept") or ""):
+            return {"error": str(e)}
+        return RedirectResponse(url=f"/patients/{patient_id}?ai_error={str(e)}", status_code=303)
 
 
 @router.post("", status_code=201, response_model=Patient)

@@ -2,6 +2,18 @@
 {% set page_title = "Patient Details" %}
 
 {% block content %}
+    {% if request.query_params.get('ai_success') %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            Request sent to AI successfully and response stored.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+    {% if request.query_params.get('ai_error') %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            Error calling AI: {{ request.query_params.get('ai_error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
     <div class="row g-3">
         <!-- Left column -->
         <div class="col-md-6">
@@ -55,6 +67,17 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Medical Notes panel -->
+            <div class="card mt-3">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span>Medical Notes</span>
+                    <button id="sendToAiBtn" class="btn btn-sm btn-info text-white">Send to AI</button>
+                </div>
+                <div class="card-body">
+                    <textarea id="medicalNotes" class="form-control" rows="10" placeholder="AI response will appear here..."></textarea>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -67,6 +90,8 @@
             const chartTiles = document.getElementById('chartTiles');
             const addChartTileBtn = document.getElementById('addChartTileBtn');
             const chartOption = document.getElementById('chartOption');
+            const sendToAiBtn = document.getElementById('sendToAiBtn');
+            const medicalNotes = document.getElementById('medicalNotes');
 
             // Hold available options for current patient (from backend)
             // Array of {check_template, item_name, label}
@@ -290,6 +315,37 @@
             }
 
             addChartTileBtn.addEventListener('click', addTile);
+
+            sendToAiBtn.addEventListener('click', async () => {
+                sendToAiBtn.disabled = true;
+                sendToAiBtn.textContent = 'Sending...';
+                medicalNotes.value = 'Processing request...';
+
+                try {
+                    const resp = await fetch(`/patients/${patientId}/send_to_ai`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const data = await resp.json();
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        medicalNotes.value = 'Error: ' + data.error;
+                    } else if (data.choices && data.choices[0] && data.choices[0].message) {
+                        medicalNotes.value = data.choices[0].message.content;
+                    } else {
+                        medicalNotes.value = 'Unexpected response format from AI.';
+                    }
+                } catch (e) {
+                    alert('Network error: ' + e.message);
+                    medicalNotes.value = 'Network error: ' + e.message;
+                } finally {
+                    sendToAiBtn.disabled = false;
+                    sendToAiBtn.textContent = 'Send to AI';
+                }
+            });
 
             function tryAutoAddDefaultPhysicalsCharts() {
                 const type = 'physicals';

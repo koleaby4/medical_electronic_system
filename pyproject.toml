@@ -12,6 +12,7 @@ dependencies = [
     "pydantic",
     "pydantic-settings",
     "dotenv",
+    "openai",
 ]
 
 [dependency-groups]

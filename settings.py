@@ -1,8 +1,25 @@
+import os
 from pathlib import Path
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings
+
+load_dotenv()
+
+
+class OpenAISettings(BaseModel):
+    api_key: str
+    prompt: str
+    model: str
+    url: str
 
 
 class Settings(BaseSettings):
     db_file: Path = Path(__file__).parent.absolute() / "database.sqlite"
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    openai: OpenAISettings = OpenAISettings(
+        api_key=os.getenv("openai_api_key") or os.getenv("OPENAI_API_KEY"),
+        prompt=os.getenv("openai_prompt") or os.getenv("OPENAI_PROMPT"),
+        model=os.getenv("openai_model") or os.getenv("OPENAI_MODEL"),
+        url=os.getenv("openai_url") or os.getenv("OPENAI_URL"),
+    )

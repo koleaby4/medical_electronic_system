@@ -51,7 +51,7 @@ def test_edit_page_prefilled_and_update_via_html_form(client: TestClient):
         "items[0][name]": "weight",
         "items[0][units]": "kg",
         "items[0][input_type]": "number",
-        "items[0][placeholder]": "80.0", # Attempting to change placeholder
+        "items[0][placeholder]": "80.0",  # Attempting to change placeholder
     }
     resp_post = client.post("/admin/medical_check_templates/new", data=form, follow_redirects=False)
     assert resp_post.status_code == 303

@@ -33,7 +33,11 @@ def test_template_name_update(client: TestClient):
     template_id = resp.json()["template_id"]
 
     # Attempt to update name via form post
-    resp = client.post("/admin/medical_check_templates/new", data={"check_name": "New Name", "template_id": str(template_id)}, follow_redirects=False)
+    resp = client.post(
+        "/admin/medical_check_templates/new",
+        data={"check_name": "New Name", "template_id": str(template_id)},
+        follow_redirects=False,
+    )
     assert resp.status_code == 303
 
     # Verify name updated
