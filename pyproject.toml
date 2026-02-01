@@ -11,6 +11,7 @@ dependencies = [
     "jinja2",
     "pydantic",
     "pydantic-settings",
+    "dotenv",
 ]
 
 [dependency-groups]
