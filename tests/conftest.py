@@ -34,6 +34,18 @@ def client(app) -> Generator[TestClient, None, None]:
 
 
 # Test helpers / fixtures
+@pytest.fixture(autouse=True)
+def setup_ai_mock(monkeypatch: pytest.MonkeyPatch):
+    """Ensure AI mock mode is used by default in all tests."""
+    # We use playback mode by default.
+    # If a test needs to hit the real API or record, it can override this.
+    # However, since we don't want tests to fail if they don't have fixtures,
+    # we might need a more robust way to mock it if we don't want to provide fixtures for everything.
+    monkeypatch.setenv("AI_MOCK_MODE", "playback")
+    # Point to a stable directory for test fixtures
+    monkeypatch.setenv("AI_FIXTURES_DIR", "tests/fixtures/ai_responses")
+
+
 @pytest.fixture()
 def create_patient(client: TestClient):
     """Factory fixture to create a sample patient and return its id.

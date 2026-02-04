@@ -6,10 +6,11 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
-from src.dependencies import get_storage
+from src.dependencies import get_ai_service, get_storage
 from src.models.enums import MedicalCheckStatus
 from src.models.medical_check import MedicalCheck, MedicalChecks
 from src.models.medical_check_item import MedicalCheckItem
+from src.services.ai_service import AiService
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
@@ -56,6 +57,7 @@ async def create_medical_check(
     patient_id: int,
     request: Request,
     storage: DbStorage = Depends(get_storage),
+    ai_service: AiService = Depends(get_ai_service),
     type: str = Form(...),
     date: datetime.date = Form(...),
     status: str = Form(...),
@@ -92,6 +94,9 @@ async def create_medical_check(
             medical_check_items=mc.medical_check_items,
             notes=mc.notes,
         )
+
+        # Trigger AI analysis
+        await ai_service.prepare_and_send_request(patient_id)
 
         created = storage.medical_checks.get_medical_check(patient_id=patient_id, check_id=check_id)
         headers = {"Location": f"/patients/{patient_id}/medical_checks/{check_id}"}
@@ -132,6 +137,9 @@ async def create_medical_check(
         medical_check_items=mc.medical_check_items,
         notes=mc.notes,
     )
+
+    # Trigger AI analysis
+    await ai_service.prepare_and_send_request(patient_id)
 
     return RedirectResponse(url=f"/patients/{patient.patient_id}", status_code=303)
 

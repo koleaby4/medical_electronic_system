@@ -23,10 +23,12 @@ async def test_send_to_ai_button_and_response(client: TestClient, create_patient
     # 3. Mock AiService and trigger the button click via AJAX
     mock_ai_service = MagicMock()
     mock_response = MagicMock()
-    content_json = json.dumps({
-        "Findings": "Patient is doing well.\n- Blood pressure is normal.",
-        "Outstanding tasks": "- Schedule follow-up blood test."
-    })
+    content_json = json.dumps(
+        {
+            "Findings": "Patient is doing well.\n- Blood pressure is normal.",
+            "Outstanding tasks": "- Schedule follow-up blood test.",
+        }
+    )
     mock_response.response_json = json.dumps({"choices": [{"message": {"content": content_json}}]})
     mock_ai_service.prepare_and_send_request = AsyncMock(return_value=(MagicMock(), mock_response))
 
