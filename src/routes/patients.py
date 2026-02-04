@@ -286,6 +286,16 @@ async def get_patient(
     if "application/json" in request.headers.get("accept", ""):
         return patient
 
+    # Provide available medical check types for UI dropdown
+    check_templates = [t for t in storage.medical_check_templates.list_medical_check_templates() if t.is_active]
+
+    # Fetch last AI response if any
+    last_ai_response = None
+    if ai_requests := storage.ai_requests.get_by_patient(patient_id):
+        last_request = ai_requests[0]
+        if ai_responses := storage.ai_responses.get_by_request(last_request.id):
+            last_ai_response = ai_responses[0].response_json
+
     return templates.TemplateResponse(
         request,
         "patient_details.html",
@@ -293,7 +303,7 @@ async def get_patient(
             "active_page": "patients",
             "patient": patient,
             "age": _get_age(patient.dob),
-            # Provide available medical check types for UI dropdown
-            "templates": [t for t in storage.medical_check_templates.list_medical_check_templates() if t.is_active],
+            "templates": check_templates,
+            "last_ai_response": last_ai_response,
         },
     )
