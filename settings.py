@@ -13,6 +13,7 @@ class OpenAISettings(BaseModel):
     prompt: str
     model: str
     url: str
+    timeout: float
 
 
 class Settings(BaseSettings):
@@ -22,4 +23,5 @@ class Settings(BaseSettings):
         prompt=os.getenv("openai_prompt") or os.getenv("OPENAI_PROMPT"),
         model=os.getenv("openai_model") or os.getenv("OPENAI_MODEL"),
         url=os.getenv("openai_url") or os.getenv("OPENAI_URL"),
+        timeout=float(os.getenv("openai_timeout")),
     )

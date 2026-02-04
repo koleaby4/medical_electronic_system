@@ -68,14 +68,14 @@
                 </div>
             </div>
 
-            <!-- Medical Notes panel -->
+            <!-- Summary panel -->
             <div class="card mt-3">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <span>Medical Notes</span>
-                    <button id="sendToAiBtn" class="btn btn-sm btn-info text-white">Send to AI</button>
+                    <span>Summary</span>
+                    <button id="sendToAiBtn" class="btn btn-sm btn-info text-white">Summarise</button>
                 </div>
                 <div class="card-body">
-                    <textarea id="medicalNotes" class="form-control" rows="10" placeholder="AI response will appear here..."></textarea>
+                    <div id="medicalNotes" class="border rounded p-3 bg-light" style="min-height: 200px; white-space: pre-wrap;">AI response will appear here...</div>
                 </div>
             </div>
         </div>
@@ -319,7 +319,7 @@
             sendToAiBtn.addEventListener('click', async () => {
                 sendToAiBtn.disabled = true;
                 sendToAiBtn.textContent = 'Sending...';
-                medicalNotes.value = 'Processing request...';
+                medicalNotes.textContent = 'Processing request...';
 
                 try {
                     const resp = await fetch(`/patients/${patientId}/send_to_ai`, {
@@ -332,18 +332,77 @@
                     const data = await resp.json();
                     if (data.error) {
                         alert('Error: ' + data.error);
-                        medicalNotes.value = 'Error: ' + data.error;
+                        medicalNotes.textContent = 'Error: ' + data.error;
                     } else if (data.choices && data.choices[0] && data.choices[0].message) {
-                        medicalNotes.value = data.choices[0].message.content;
+                        const content = data.choices[0].message.content;
+                        try {
+                            const parsed = JSON.parse(content);
+                            medicalNotes.innerHTML = '';
+                            for (const [key, value] of Object.entries(parsed)) {
+                                const section = document.createElement('div');
+                                section.className = 'mb-3';
+                                
+                                const title = document.createElement('h6');
+                                title.className = 'fw-bold border-bottom pb-1 text-primary';
+                                title.textContent = key;
+                                section.appendChild(title);
+                                
+                                const body = document.createElement('div');
+                                body.style.whiteSpace = 'pre-wrap';
+                                
+                                // Simple bullet point parsing: if line starts with - or *, use <ul>
+                                const lines = value.split('\n');
+                                if (lines.some(l => l.trim().startsWith('-') || l.trim().startsWith('*'))) {
+                                    const ul = document.createElement('ul');
+                                    ul.className = 'ps-3 mb-0';
+                                    let currentText = '';
+                                    
+                                    for (let line of lines) {
+                                        const trimmed = line.trim();
+                                        if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+                                            if (currentText) {
+                                                const p = document.createElement('p');
+                                                p.className = 'mb-1';
+                                                p.textContent = currentText.trim();
+                                                body.appendChild(p);
+                                                currentText = '';
+                                            }
+                                            const li = document.createElement('li');
+                                            li.textContent = trimmed.substring(1).trim();
+                                            ul.appendChild(li);
+                                        } else if (trimmed) {
+                                            currentText += line + '\n';
+                                        }
+                                    }
+                                    if (currentText) {
+                                        const p = document.createElement('p');
+                                        p.className = 'mb-1';
+                                        p.textContent = currentText.trim();
+                                        body.appendChild(p);
+                                    }
+                                    if (ul.children.length > 0) {
+                                        body.appendChild(ul);
+                                    }
+                                } else {
+                                    body.textContent = value;
+                                }
+                                
+                                section.appendChild(body);
+                                medicalNotes.appendChild(section);
+                            }
+                        } catch (e) {
+                            // Fallback to raw text if not JSON
+                            medicalNotes.textContent = content;
+                        }
                     } else {
-                        medicalNotes.value = 'Unexpected response format from AI.';
+                        medicalNotes.textContent = 'Unexpected response format from AI.';
                     }
                 } catch (e) {
                     alert('Network error: ' + e.message);
-                    medicalNotes.value = 'Network error: ' + e.message;
+                    medicalNotes.textContent = 'Network error: ' + e.message;
                 } finally {
                     sendToAiBtn.disabled = false;
-                    sendToAiBtn.textContent = 'Send to AI';
+                    sendToAiBtn.textContent = 'Summarise';
                 }
             });
 

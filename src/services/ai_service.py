@@ -71,7 +71,7 @@ class AiService:
                 response = await self.client.chat.completions.create(
                     model=self.settings.model,
                     messages=payload["messages"],
-                    timeout=30.0,
+                    timeout=self.settings.timeout,
                 )
 
                 # Save response to DB

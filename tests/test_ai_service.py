@@ -13,7 +13,9 @@ from src.services.ai_service import AiService
 async def test_ai_service_anonymization_and_storage(migrated_db, create_patient):
     # Setup
     db = DbStorage(migrated_db)
-    settings = OpenAISettings(api_key="test_key", prompt="Test prompt", model="test-model", url="https://example.com")
+    settings = OpenAISettings(
+        api_key="test_key", prompt="Test prompt", model="test-model", url="https://example.com", timeout=30.0
+    )
 
     # Mock AsyncOpenAI.chat.completions.create
     with patch("src.services.ai_service.AsyncOpenAI") as mock_openai_class:
@@ -76,13 +78,16 @@ async def test_ai_service_anonymization_and_storage(migrated_db, create_patient)
         args, kwargs = mock_client.chat.completions.create.call_args
         assert kwargs["model"] == "test-model"
         assert kwargs["messages"] == payload["messages"]
+        assert kwargs["timeout"] == 30.0
 
 
 @pytest.mark.asyncio
 async def test_ai_service_no_api_key_still_saves_to_db(migrated_db, create_patient):
     # Setup
     db = DbStorage(migrated_db)
-    settings = OpenAISettings(api_key="", prompt="Test prompt", model="test-model", url="https://example.com")
+    settings = OpenAISettings(
+        api_key="", prompt="Test prompt", model="test-model", url="https://example.com", timeout=30.0
+    )
     ai_service = AiService(db, settings)
 
     patient_id = create_patient()

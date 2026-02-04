@@ -12,17 +12,22 @@ async def test_send_to_ai_button_and_response(client: TestClient, create_patient
     # 1. Create a patient
     patient_id = create_patient()
 
-    # 2. Check if the button and text area are present on the patient details page
+    # 2. Check if the button and summary div are present on the patient details page
     resp = client.get(f"/patients/{patient_id}")
     assert resp.status_code == 200
-    assert "Send to AI" in resp.text
+    assert "Summarise" in resp.text
+    assert "Summary" in resp.text
     assert 'id="medicalNotes"' in resp.text
     assert 'id="sendToAiBtn"' in resp.text
 
     # 3. Mock AiService and trigger the button click via AJAX
     mock_ai_service = MagicMock()
     mock_response = MagicMock()
-    mock_response.response_json = json.dumps({"choices": [{"message": {"content": "Test AI Content"}}]})
+    content_json = json.dumps({
+        "Findings": "Patient is doing well.\n- Blood pressure is normal.",
+        "Outstanding tasks": "- Schedule follow-up blood test."
+    })
+    mock_response.response_json = json.dumps({"choices": [{"message": {"content": content_json}}]})
     mock_ai_service.prepare_and_send_request = AsyncMock(return_value=(MagicMock(), mock_response))
 
     # Override the dependency in the app
@@ -38,7 +43,7 @@ async def test_send_to_ai_button_and_response(client: TestClient, create_patient
         # Check JSON response
         assert resp.status_code == 200
         data = resp.json()
-        assert data["choices"][0]["message"]["content"] == "Test AI Content"
+        assert data["choices"][0]["message"]["content"] == content_json
     finally:
         app.dependency_overrides.clear()
 
