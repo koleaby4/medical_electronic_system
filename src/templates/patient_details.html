@@ -75,6 +75,9 @@
                     <button id="sendToAiBtn" class="btn btn-sm btn-info text-white">Summarise</button>
                 </div>
                 <div class="card-body">
+                    <div id="aiProgressBar" class="progress mb-3" style="display: none;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 100%"></div>
+                    </div>
                     <div id="medicalNotes" class="border rounded p-3 bg-light" style="min-height: 200px; white-space: pre-wrap;">AI response will appear here...</div>
                 </div>
             </div>
@@ -92,6 +95,7 @@
             const chartOption = document.getElementById('chartOption');
             const sendToAiBtn = document.getElementById('sendToAiBtn');
             const medicalNotes = document.getElementById('medicalNotes');
+            const aiProgressBar = document.getElementById('aiProgressBar');
 
             function displayAiResponse(content) {
                 try {
@@ -410,7 +414,8 @@
             sendToAiBtn.addEventListener('click', async () => {
                 sendToAiBtn.disabled = true;
                 sendToAiBtn.textContent = 'Sending...';
-                medicalNotes.textContent = 'Processing request...';
+                medicalNotes.textContent = '';
+                aiProgressBar.style.display = 'flex';
 
                 try {
                     const resp = await fetch(`/patients/${patientId}/send_to_ai`, {
@@ -433,6 +438,7 @@
                 } finally {
                     sendToAiBtn.disabled = false;
                     sendToAiBtn.textContent = 'Summarise';
+                    aiProgressBar.style.display = 'none';
                 }
             });
         });
