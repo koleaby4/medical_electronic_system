@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from settings import OpenAISettings, Settings
+from settings import OpenAISettings
 from src.data_access.db_storage import DbStorage
 from src.models.medical_check_item import MedicalCheckItem
 from src.services.ai_service import AiService
