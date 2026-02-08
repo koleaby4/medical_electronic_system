@@ -40,7 +40,7 @@ class AiService:
         payload = {
             "model": self.settings.model,
             "messages": [
-                {"role": "system", "content": self.settings.prompt},
+                {"role": "system", "content": self.settings.system_prompt},
                 {
                     "role": "user",
                     "content": json.dumps(
@@ -48,7 +48,7 @@ class AiService:
                             "patient_info": anonymized_patient,
                             "medical_history": anonymized_checks,
                         },
-                        indent=2,
+                        indent=4,
                     ),
                 },
             ],
@@ -59,7 +59,7 @@ class AiService:
             patient_id=patient_id,
             model_name=self.settings.model,
             model_url=self.settings.url,
-            system_prompt_text=self.settings.prompt,
+            system_prompt_text=self.settings.system_prompt,
             request_payload_json=json.dumps(payload),
         )
         self.db.ai_requests.save(ai_req)

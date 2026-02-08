@@ -36,7 +36,7 @@ class MockAiService(AiService):
         payload = {
             "model": self.settings.model,
             "messages": [
-                {"role": "system", "content": self.settings.prompt},
+                {"role": "system", "content": self.settings.system_prompt},
                 {
                     "role": "user",
                     "content": json.dumps(
@@ -62,7 +62,7 @@ class MockAiService(AiService):
                     patient_id=patient_id,
                     model_name=self.settings.model,
                     model_url=self.settings.url,
-                    system_prompt_text=self.settings.prompt,
+                    system_prompt_text=self.settings.system_prompt,
                     request_payload_json=json.dumps(payload),
                 )
                 self.db.ai_requests.save(ai_req)
@@ -78,7 +78,7 @@ class MockAiService(AiService):
                     patient_id=patient_id,
                     model_name=self.settings.model,
                     model_url=self.settings.url,
-                    system_prompt_text=self.settings.prompt,
+                    system_prompt_text=self.settings.system_prompt,
                     request_payload_json=json.dumps(payload),
                 )
                 self.db.ai_requests.save(ai_req)

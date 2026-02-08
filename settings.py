@@ -10,7 +10,7 @@ load_dotenv()
 
 class OpenAISettings(BaseModel):
     api_key: str
-    prompt: str
+    system_prompt: str
     model: str
     url: str
     timeout: float
@@ -19,9 +19,9 @@ class OpenAISettings(BaseModel):
 class Settings(BaseSettings):
     db_file: Path = Path(__file__).parent.absolute() / "database.sqlite"
     openai: OpenAISettings = OpenAISettings(
-        api_key=os.getenv("openai_api_key") or os.getenv("OPENAI_API_KEY"),
-        prompt=os.getenv("openai_prompt") or os.getenv("OPENAI_PROMPT"),
-        model=os.getenv("openai_model") or os.getenv("OPENAI_MODEL"),
-        url=os.getenv("openai_url") or os.getenv("OPENAI_URL"),
-        timeout=float(os.getenv("openai_timeout")),
+        api_key=os.getenv("OPENAI_API_KEY"),
+        system_prompt=os.getenv("OPENAI_SYSTEM_PROMPT"),
+        model=os.getenv("OPENAI_MODEL"),
+        url=os.getenv("OPENAI_URL"),
+        timeout=float(os.getenv("OPENAI_TIMEOUT")),
     )

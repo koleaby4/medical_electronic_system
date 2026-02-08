@@ -17,7 +17,7 @@ async def test_mock_ai_service_record_and_playback(migrated_db, create_patient, 
     monkeypatch.setenv("AI_FIXTURES_DIR", str(fixtures_dir))
 
     settings = OpenAISettings(
-        api_key="test_key", prompt="Test prompt", model="test-model", url="https://example.com", timeout=30.0
+        api_key="test_key", system_prompt="Test prompt", model="test-model", url="https://example.com", timeout=30.0
     )
 
     patient_id = create_patient()
