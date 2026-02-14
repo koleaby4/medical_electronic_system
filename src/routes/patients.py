@@ -25,9 +25,7 @@ async def list_patients(
 ):
     patients = storage.patients.get_all_patients()
 
-    return templates.TemplateResponse(
-        request, "patients.html", {"active_page": "patients", "patients": patients}
-    )
+    return templates.TemplateResponse(request, "patients.html", {"active_page": "patients", "patients": patients})
 
 
 @router.get("/new", include_in_schema=False)

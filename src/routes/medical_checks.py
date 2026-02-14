@@ -218,11 +218,10 @@ async def get_timeseries(
     return {"records": series}
 
 
-@router.get("/chartable_options", response_model=None)
+@router.get("/chartable_options")
 async def get_chartable_options(patient_id: int, storage: DbStorage = Depends(get_storage)):
     """
     Return list of chartable numeric options available for the patient.
-    Shape: {"records": [{"check_template": str, "item_name": str, "label": str}, ...]}
     """
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")

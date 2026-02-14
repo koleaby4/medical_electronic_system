@@ -37,7 +37,7 @@
                         <div class="col-auto">
                             <label for="chartOption" class="form-label">Chart item</label>
                             <select id="chartOption" class="form-select">
-                                <!-- options populated dynamically as: name -> item_name -->
+                                <option>Loading...</option>
                             </select>
                         </div>
                         <div class="col-auto">
@@ -61,21 +61,94 @@
                 <div class="card-body">
                     <!-- Top: Add control -->
                     <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
-                        <select id="checkType" class="form-select" style="max-width: 320px;">
+                        <select id="checkType" name="check_template_id" class="form-select" style="max-width: 320px;">
                             {% for t in templates or [] %}
                                 <option value="{{ t.template_id }}">{{ t.name }}</option>
                             {% endfor %}
                         </select>
-                        <button id="addRecordBtn" class="btn btn-primary">Add Record</button>
+                        <a id="addRecordBtn" class="btn btn-primary" 
+                           href="#" 
+                           onclick="this.href='/patients/{{ patient.patient_id }}/medical_checks/new?check_template_id=' + document.getElementById('checkType').value">Add Record</a>
                     </div>
 
                     <!-- Bottom: tiles list -->
-                    <div id="noRecords" class="text-muted" style="display:none;">No records yet.</div>
                     <div id="checksTiles" class="row row-cols-1 g-2">
-                        <!-- populated by JS -->
+                        <div class="text-muted">Loading records...</div>
                     </div>
                 </div>
             </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', async () => {
+                    const patientId = '{{ patient.patient_id }}';
+                    const container = document.getElementById('checksTiles');
+                    
+                    async function loadMedicalChecks() {
+                        try {
+                            const resp = await fetch(`/patients/${patientId}/medical_checks`);
+                            if (!resp.ok) throw new Error('Failed to load medical checks');
+                            const data = await resp.json();
+                            
+                            if (data.records && data.records.length > 0) {
+                                container.innerHTML = '';
+                                data.records.forEach(r => {
+                                    const col = document.createElement('div');
+                                    col.className = 'col';
+                                    
+                                    const statusClass = r.status === 'Red' ? 'bg-danger text-white' : 
+                                                      r.status === 'Amber' ? 'bg-warning text-dark' : 
+                                                      r.status === 'Green' ? 'bg-success text-white' : '';
+                                    
+                                    const div = document.createElement('div');
+                                    div.className = `border rounded py-2 px-3 d-flex justify-content-between align-items-center ${statusClass}`;
+                                    if (r.check_id) {
+                                        div.style.cursor = 'pointer';
+                                        div.onclick = () => window.location.href = `/patients/${patientId}/medical_checks/${r.check_id}`;
+                                        div.title = 'View details';
+                                    }
+                                    
+                                    div.innerHTML = `
+                                        <div class="fw-bold text-truncate">${r.template_name || ''}</div>
+                                        <div class="fw-bold ms-3">${r.check_date}</div>
+                                    `;
+                                    col.appendChild(div);
+                                    container.appendChild(col);
+                                });
+                            } else {
+                                container.innerHTML = '<div id="noRecords" class="text-muted">No records yet.</div>';
+                            }
+                        } catch (e) {
+                            container.innerHTML = '<div class="text-danger">Failed to load records</div>';
+                        }
+                    }
+
+                    async function loadChartableOptions() {
+                        try {
+                            const resp = await fetch(`/patients/${patientId}/medical_checks/chartable_options`, {
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            if (!resp.ok) throw new Error('Failed to load chartable options');
+                            const data = await resp.json();
+                            const select = document.getElementById('chartOption');
+                            if (data.records && data.records.length > 0) {
+                                select.innerHTML = data.records.map(r => `
+                                    <option value='${JSON.stringify({type: r.check_template, name: r.item_name})}'>
+                                        ${r.label || (r.check_template + ' -> ' + r.item_name)}
+                                    </option>
+                                `).join('');
+                            } else {
+                                select.innerHTML = '<option value="">No chartable data</option>';
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            document.getElementById('chartOption').innerHTML = '<option value="">Error loading options</option>';
+                        }
+                    }
+            
+                    loadMedicalChecks();
+                    loadChartableOptions();
+                });
+            </script>
 
             <!-- Summary panel -->
             <div class="card mt-3">
@@ -104,8 +177,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const patientId = document.getElementById('patient-details-container').dataset.patientId;
-            const tiles = document.getElementById('checksTiles');
-            const noRecords = document.getElementById('noRecords');
             const chartTiles = document.getElementById('chartTiles');
             const addChartTileBtn = document.getElementById('addChartTileBtn');
             const chartOption = document.getElementById('chartOption');
@@ -113,170 +184,8 @@
             const medicalNotes = document.getElementById('medicalNotes');
             const aiProgressBar = document.getElementById('aiProgressBar');
 
-            function displayAiResponse(content) {
-                try {
-                    const parsed = typeof content === 'string' ? JSON.parse(content) : content;
-                    // If it's the full OpenAI response object, extract content
-                    let actualContent = parsed;
-                    if (parsed.choices && parsed.choices[0] && parsed.choices[0].message) {
-                        actualContent = parsed.choices[0].message.content;
-                        try {
-                            actualContent = JSON.parse(actualContent);
-                        } catch (e) {
-                            // actualContent remains a string
-                        }
-                    }
-
-                    if (typeof actualContent === 'object' && actualContent !== null) {
-                        medicalNotes.innerHTML = '';
-                        for (let [key, value] of Object.entries(actualContent)) {
-                            if (key.toLowerCase() === 'charts') {
-                                if (Array.isArray(value)) {
-                                    for (const chartSpec of value) {
-                                        if (typeof chartSpec === 'string' && chartSpec.includes('.')) {
-                                            const [type, name] = chartSpec.split('.', 2);
-                                            addTileWith(type.trim(), name.trim());
-                                        }
-                                    }
-                                }
-                                continue;
-                            }
-
-                            const section = document.createElement('div');
-                            section.className = 'mb-3';
-                            
-                            const title = document.createElement('h6');
-                            title.className = 'fw-bold border-bottom pb-1 text-primary';
-                            title.textContent = key;
-                            section.appendChild(title);
-                            
-                            const body = document.createElement('div');
-                            
-                            if (typeof value === 'object' && value !== null && value.html) {
-                                body.innerHTML = value.html;
-                            } else {
-                                body.style.whiteSpace = 'pre-wrap';
-                                // Simple bullet point parsing: if line starts with - or *, use <ul>
-                                const lines = String(typeof value === 'object' && value !== null && value.text ? value.text : value).split('\n');
-                                if (lines.some(l => l.trim().startsWith('-') || l.trim().startsWith('*'))) {
-                                    const ul = document.createElement('ul');
-                                    ul.className = 'ps-3 mb-0';
-                                    let currentText = '';
-                                    
-                                    for (let line of lines) {
-                                        const trimmed = line.trim();
-                                        if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
-                                            if (currentText) {
-                                                const p = document.createElement('p');
-                                                p.className = 'mb-1';
-                                                p.textContent = currentText.trim();
-                                                body.appendChild(p);
-                                                currentText = '';
-                                            }
-                                            const li = document.createElement('li');
-                                            li.textContent = trimmed.substring(1).trim();
-                                            ul.appendChild(li);
-                                        } else if (trimmed) {
-                                            currentText += line + '\n';
-                                        }
-                                    }
-                                    if (currentText) {
-                                        const p = document.createElement('p');
-                                        p.className = 'mb-1';
-                                        p.textContent = currentText.trim();
-                                        body.appendChild(p);
-                                    }
-                                    if (ul.children.length > 0) {
-                                        body.appendChild(ul);
-                                    }
-                                } else {
-                                    body.textContent = typeof value === 'object' && value !== null && value.text ? value.text : value;
-                                }
-                            }
-                            
-                            section.appendChild(body);
-                            medicalNotes.appendChild(section);
-                        }
-                    } else {
-                        medicalNotes.textContent = actualContent;
-                    }
-                } catch (e) {
-                    console.error("Failed to parse AI response:", e);
-                    medicalNotes.textContent = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
-                }
-            }
-
-            // Hold available options for current patient (from backend)
-            // Array of {check_template, item_name, label}
-            let chartableOptions = [];
-
-            function render(records) {
-                tiles.innerHTML = '';
-                if (!records || records.length === 0) {
-                    noRecords.style.display = '';
-                    return;
-                }
-                noRecords.style.display = 'none';
-                for (const r of records) {
-                    const col = document.createElement('div');
-                    col.className = 'col';
-
-                    const card = document.createElement('div');
-                    card.className = 'border rounded py-2 px-3 d-flex justify-content-between align-items-center';
-                    if (r.check_id) {
-                        card.style.cursor = 'pointer';
-                        card.addEventListener('click', () => {
-                            window.location.href = `/patients/${patientId}/medical_checks/${r.check_id}`;
-                        });
-                        card.title = 'View details';
-                    }
-
-                    const templateName = document.createElement('div');
-                    templateName.className = 'fw-bold text-truncate';
-                    templateName.textContent = r.template_name || '';
-
-                    const date = document.createElement('div');
-                    date.className = 'fw-bold ms-3';
-                    date.textContent = r.check_date;
-
-                    const sVal = r.status || '';
-                    if (sVal === 'Red') {
-                        card.classList.add('bg-danger', 'text-white');
-                    } else if (sVal === 'Amber') {
-                        card.classList.add('bg-warning', 'text-dark');
-                    } else if (sVal === 'Green') {
-                        card.classList.add('bg-success', 'text-white');
-                    }
-
-                    card.append(templateName, date);
-                    col.appendChild(card);
-                    tiles.appendChild(col);
-                }
-            }
-
-            Promise.all([
-                fetch(`/patients/${patientId}/medical_checks`).then(r => r.json()).catch(() => ({records: []})),
-                fetch(`/patients/${patientId}/medical_checks/chartable_options`).then(r => r.json()).catch(() => ({records: []})),
-            ])
-                .then(([checksData, optionsData]) => {
-                    const records = Array.isArray(checksData.records) ? checksData.records : [];
-                    chartableOptions = Array.isArray(optionsData.records) ? optionsData.records : [];
-                    populateChartOptionSelect();
-                    updateChartsControlsState();
-                    render(records);
-
-                })
-                .catch(() => {
-                    // If failed, disable controls and render empty list
-                    render([]);
-                    updateChartsControlsState(true);
-                });
-
-            // Redirect to generic add page based on selected type
-            document.getElementById('addRecordBtn').addEventListener('click', () => {
-                const selectedTemplateId = document.getElementById('checkType').value;
-                window.location.href = `/patients/${patientId}/medical_checks/new?check_template_id=${encodeURIComponent(selectedTemplateId)}`;
-            });
+            // HOLD: chartableOptions removed from JS as we'll fetch them via HTMX directly into the select.
+            // Let's keep the JS for charts for now as it's heavily Chart.js dependent.
 
             // --- Dynamic chart tiles ---
             const chartState = new Map(); // key -> { chart, el }
@@ -311,24 +220,6 @@
                 col.appendChild(card);
 
                 return { col, canvas, removeBtn };
-            }
-
-            function populateChartOptionSelect() {
-                const current = chartOption.value;
-                chartOption.innerHTML = '';
-                for (const o of chartableOptions) {
-                    const opt = document.createElement('option');
-                    opt.value = JSON.stringify({ type: o.check_template, name: o.item_name });
-                    opt.textContent = o.label || `${o.check_template} -> ${o.item_name}`;
-                    chartOption.appendChild(opt);
-                }
-                if (current) chartOption.value = current;
-            }
-
-            function updateChartsControlsState(forceDisable = false) {
-                const hasOptions = !forceDisable && Array.isArray(chartableOptions) && chartableOptions.length > 0;
-                chartOption.disabled = !hasOptions;
-                addChartTileBtn.disabled = !hasOptions;
             }
 
             async function fetchSeries(type, name) {

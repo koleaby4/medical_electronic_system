@@ -76,9 +76,9 @@ class MockAiService(AiService):
                 dummy_content = {
                     "Overview": {
                         "text": "Dummy AI overview for testing.",
-                        "html": "<p>Dummy AI overview for testing.</p>"
+                        "html": "<p>Dummy AI overview for testing.</p>",
                     },
-                    "Charts": []
+                    "Charts": [],
                 }
                 ai_req = AiRequest(
                     patient_id=patient_id,
