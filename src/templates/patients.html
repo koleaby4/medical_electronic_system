@@ -23,18 +23,4 @@
             </tbody>
         </table>
     </div>
-
-    <script>
-        // Make patient rows clickable to open patient details, but ignore clicks on existing links/buttons
-        document.querySelector('#patientsTable tbody').addEventListener('click', function (e) {
-            // If clicked inside a link or button, do nothing (let default behavior happen)
-            if (e.target.closest('a, button')) {
-                return;
-            }
-            const row = e.target.closest('tr[data-href]');
-            if (row) {
-                window.location.href = row.getAttribute('data-href');
-            }
-        });
-    </script>
 {% endblock %}

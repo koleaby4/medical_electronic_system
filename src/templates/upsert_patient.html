@@ -11,7 +11,10 @@
 
 {% block content %}
     <h2 class="mb-4">{{ page_title }}</h2>
-    <form id="patientForm" action="{{ form_action }}" method="post">
+    <form id="patientForm" 
+          hx-post="{{ form_action }}" 
+          hx-target="body" 
+          hx-push-url="true">
         {# Simpler edit handling: use method override for PUT when editing #}
         {% if patient %}
             <input type="hidden" name="_method" value="PUT">

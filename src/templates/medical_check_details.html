@@ -21,7 +21,10 @@
                     <div class="col-8">{{ check.check_date }}</div>
                 </div>
 
-                <form method="post" action="/patients/{{ patient.patient_id }}/medical_checks/{{ check.check_id }}/status" class="row g-2 align-items-end">
+                <form hx-post="/patients/{{ patient.patient_id }}/medical_checks/{{ check.check_id }}/status" 
+                      hx-target="body" 
+                      hx-push-url="true"
+                      class="row g-2 align-items-end">
                     <div class="col-8">
                         <label for="status" class="form-label mb-0">Status</label>
                         {% from '_status_select.html' import status_select %}

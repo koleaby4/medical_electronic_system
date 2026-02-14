@@ -28,7 +28,7 @@
         <div class="col-md-6">
             {% include '_patient_summary_card.html' %}
 
-            <!-- Dynamic chart tiles -->
+            <!-- Add tile controls -->
             <div class="card mb-3">
                 <div class="card-header bg-secondary text-white">Charts</div>
                 <div class="card-body">
@@ -36,7 +36,10 @@
                     <div class="row g-2 align-items-end mb-3">
                         <div class="col-auto">
                             <label for="chartOption" class="form-label">Chart item</label>
-                            <select id="chartOption" class="form-select">
+                            <select id="chartOption" class="form-select"
+                                    hx-get="/patients/{{ patient.patient_id }}/medical_checks/chartable_options"
+                                    hx-trigger="load"
+                                    hx-target="this">
                                 <option>Loading...</option>
                             </select>
                         </div>
@@ -67,87 +70,23 @@
                             {% endfor %}
                         </select>
                         <a id="addRecordBtn" class="btn btn-primary" 
-                           href="#" 
-                           onclick="this.href='/patients/{{ patient.patient_id }}/medical_checks/new?check_template_id=' + document.getElementById('checkType').value">Add Record</a>
+                           hx-get="/patients/{{ patient.patient_id }}/medical_checks/new"
+                           hx-include="#checkType"
+                           hx-target="body"
+                           hx-push-url="true">Add Record</a>
                     </div>
 
                     <!-- Bottom: tiles list -->
                     <div id="checksTiles" class="row row-cols-1 g-2">
-                        <div class="text-muted">Loading records...</div>
+                        {% with records=medical_checks, patient_id=patient.patient_id %}
+                            {% include '_medical_checks_list.html' %}
+                        {% endwith %}
                     </div>
                 </div>
             </div>
 
             <script>
-                document.addEventListener('DOMContentLoaded', async () => {
-                    const patientId = '{{ patient.patient_id }}';
-                    const container = document.getElementById('checksTiles');
-                    
-                    async function loadMedicalChecks() {
-                        try {
-                            const resp = await fetch(`/patients/${patientId}/medical_checks`);
-                            if (!resp.ok) throw new Error('Failed to load medical checks');
-                            const data = await resp.json();
-                            
-                            if (data.records && data.records.length > 0) {
-                                container.innerHTML = '';
-                                data.records.forEach(r => {
-                                    const col = document.createElement('div');
-                                    col.className = 'col';
-                                    
-                                    const statusClass = r.status === 'Red' ? 'bg-danger text-white' : 
-                                                      r.status === 'Amber' ? 'bg-warning text-dark' : 
-                                                      r.status === 'Green' ? 'bg-success text-white' : '';
-                                    
-                                    const div = document.createElement('div');
-                                    div.className = `border rounded py-2 px-3 d-flex justify-content-between align-items-center ${statusClass}`;
-                                    if (r.check_id) {
-                                        div.style.cursor = 'pointer';
-                                        div.onclick = () => window.location.href = `/patients/${patientId}/medical_checks/${r.check_id}`;
-                                        div.title = 'View details';
-                                    }
-                                    
-                                    div.innerHTML = `
-                                        <div class="fw-bold text-truncate">${r.template_name || ''}</div>
-                                        <div class="fw-bold ms-3">${r.check_date}</div>
-                                    `;
-                                    col.appendChild(div);
-                                    container.appendChild(col);
-                                });
-                            } else {
-                                container.innerHTML = '<div id="noRecords" class="text-muted">No records yet.</div>';
-                            }
-                        } catch (e) {
-                            container.innerHTML = '<div class="text-danger">Failed to load records</div>';
-                        }
-                    }
-
-                    async function loadChartableOptions() {
-                        try {
-                            const resp = await fetch(`/patients/${patientId}/medical_checks/chartable_options`, {
-                                headers: { 'Accept': 'application/json' }
-                            });
-                            if (!resp.ok) throw new Error('Failed to load chartable options');
-                            const data = await resp.json();
-                            const select = document.getElementById('chartOption');
-                            if (data.records && data.records.length > 0) {
-                                select.innerHTML = data.records.map(r => `
-                                    <option value='${JSON.stringify({type: r.check_template, name: r.item_name})}'>
-                                        ${r.label || (r.check_template + ' -> ' + r.item_name)}
-                                    </option>
-                                `).join('');
-                            } else {
-                                select.innerHTML = '<option value="">No chartable data</option>';
-                            }
-                        } catch (e) {
-                            console.error(e);
-                            document.getElementById('chartOption').innerHTML = '<option value="">Error loading options</option>';
-                        }
-                    }
-            
-                    loadMedicalChecks();
-                    loadChartableOptions();
-                });
+                // Removed loadMedicalChecks and loadChartableOptions as they are now handled by HTMX
             </script>
 
             <!-- Summary panel -->

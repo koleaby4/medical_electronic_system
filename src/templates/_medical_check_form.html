@@ -1,6 +1,9 @@
 {% from '_status_select.html' import status_select %}
 
-<form id="medicalCheckForm" class="vstack gap-3" method="post" action="/patients/{{ patient.patient_id }}/medical_checks">
+<form id="medicalCheckForm" class="vstack gap-3" 
+      hx-post="/patients/{{ patient.patient_id }}/medical_checks"
+      hx-target="body"
+      hx-push-url="true">
     <div class="row g-2 align-items-center">
         <input type="hidden" name="type" value="{{ check_template }}">
         <div class="col-sm-12">
@@ -65,9 +68,10 @@
         const dateEl = document.getElementById('checkDate');
         if (dateEl && !dateEl.value) {
             const today = new Date();
+            const y = today.getFullYear();
             const m = String(today.getMonth()+1).padStart(2,'0');
             const d = String(today.getDate()).padStart(2,'0');
-            dateEl.value = `${today.getFullYear()}-${m}-${d}`;
+            dateEl.value = `${y}-${m}-${d}`;
         }
     })();
 </script>

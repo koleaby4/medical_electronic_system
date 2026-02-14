@@ -1,8 +1,9 @@
 import datetime
+import json
 from contextlib import suppress
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
@@ -44,11 +45,12 @@ def _resolve_medical_check_template(raw: str) -> str:
 
 
 @router.get("", response_model=MedicalChecks)
-async def list_medical_checks(patient_id: int, storage: DbStorage = Depends(get_storage)) -> MedicalChecks:
+async def list_medical_checks(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
     checks: list[MedicalCheck] = storage.medical_checks.get_medical_checks(patient_id)
+
     return MedicalChecks(records=checks)
 
 
@@ -219,7 +221,7 @@ async def get_timeseries(
 
 
 @router.get("/chartable_options")
-async def get_chartable_options(patient_id: int, storage: DbStorage = Depends(get_storage)):
+async def get_chartable_options(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
     """
     Return list of chartable numeric options available for the patient.
     """
@@ -227,6 +229,19 @@ async def get_chartable_options(patient_id: int, storage: DbStorage = Depends(ge
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
     rows = storage.medical_checks.get_chartable_options(patient_id=patient_id)
+
+    if request.headers.get("HX-Request"):
+        if rows:
+            options_html = "".join(
+                [
+                    f"<option value='{json.dumps({'type': r['check_template'], 'name': r['item_name']})}'>{r['label'] or (r['check_template'] + ' -> ' + r['item_name'])}</option>"
+                    for r in rows
+                ]
+            )
+            return HTMLResponse(content=options_html)
+        else:
+            return HTMLResponse(content='<option value="">No chartable data</option>')
+
     return {"records": rows}
 
 

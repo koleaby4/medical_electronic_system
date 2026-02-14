@@ -303,6 +303,8 @@ async def get_patient(
     # Provide available medical check types for UI dropdown
     check_templates = [t for t in storage.medical_check_templates.list_medical_check_templates() if t.is_active]
 
+    medical_checks = storage.medical_checks.get_medical_checks(patient_id)
+
     # Fetch last AI response if any
     last_ai_response = None
     if ai_requests := storage.ai_requests.get_by_patient(patient_id):
@@ -318,6 +320,7 @@ async def get_patient(
             "patient": patient,
             "age": _get_age(patient.dob),
             "templates": check_templates,
+            "medical_checks": medical_checks,
             "last_ai_response": last_ai_response,
             "patient_id": patient_id,
         },
