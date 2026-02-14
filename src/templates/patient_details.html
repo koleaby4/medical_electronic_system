@@ -2,6 +2,15 @@
 {% set page_title = "Patient Details" %}
 
 {% block content %}
+    <script>
+        (function() {
+            // Define addTileWith globally early so it can be called from partials during initial load
+            window.addTileWith = function(type, name) {
+                if (!window._earlyCharts) window._earlyCharts = [];
+                window._earlyCharts.push({type, name});
+            };
+        })();
+    </script>
     {% if request.query_params.get('ai_success') %}
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             Request sent to AI successfully and response stored.
@@ -14,7 +23,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     {% endif %}
-    <div class="row g-3">
+    <div class="row g-3" id="patient-details-container" data-patient-id="{{ patient.patient_id }}">
         <!-- Left column -->
         <div class="col-md-6">
             {% include '_patient_summary_card.html' %}
@@ -72,13 +81,20 @@
             <div class="card mt-3">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <span>Summary</span>
-                    <button id="sendToAiBtn" class="btn btn-sm btn-info text-white">Summarise</button>
+                    <button id="sendToAiBtn" class="btn btn-sm btn-info text-white"
+                            hx-post="/patients/{{ patient.patient_id }}/send_to_ai"
+                            hx-target="#medicalNotes"
+                            hx-indicator="#aiProgressBar">Summarise</button>
                 </div>
                 <div class="card-body">
-                    <div id="aiProgressBar" class="progress mb-3" style="display: none;">
+                    <div id="aiProgressBar" class="progress mb-3 htmx-indicator">
                         <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 100%"></div>
                     </div>
-                    <div id="medicalNotes" class="border rounded p-3 bg-light" style="min-height: 200px; white-space: pre-wrap;">Summary will appear here...</div>
+                    <div id="medicalNotes" class="border rounded p-3 bg-light" style="min-height: 200px;">
+                        {% with ai_response=last_ai_response, patient_id=patient.patient_id %}
+                            {% include '_ai_summary.html' %}
+                        {% endwith %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -87,7 +103,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const patientId = {{ patient.patient_id }};
+            const patientId = document.getElementById('patient-details-container').dataset.patientId;
             const tiles = document.getElementById('checksTiles');
             const noRecords = document.getElementById('noRecords');
             const chartTiles = document.getElementById('chartTiles');
@@ -249,10 +265,6 @@
                     updateChartsControlsState();
                     render(records);
 
-                    // Render initial AI response if present (do it after chartableOptions are ready)
-                    {% if last_ai_response %}
-                        displayAiResponse({{ last_ai_response | safe }});
-                    {% endif %}
                 })
                 .catch(() => {
                     // If failed, disable controls and render empty list
@@ -374,7 +386,7 @@
                 });
             }
 
-            async function addTileWith(type, name) {
+            async function addTileWithImpl(type, name) {
                 if (!type || !name) return;
                 const key = normalizeKey(type, name);
                 if (chartState.has(key)) {
@@ -393,6 +405,22 @@
                 }
             }
 
+            function removeTile(key) {
+                const state = chartState.get(key);
+                if (!state) return;
+                try { state.chart.destroy(); } catch (_) {}
+                state.el.remove();
+                chartState.delete(key);
+            }
+
+            window.addTileWith = addTileWithImpl;
+
+            // Process any charts that were requested before DOM was ready
+            if (window._earlyCharts) {
+                window._earlyCharts.forEach(c => window.addTileWith(c.type, c.name));
+                delete window._earlyCharts;
+            }
+
             async function addTile() {
                 const raw = chartOption.value;
                 if (!raw) {
@@ -402,49 +430,10 @@
                 let parsed;
                 try { parsed = JSON.parse(raw); } catch { parsed = null; }
                 if (!parsed || !parsed.type || !parsed.name) return;
-                await addTileWith(parsed.type, parsed.name);
-            }
-
-            function removeTile(key) {
-                const state = chartState.get(key);
-                if (!state) return;
-                try { state.chart.destroy(); } catch (_) {}
-                state.el.remove();
-                chartState.delete(key);
+                await window.addTileWith(parsed.type, parsed.name);
             }
 
             addChartTileBtn.addEventListener('click', addTile);
-
-            sendToAiBtn.addEventListener('click', async () => {
-                sendToAiBtn.disabled = true;
-                sendToAiBtn.textContent = 'Sending...';
-                medicalNotes.textContent = '';
-                aiProgressBar.style.display = 'flex';
-
-                try {
-                    const resp = await fetch(`/patients/${patientId}/send_to_ai`, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-
-                    const data = await resp.json();
-                    if (data.error) {
-                        alert('Error: ' + data.error);
-                        medicalNotes.textContent = 'Error: ' + data.error;
-                    } else {
-                        displayAiResponse(data);
-                    }
-                } catch (e) {
-                    alert('Network error: ' + e.message);
-                    medicalNotes.textContent = 'Network error: ' + e.message;
-                } finally {
-                    sendToAiBtn.disabled = false;
-                    sendToAiBtn.textContent = 'Summarise';
-                    aiProgressBar.style.display = 'none';
-                }
-            });
         });
     </script>
 {% endblock %}

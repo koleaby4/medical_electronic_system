@@ -1,0 +1,62 @@
+{% if ai_response %}
+    {% set parsed = ai_response | from_json if ai_response is string else ai_response %}
+    {% if parsed.choices and parsed.choices[0] and parsed.choices[0].message %}
+        {% set actual_content = parsed.choices[0].message.content %}
+        {# We skip the try-catch and just use from_json filter if it looks like JSON #}
+        {% if actual_content is string and (actual_content.strip().startswith('{') or actual_content.strip().startswith('[')) %}
+            {% set actual_content = actual_content | from_json %}
+        {% endif %}
+    {% else %}
+        {% set actual_content = parsed %}
+    {% endif %}
+
+    {% if actual_content is mapping %}
+        {% for key, value in actual_content.items() %}
+            {% if key.lower() == 'charts' %}
+                <!-- Found charts: {{ value }} -->
+            {% else %}
+                <div class="mb-3">
+                    <h6 class="fw-bold border-bottom pb-1 text-primary">{{ key }}</h6>
+                    <div>
+                        {% if value is mapping and value.html %}
+                            {{ value.html | safe }}
+                        {% else %}
+                            {% set text_val = value.text if (value is mapping and value.text) else value %}
+                            <div style="white-space: pre-wrap;">{{ text_val }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        
+        {# Special handling for charts to trigger JS #}
+        {% if actual_content.Charts or actual_content.charts %}
+            {% set charts_list = actual_content.Charts or actual_content.charts %}
+            <div class="ai-charts-trigger" 
+                 data-charts='{{ charts_list | tojson }}'
+                 style="display:none;">
+            </div>
+            <script>
+                (function() {
+                    const triggers = document.querySelectorAll('.ai-charts-trigger');
+                    const trigger = triggers[triggers.length - 1]; // Use the most recent one
+                    if (trigger) {
+                        const charts = JSON.parse(trigger.getAttribute('data-charts'));
+                        if (Array.isArray(charts) && window.addTileWith) {
+                            charts.forEach(chartSpec => {
+                                if (typeof chartSpec === 'string' && chartSpec.includes('.')) {
+                                    const [type, name] = chartSpec.split('.', 2);
+                                    window.addTileWith(type.trim(), name.trim());
+                                }
+                            });
+                        }
+                    }
+                })();
+            </script>
+        {% endif %}
+    {% else %}
+        <div style="white-space: pre-wrap;">{{ actual_content }}</div>
+    {% endif %}
+{% else %}
+    <div class="text-muted">Summary will appear here...</div>
+{% endif %}

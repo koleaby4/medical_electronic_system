@@ -15,6 +15,7 @@ from src.services.ai_service import AiService
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
+templates.env.filters["from_json"] = json.loads
 
 
 @router.get("", include_in_schema=False)
@@ -67,12 +68,26 @@ async def send_to_ai(
 ):
     try:
         _, ai_resp = await ai_service.prepare_and_send_request(patient_id)
+
+        if request.headers.get("HX-Request"):
+            return templates.TemplateResponse(
+                request,
+                "_ai_summary.html",
+                {
+                    "ai_response": ai_resp.response_json if ai_resp else None,
+                    "patient_id": patient_id,
+                },
+            )
+
         if "application/json" in (request.headers.get("accept") or ""):
             if ai_resp:
                 return json.loads(ai_resp.response_json)
             return {"error": "No response from AI"}
         return RedirectResponse(url=f"/patients/{patient_id}?ai_success=1", status_code=303)
     except Exception as e:
+        if request.headers.get("HX-Request"):
+            return f'<div class="alert alert-danger">Error: {str(e)}</div>'
+
         if "application/json" in (request.headers.get("accept") or ""):
             return {"error": str(e)}
         return RedirectResponse(url=f"/patients/{patient_id}?ai_error={str(e)}", status_code=303)
@@ -306,5 +321,6 @@ async def get_patient(
             "age": _get_age(patient.dob),
             "templates": check_templates,
             "last_ai_response": last_ai_response,
+            "patient_id": patient_id,
         },
     )

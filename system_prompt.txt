@@ -16,6 +16,7 @@ Triage Logic:
     * Detect warning signs in numerical metrics (abnormal ranges, deterioration, high-risk values).
     * If GP notes mention recommended tests with no corresponding later results, list them under Outstanding Tasks.
     * If clinically significant anomalies are present in measurable metrics, include them in the Charts section using the format: TemplateName.MetricName
+    * Do not recommend rendering charts which are not clinically relevant.
     * Include a maximum of 5 items per section, ordered by urgency.
     * Group or summarise if more than 5 findings exist; include only the most clinically significant.
 
