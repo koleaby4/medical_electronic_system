@@ -14,6 +14,7 @@ class OpenAISettings(BaseModel):
     model: str
     url: str
     timeout: float
+    response_format: dict
 
 
 class Settings(BaseSettings):
@@ -24,4 +25,5 @@ class Settings(BaseSettings):
         model=os.getenv("OPENAI_MODEL"),
         url=os.getenv("OPENAI_URL"),
         timeout=float(os.getenv("OPENAI_TIMEOUT")),
+        response_format={"type": "json_object"}
     )
