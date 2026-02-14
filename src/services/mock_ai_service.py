@@ -73,7 +73,13 @@ class MockAiService(AiService):
             else:
                 # If no fixture found, return a dummy response instead of failing
                 # This makes tests more robust if they don't strictly depend on AI content
-                dummy_content = {"Overview": "Dummy AI overview for testing.", "Charts": []}
+                dummy_content = {
+                    "Overview": {
+                        "text": "Dummy AI overview for testing.",
+                        "html": "<p>Dummy AI overview for testing.</p>"
+                    },
+                    "Charts": []
+                }
                 ai_req = AiRequest(
                     patient_id=patient_id,
                     model_name=self.settings.model,

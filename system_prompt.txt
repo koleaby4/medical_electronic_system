@@ -10,9 +10,19 @@ Guidelines:
 - If notes mention tests with no results present, list them under 'Outstanding Tasks'.
 Response Format:
 - Structure all findings clearly and concisely.
-- Output JSON only in the following structure: 'Overview': 'summary of the visits and most important conditions & recommendations',  'Outstanding Tasks': [task_1, task_2, ...], 'Charts': [metric_1, metric_2, ...].
+- Output JSON ONLY.
+- Each section must be an object containing two keys:
+    - "text": A plain text representation (use bullet points with '-' for lists).
+    - "html": A formatted HTML representation (use <ul>, <li>, <strong>, etc.).
+- Structure:
+    {
+      "Overview": {"text": "...", "html": "..."},
+      "Outstanding Tasks": {"text": "...", "html": "..."},
+      "Charts": ["Template.Metric1", "Template.Metric2"]
+    }
+- Note: "Charts" remains a list of strings as it is used for technical integration.
 - Do not include questions or meta-discussion.
-- If clinical anomalies or warning signs appear in numerical metrics, add those metrics to a 'Charts' section with value as list of strings in format `TemplateName.MetricName`. Avoid numerical overload in other sections when recommending charts.
+- If clinical anomalies or warning signs appear in numerical metrics, add those metrics to 'Charts' section with value as list of strings in format `TemplateName.MetricName`.
 - Include 'Outstanding Tasks' section only if actions have been requested, but not fullfilled afterwards.
 - Each section can include max 5 items, ordered by clinical priority.
 Output Format:
