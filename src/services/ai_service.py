@@ -54,18 +54,17 @@ class AiService:
             ],
         }
 
-        # 4. Save request to DB
-        ai_req = AiRequest(
+        ai_request = AiRequest(
             patient_id=patient_id,
             model_name=self.settings.model,
             model_url=self.settings.url,
             system_prompt_text=self.settings.system_prompt,
             request_payload_json=json.dumps(payload),
         )
-        self.db.ai_requests.save(ai_req)
+        self.db.ai_requests.save(ai_request)
 
         # 5. Send to OpenAI (if API key is present)
-        ai_resp = None
+        ai_response = None
         if self.client:
             try:
                 response = await self.client.chat.completions.create(
@@ -75,14 +74,14 @@ class AiService:
                 )
 
                 # Save response to DB
-                ai_resp = AiResponse(request_id=ai_req.id, response_json=response.model_dump_json())
-                self.db.ai_responses.save(ai_resp)
+                ai_response = AiResponse(request_id=ai_request.id, response_json=response.model_dump_json())
+                self.db.ai_responses.save(ai_response)
             except Exception as e:
                 # In a real app we'd log this and maybe store error status
                 print(f"Error calling OpenAI: {e}")
                 raise
 
-        return ai_req, ai_resp
+        return ai_request, ai_response
 
     def _anonymize_patient(self, patient: Patient) -> dict[str, Any]:
         data_json = patient.model_dump_json(

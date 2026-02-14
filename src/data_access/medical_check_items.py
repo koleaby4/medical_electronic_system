@@ -10,14 +10,14 @@ class MedicalCheckItemsStorage(BaseStorage):
         super().__init__(conn)
 
     def insert_items(self, *, check_id: int, medical_check_items: list[MedicalCheckItem]) -> None:
-        for mci in medical_check_items:
-            check_item_id = mci.check_item_id or str(uuid.uuid4())
+        for item in medical_check_items:
+            check_item_id = item.check_item_id or str(uuid.uuid4())
             self.conn.execute(
                 """
                 INSERT INTO medical_check_items (check_item_id, check_id, name, units, value)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                [check_item_id, check_id, mci.name, mci.units or "", str(mci.value)],
+                [check_item_id, check_id, item.name, item.units or "", str(item.value)],
             )
 
     def get_items_by_check_id(self, *, check_id: int) -> list[MedicalCheckItem]:

@@ -53,16 +53,16 @@ class PatientsStorage(BaseStorage):
 
     def get_all_patients(self) -> list[Patient]:
         cur = self.conn.cursor()
-        sql = """
+        query = """
                 SELECT p.*, a.line_1, a.line_2, a.town, a.postcode, a.country
                 FROM patients p
                 LEFT JOIN addresses a ON a.patient_id = p.patient_id
-                ORDER BY p.patient_id DESC \
+                ORDER BY p.patient_id DESC
               """
 
         try:
-            cur.execute(sql)
-            return [_row_to_patient(r) for r in self._fetch_all_dicts(cur)]
+            cur.execute(query)
+            return [_row_to_patient(row) for row in self._fetch_all_dicts(cur)]
         finally:
             cur.close()
 
@@ -84,8 +84,8 @@ class PatientsStorage(BaseStorage):
             cur.close()
 
 
-def _row_to_patient(r: dict[str, Any]) -> Patient:
-    address = build_address(r)
+def _row_to_patient(row: dict[str, Any]) -> Patient:
+    address = build_address(row)
     # Fallback for legacy rows without an address
     if address is None:
         address = Address(
@@ -95,20 +95,16 @@ def _row_to_patient(r: dict[str, Any]) -> Patient:
             postcode="SW1A1AA",
             country="United Kingdom",
         )
-    patient_data = {
-        k: v
-        for k, v in r.items()
-        if k
-        in {
-            "patient_id",
-            "title",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "sex",
-            "dob",
-            "email",
-            "phone",
-        }
+    patient_fields = {
+        "patient_id",
+        "title",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "sex",
+        "dob",
+        "email",
+        "phone",
     }
+    patient_data = {key: value for key, value in row.items() if key in patient_fields}
     return Patient(**patient_data, address=address)

@@ -1,8 +1,7 @@
-import re
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
@@ -14,7 +13,10 @@ templates = Jinja2Templates(directory="src/templates")
 
 
 @router.get("/medical_check_templates", include_in_schema=False)
-async def medical_check_templates(request: Request, storage: DbStorage = Depends(get_storage)):
+async def medical_check_templates(
+    request: Request,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse:
     all_templates = storage.medical_check_templates.list_medical_check_templates()
     active_templates = [t for t in all_templates if t.is_active]
     deactivated_templates = [t for t in all_templates if not t.is_active]
@@ -30,7 +32,7 @@ async def medical_check_templates(request: Request, storage: DbStorage = Depends
 
 
 @router.get("/medical_check_templates/new", include_in_schema=False)
-async def new_medical_check_template(request: Request):
+async def new_medical_check_template(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "upsert_medical_check_template.html",
@@ -38,8 +40,11 @@ async def new_medical_check_template(request: Request):
     )
 
 
-@router.post("/medical_check_templates/new", include_in_schema=False)
-async def save_medical_check_template(request: Request, storage: DbStorage = Depends(get_storage)):
+@router.post("/medical_check_templates/new", include_in_schema=False, response_model=None)
+async def save_medical_check_template(
+    request: Request,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse | RedirectResponse:
     form = await request.form()
 
     check_name = form.get("check_name", "").strip()
@@ -55,9 +60,10 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
         )
 
     items_by_idx: dict[int, dict[str, Any]] = {}
-    pattern = re.compile(r"^items\[(\d+)\]\[(name|units|input_type|placeholder)\]$")
+    import re
+    item_key_pattern = re.compile(r"^items\[(\d+)\]\[(name|units|input_type|placeholder)\]$")
     for key, value in form.multi_items():
-        if m := pattern.match(key):
+        if m := item_key_pattern.match(key):
             idx = int(m.group(1))
             field = m.group(2)
             items_by_idx.setdefault(idx, {})[field] = (value or "").strip()
@@ -95,7 +101,11 @@ async def save_medical_check_template(request: Request, storage: DbStorage = Dep
 
 
 @router.get("/medical_check_templates/{template_id}/edit", include_in_schema=False)
-async def edit_medical_check_template(template_id: int, request: Request, storage: DbStorage = Depends(get_storage)):
+async def edit_medical_check_template(
+    template_id: int,
+    request: Request,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse:
     if mct := storage.medical_check_templates.get_template(template_id=template_id):
         return templates.TemplateResponse(
             request,
@@ -107,20 +117,29 @@ async def edit_medical_check_template(template_id: int, request: Request, storag
 
 
 @router.post("/medical_check_templates/{template_id}/deactivate", include_in_schema=False)
-async def deactivate_medical_check_template(template_id: int, storage: DbStorage = Depends(get_storage)):
+async def deactivate_medical_check_template(
+    template_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> RedirectResponse:
     storage.medical_check_templates.set_active_status(template_id=template_id, is_active=False)
     return RedirectResponse(url="/admin/medical_check_templates", status_code=303)
 
 
 @router.post("/medical_check_templates/{template_id}/activate", include_in_schema=False)
-async def activate_medical_check_template(template_id: int, storage: DbStorage = Depends(get_storage)):
+async def activate_medical_check_template(
+    template_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> RedirectResponse:
     storage.medical_check_templates.set_active_status(template_id=template_id, is_active=True)
     return RedirectResponse(url="/admin/medical_check_templates", status_code=303)
 
 
 # JSON API: create a medical check template
 @router.post("/medical_check_templates")
-async def create_medical_check_template_json(request: Request, storage: DbStorage = Depends(get_storage)):
+async def create_medical_check_template_json(
+    request: Request,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> JSONResponse:
     if "application/json" not in (request.headers.get("content-type") or ""):
         raise HTTPException(status_code=415, detail="Content-Type must be application/json")
 
@@ -150,7 +169,8 @@ async def create_medical_check_template_json(request: Request, storage: DbStorag
 # JSON API: get a medical check template by id
 @router.get("/medical_check_templates/{template_id}")
 async def get_medical_check_template_json(
-    template_id: int, storage: DbStorage = Depends(get_storage)
+    template_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
 ) -> MedicalCheckTemplate:
     if mct := storage.medical_check_templates.get_template(template_id=template_id):
         return mct

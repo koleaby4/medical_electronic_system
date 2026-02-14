@@ -86,19 +86,19 @@ class MedicalChecksStorage(BaseStorage):
             cur.close()
 
         records: list[MedicalCheck] = []
-        for r in raw_rows:
-            check_id = r.get("check_id")
+        for row in raw_rows:
+            check_id = row.get("check_id")
             items = self.items.get_items_by_check_id(check_id=check_id)
-            mc = MedicalCheck(
-                check_id=r.get("check_id"),
-                patient_id=r.get("patient_id"),
-                check_date=r.get("check_date"),
-                template_name=r.get("check_template"),
-                status=MedicalCheckStatus(r.get("status")),
-                notes=r.get("notes"),
+            medical_check = MedicalCheck(
+                check_id=row.get("check_id"),
+                patient_id=row.get("patient_id"),
+                check_date=row.get("check_date"),
+                template_name=row.get("check_template"),
+                status=MedicalCheckStatus(row.get("status")),
+                notes=row.get("notes"),
                 medical_check_items=items,
             )
-            records.append(mc)
+            records.append(medical_check)
 
         return records
 
@@ -120,24 +120,24 @@ class MedicalChecksStorage(BaseStorage):
                 """,
                 [patient_id, check_id],
             )
-            r = self._fetch_one_dict(cur)
-            if not r:
+            row = self._fetch_one_dict(cur)
+            if not row:
                 return None
         finally:
             cur.close()
 
         items = self.items.get_items_by_check_id(check_id=check_id)
 
-        mc = MedicalCheck(
-            check_id=r.get("check_id"),
-            patient_id=r.get("patient_id"),
-            check_date=r.get("check_date"),
-            template_name=r.get("check_template"),
-            status=MedicalCheckStatus(r.get("status")),
-            notes=r.get("notes"),
+        medical_check = MedicalCheck(
+            check_id=row.get("check_id"),
+            patient_id=row.get("patient_id"),
+            check_date=row.get("check_date"),
+            template_name=row.get("check_template"),
+            status=MedicalCheckStatus(row.get("status")),
+            notes=row.get("notes"),
             medical_check_items=items,
         )
-        return mc
+        return medical_check
 
     def update_status(self, *, check_id: int, status: str) -> None:
         self.conn.execute(

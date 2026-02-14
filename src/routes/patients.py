@@ -1,8 +1,9 @@
 import json
 from datetime import date
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from src.data_access.db_storage import DbStorage
@@ -21,15 +22,15 @@ templates.env.filters["from_json"] = json.loads
 @router.get("", include_in_schema=False)
 async def list_patients(
     request: Request,
-    storage: DbStorage = Depends(get_storage),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse:
     patients = storage.patients.get_all_patients()
 
     return templates.TemplateResponse(request, "patients.html", {"active_page": "patients", "patients": patients})
 
 
 @router.get("/new", include_in_schema=False)
-async def create_patient_form(request: Request):
+async def create_patient_form(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "upsert_patient.html",
@@ -43,7 +44,11 @@ async def create_patient_form(request: Request):
 
 
 @router.get("/{patient_id}/edit", include_in_schema=False)
-async def edit_patient_form(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
+async def edit_patient_form(
+    request: Request,
+    patient_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse:
     if patient := storage.patients.get_patient(patient_id=patient_id):
         return templates.TemplateResponse(
             request,
@@ -58,12 +63,12 @@ async def edit_patient_form(request: Request, patient_id: int, storage: DbStorag
     raise HTTPException(status_code=404, detail=f"Patient with {patient_id=} not found")
 
 
-@router.post("/{patient_id}/send_to_ai")
+@router.post("/{patient_id}/send_to_ai", response_model=None)
 async def send_to_ai(
     request: Request,
     patient_id: int,
-    ai_service: AiService = Depends(get_ai_service),
-):
+    ai_service: Annotated[AiService, Depends(get_ai_service)],
+) -> HTMLResponse | JSONResponse | RedirectResponse | str:
     try:
         _, ai_resp = await ai_service.prepare_and_send_request(patient_id)
 
@@ -79,38 +84,38 @@ async def send_to_ai(
 
         if "application/json" in (request.headers.get("accept") or ""):
             if ai_resp:
-                return json.loads(ai_resp.response_json)
-            return {"error": "No response from AI"}
+                return JSONResponse(content=json.loads(ai_resp.response_json))
+            return JSONResponse(content={"error": "No response from AI"}, status_code=500)
+
         return RedirectResponse(url=f"/patients/{patient_id}?ai_success=1", status_code=303)
     except Exception as e:
         if request.headers.get("HX-Request"):
             return f'<div class="alert alert-danger">Error: {str(e)}</div>'
 
         if "application/json" in (request.headers.get("accept") or ""):
-            return {"error": str(e)}
+            return JSONResponse(content={"error": str(e)}, status_code=500)
+
         return RedirectResponse(url=f"/patients/{patient_id}?ai_error={str(e)}", status_code=303)
 
 
-@router.post("", status_code=201, response_model=Patient)
+@router.post("", status_code=201, response_model=None)
 async def create_patient(
     request: Request,
-    storage: DbStorage = Depends(get_storage),
-    # Form data
-    title: str = Form(None),
-    first_name: str = Form(None),
-    middle_name: str | None = Form(None),
-    last_name: str = Form(None),
-    sex: str = Form(None),
-    dob: date = Form(None),
-    email: str = Form(None),
-    phone: str = Form(None),
-    # Address fields (required, canonical names)
-    line_1: str | None = Form(None),
-    line_2: str | None = Form(None),
-    town: str | None = Form(None),
-    postcode: str | None = Form(None),
-    country: str | None = Form(None),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+    title: Annotated[str | None, Form()] = None,
+    first_name: Annotated[str | None, Form()] = None,
+    middle_name: Annotated[str | None, Form()] = None,
+    last_name: Annotated[str | None, Form()] = None,
+    sex: Annotated[str | None, Form()] = None,
+    dob: Annotated[date | None, Form()] = None,
+    email: Annotated[str | None, Form()] = None,
+    phone: Annotated[str | None, Form()] = None,
+    line_1: Annotated[str | None, Form()] = None,
+    line_2: Annotated[str | None, Form()] = None,
+    town: Annotated[str | None, Form()] = None,
+    postcode: Annotated[str | None, Form()] = None,
+    country: Annotated[str | None, Form()] = None,
+) -> RedirectResponse | Patient:
     if is_json := "application/json" in (request.headers.get("content-type") or ""):
         data = await request.json()
         addr = build_address(data)
@@ -172,26 +177,25 @@ async def create_patient(
     return RedirectResponse(url=f"/patients/{saved_patient.patient_id}", status_code=303)
 
 
-@router.put("/{patient_id}")
+@router.put("/{patient_id}", response_model=None)
 async def update_patient(
     request: Request,
     patient_id: int,
-    storage: DbStorage = Depends(get_storage),
-    title: str = Form(None),
-    first_name: str = Form(None),
-    middle_name: str | None = Form(None),
-    last_name: str = Form(None),
-    sex: str = Form(None),
-    dob: date = Form(None),
-    email: str = Form(None),
-    phone: str = Form(None),
-    # Address fields (canonical names)
-    line_1: str | None = Form(None),
-    line_2: str | None = Form(None),
-    town: str | None = Form(None),
-    postcode: str | None = Form(None),
-    country: str | None = Form(None),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+    title: Annotated[str | None, Form()] = None,
+    first_name: Annotated[str | None, Form()] = None,
+    middle_name: Annotated[str | None, Form()] = None,
+    last_name: Annotated[str | None, Form()] = None,
+    sex: Annotated[str | None, Form()] = None,
+    dob: Annotated[date | None, Form()] = None,
+    email: Annotated[str | None, Form()] = None,
+    phone: Annotated[str | None, Form()] = None,
+    line_1: Annotated[str | None, Form()] = None,
+    line_2: Annotated[str | None, Form()] = None,
+    town: Annotated[str | None, Form()] = None,
+    postcode: Annotated[str | None, Form()] = None,
+    country: Annotated[str | None, Form()] = None,
+) -> RedirectResponse | Patient:
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found")
 
@@ -248,12 +252,12 @@ async def update_patient(
 
 
 # Transitional support for HTML forms posting with method override used by existing template/tests
-@router.post("/{patient_id}", include_in_schema=False)
+@router.post("/{patient_id}", include_in_schema=False, response_model=None)
 async def update_patient_post_method_override(
     request: Request,
     patient_id: int,
-    storage: DbStorage = Depends(get_storage),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> RedirectResponse | Patient:
     form = await request.form()
     if form.get("_method") != "PUT":
         raise HTTPException(status_code=405, detail="Method Not Allowed")
@@ -287,12 +291,12 @@ def _get_age(dob: date) -> int:
     return years
 
 
-@router.get("/{patient_id}", include_in_schema=False)
+@router.get("/{patient_id}", include_in_schema=False, response_model=None)
 async def get_patient(
     request: Request,
     patient_id: int,
-    storage: DbStorage = Depends(get_storage),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse | Patient:
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail="Patient not found")
 

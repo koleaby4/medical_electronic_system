@@ -19,11 +19,6 @@ class MockAiService(AiService):
         if self.mock_mode == "live":
             return await super().prepare_and_send_request(patient_id)
 
-        # We need the payload to generate the cache key
-        # Since AiService.prepare_and_send_request is monolithic, we have to duplicate some logic
-        # to get the payload without sending it, or just use the super() call and intercept.
-        # Intercepting is cleaner if we want to avoid logic duplication.
-
         # 1. Collect data (same as super)
         patient = self.db.patients.get_patient(patient_id)
         if not patient:
@@ -58,18 +53,18 @@ class MockAiService(AiService):
                 with open(cache_file, "r") as f:
                     cached_data = json.load(f)
 
-                ai_req = AiRequest(
+                ai_request = AiRequest(
                     patient_id=patient_id,
                     model_name=self.settings.model,
                     model_url=self.settings.url,
                     system_prompt_text=self.settings.system_prompt,
                     request_payload_json=json.dumps(payload),
                 )
-                self.db.ai_requests.save(ai_req)
+                self.db.ai_requests.save(ai_request)
 
-                ai_resp = AiResponse(request_id=ai_req.id, response_json=json.dumps(cached_data))
-                self.db.ai_responses.save(ai_resp)
-                return ai_req, ai_resp
+                ai_response = AiResponse(request_id=ai_request.id, response_json=json.dumps(cached_data))
+                self.db.ai_responses.save(ai_response)
+                return ai_request, ai_response
             else:
                 # If no fixture found, return a dummy response instead of failing
                 # This makes tests more robust if they don't strictly depend on AI content
@@ -80,32 +75,32 @@ class MockAiService(AiService):
                     },
                     "Charts": [],
                 }
-                ai_req = AiRequest(
+                ai_request = AiRequest(
                     patient_id=patient_id,
                     model_name=self.settings.model,
                     model_url=self.settings.url,
                     system_prompt_text=self.settings.system_prompt,
                     request_payload_json=json.dumps(payload),
                 )
-                self.db.ai_requests.save(ai_req)
-                ai_resp = AiResponse(
-                    request_id=ai_req.id,
+                self.db.ai_requests.save(ai_request)
+                ai_response = AiResponse(
+                    request_id=ai_request.id,
                     response_json=json.dumps({"choices": [{"message": {"content": json.dumps(dummy_content)}}]}),
                 )
-                self.db.ai_responses.save(ai_resp)
-                return ai_req, ai_resp
+                self.db.ai_responses.save(ai_response)
+                return ai_request, ai_response
 
         # Record mode
-        ai_req, ai_resp = await super().prepare_and_send_request(patient_id)
+        ai_request, ai_response = await super().prepare_and_send_request(patient_id)
 
-        if ai_resp:
+        if ai_response:
             self.fixtures_dir.mkdir(parents=True, exist_ok=True)
-            # OpenAI response is in ai_resp.response_json
-            resp_data = json.loads(ai_resp.response_json)
+            # OpenAI response is in ai_response.response_json
+            resp_data = json.loads(ai_response.response_json)
             with open(cache_file, "w") as f:
                 json.dump(resp_data, f, indent=2)
 
-        return ai_req, ai_resp
+        return ai_request, ai_response
 
     def _generate_cache_key(self, payload: dict[str, Any]) -> str:
         key_data = {

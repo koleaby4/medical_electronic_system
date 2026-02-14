@@ -1,6 +1,7 @@
 import datetime
 import json
 from contextlib import suppress
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -18,13 +19,13 @@ templates = Jinja2Templates(directory="src/templates")
 
 
 # Todo: refactor this?
-def _resolve_medical_check_template(raw: str) -> str:
+def _resolve_template_name(raw_name: str) -> str:
     """Resolve a user-submitted check template to a canonical string.
 
     - Maps common aliases to canonical strings: "physicals", "blood", "colonoscopy".
     - Otherwise, returns the trimmed input to support custom names.
     """
-    key = (raw or "").strip()
+    key = (raw_name or "").strip()
     key_lc = key.lower()
     # Normalize common separators for aliasing
     key_norm = key_lc.replace("_", " ").replace("-", " ")
@@ -45,32 +46,34 @@ def _resolve_medical_check_template(raw: str) -> str:
 
 
 @router.get("", response_model=MedicalChecks)
-async def list_medical_checks(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
+async def list_medical_checks(
+    patient_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> MedicalChecks:
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
-    checks: list[MedicalCheck] = storage.medical_checks.get_medical_checks(patient_id)
+    checks = storage.medical_checks.get_medical_checks(patient_id)
 
     return MedicalChecks(records=checks)
 
 
-@router.post("")
+@router.post("", response_model=None)
 async def create_medical_check(
     patient_id: int,
     request: Request,
-    storage: DbStorage = Depends(get_storage),
-    ai_service: AiService = Depends(get_ai_service),
-    type: str = Form(...),
-    date: datetime.date = Form(...),
-    status: str = Form(...),
-    notes: str | None = Form(None),
-    param_count: int | None = Form(None),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+    ai_service: Annotated[AiService, Depends(get_ai_service)],
+    check_type: Annotated[str, Form(alias="type")],
+    check_date: Annotated[datetime.date, Form(alias="date")],
+    status: Annotated[str, Form(...)],
+    notes: Annotated[str | None, Form()] = None,
+    param_count: Annotated[int | None, Form()] = None,
+) -> JSONResponse | RedirectResponse:
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
-    # JSON submission path
-    if "application/json" in (request.headers.get("content-type") or ""):
+    if is_json := "application/json" in (request.headers.get("content-type") or ""):
         data = await request.json()
         try:
             items_payload = data.get("items") or []
@@ -79,8 +82,10 @@ async def create_medical_check(
             ]
             mc = MedicalCheck(
                 patient_id=patient_id,
-                check_date=data.get("observed_at") or data.get("check_date") or date,
-                template_name=_resolve_medical_check_template(str(data.get("type") or data.get("template_id") or type)),
+                check_date=data.get("observed_at") or data.get("check_date") or check_date,
+                template_name=_resolve_template_name(
+                    str(data.get("type") or data.get("template_id") or check_type)
+                ),
                 status=MedicalCheckStatus(str(data.get("status") or status)),
                 notes=data.get("notes"),
                 medical_check_items=medical_check_items,
@@ -88,6 +93,7 @@ async def create_medical_check(
         except Exception as e:
             raise HTTPException(status_code=422, detail=f"Invalid payload: {e}")
 
+    if is_json:
         check_id = storage.medical_checks.save(
             patient_id=patient_id,
             check_template=mc.template_name,
@@ -124,8 +130,8 @@ async def create_medical_check(
 
     mc = MedicalCheck(
         patient_id=patient_id,
-        check_date=date,
-        template_name=_resolve_medical_check_template(type),
+        check_date=check_date,
+        template_name=_resolve_template_name(check_type),
         status=MedicalCheckStatus(status),
         notes=notes,
         medical_check_items=medical_check_items,
@@ -151,8 +157,8 @@ async def new_medical_check(
     request: Request,
     patient_id: int,
     check_template_id: int,
-    storage: DbStorage = Depends(get_storage),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse:
     """Generalized new medical check page based on medical check type items.
 
     Query param:
@@ -200,13 +206,13 @@ async def new_medical_check(
     )
 
 
-@router.get("/timeseries", response_model=None)
+@router.get("/timeseries")
 async def get_timeseries(
     patient_id: int,
     check_template: str,
     item_name: str,
-    storage: DbStorage = Depends(get_storage),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> dict[str, Any]:
     """Return item value over time for a given patient, check type and item name.
     Response example: {"records": [{"date": "2025-01-01", "value": "72.5", "units": "kg"}, ...]}
     """
@@ -220,8 +226,12 @@ async def get_timeseries(
     return {"records": series}
 
 
-@router.get("/chartable_options")
-async def get_chartable_options(request: Request, patient_id: int, storage: DbStorage = Depends(get_storage)):
+@router.get("/chartable_options", response_model=None)
+async def get_chartable_options(
+    request: Request,
+    patient_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse | dict[str, Any]:
     """
     Return list of chartable numeric options available for the patient.
     """
@@ -246,10 +256,13 @@ async def get_chartable_options(request: Request, patient_id: int, storage: DbSt
 
 
 # Details page or JSON depending on Accept header
-@router.get("/{check_id}", include_in_schema=False)
+@router.get("/{check_id}", include_in_schema=False, response_model=None)
 async def medical_check_details(
-    request: Request, patient_id: int, check_id: int, storage: DbStorage = Depends(get_storage)
-):
+    request: Request,
+    patient_id: int,
+    check_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> HTMLResponse | MedicalCheck:
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
@@ -276,9 +289,9 @@ async def medical_check_details(
 async def update_medical_check_status(
     patient_id: int,
     check_id: int,
-    status: str = Form(...),
-    storage: DbStorage = Depends(get_storage),
-):
+    status: Annotated[str, Form(...)],
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> RedirectResponse:
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
@@ -297,8 +310,8 @@ async def update_medical_check(
     request: Request,
     patient_id: int,
     check_id: int,
-    storage: DbStorage = Depends(get_storage),
-):
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> MedicalCheck:
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
     if not storage.medical_checks.get_medical_check(patient_id=patient_id, check_id=check_id):
@@ -326,7 +339,11 @@ async def update_medical_check(
 
 
 @router.delete("/{check_id}")
-async def delete_medical_check(patient_id: int, check_id: int, storage: DbStorage = Depends(get_storage)):
+async def delete_medical_check(
+    patient_id: int,
+    check_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+) -> JSONResponse:
     if not storage.patients.get_patient(patient_id=patient_id):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 

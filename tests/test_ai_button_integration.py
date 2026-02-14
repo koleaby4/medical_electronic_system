@@ -63,7 +63,7 @@ async def test_send_to_ai_error_handling(client: TestClient, create_patient, app
         # Perform the POST request with Accept: application/json
         resp = client.post(f"/patients/{patient_id}/send_to_ai", headers={"Accept": "application/json"})
 
-        assert resp.status_code == 200
+        assert resp.status_code == 500
         data = resp.json()
         assert data["error"] == "AI Failure"
     finally:
