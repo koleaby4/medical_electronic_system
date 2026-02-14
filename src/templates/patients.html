@@ -3,7 +3,6 @@
 
 {% block content %}
     <h2 class="mb-3">Patients</h2>
-    <input type="text" id="searchInput" class="form-control" placeholder="Search patients...">
 
     <div class="table-responsive mt-3">
         <table id="patientsTable" class="table table-striped table-hover align-middle">
@@ -19,39 +18,13 @@
                 <th>Actions</th>
             </tr>
             </thead>
-            <tbody>
-            {% for p in patients %}
-                <tr data-href="/patients/{{ p.patient_id }}" style="cursor: pointer;">
-                    <td>{{ p.title }}</td>
-                    <td>{{ p.first_name }}</td>
-                    <td>{{ p.middle_name or '' }}</td>
-                    <td>{{ p.last_name }}</td>
-                    <td>{{ p.sex }}</td>
-                    <td>{{ p.phone }}</td>
-                    <td>{{ p.email }}</td>
-                    <td class="d-flex gap-2">
-                        <a href="/patients/{{ p.patient_id }}/edit" title="Edit Patient" class="me-2">
-                            <img src="/static/images/pencil_edit.svg" alt="Edit" style="width:32px;height:32px;vertical-align:middle;"/>
-                        </a>
-                    </td>
-                </tr>
-            {% endfor %}
+            <tbody id="patients-list">
+            {% include '_patient_table_rows.html' %}
             </tbody>
         </table>
     </div>
 
     <script>
-        document.getElementById("searchInput").addEventListener("input", function () {
-            const query = this.value.toLowerCase();
-            const rows = document.querySelectorAll("#patientsTable tbody tr");
-            rows.forEach(row => {
-                const visible = Array.from(row.children).some(td =>
-                    td.textContent.toLowerCase().includes(query)
-                );
-                row.style.display = visible ? "" : "none";
-            });
-        });
-
         // Make patient rows clickable to open patient details, but ignore clicks on existing links/buttons
         document.querySelector('#patientsTable tbody').addEventListener('click', function (e) {
             // If clicked inside a link or button, do nothing (let default behavior happen)

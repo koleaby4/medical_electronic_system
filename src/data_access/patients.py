@@ -53,15 +53,15 @@ class PatientsStorage(BaseStorage):
 
     def get_all_patients(self) -> list[Patient]:
         cur = self.conn.cursor()
-        try:
-            cur.execute(
-                """
+        sql = """
                 SELECT p.*, a.line_1, a.line_2, a.town, a.postcode, a.country
                 FROM patients p
                 LEFT JOIN addresses a ON a.patient_id = p.patient_id
-                ORDER BY p.patient_id DESC
-                """
-            )
+                ORDER BY p.patient_id DESC \
+              """
+
+        try:
+            cur.execute(sql)
             return [_row_to_patient(r) for r in self._fetch_all_dicts(cur)]
         finally:
             cur.close()

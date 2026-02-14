@@ -18,14 +18,15 @@ templates = Jinja2Templates(directory="src/templates")
 
 
 @router.get("", include_in_schema=False)
-async def list_patients(request: Request, storage: DbStorage = Depends(get_storage), format: str = "html"):
+async def list_patients(
+    request: Request,
+    storage: DbStorage = Depends(get_storage),
+):
     patients = storage.patients.get_all_patients()
 
-    # Prefer Accept header, keep query param for convenience
-    if format.lower() == "json" or "application/json" in (request.headers.get("accept") or ""):
-        return patients
-
-    return templates.TemplateResponse(request, "patients.html", {"active_page": "patients", "patients": patients})
+    return templates.TemplateResponse(
+        request, "patients.html", {"active_page": "patients", "patients": patients}
+    )
 
 
 @router.get("/new", include_in_schema=False)

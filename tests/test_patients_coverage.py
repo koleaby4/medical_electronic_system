@@ -85,11 +85,8 @@ def test_update_patient_json_success(client: TestClient, create_patient):
     assert resp.json()["first_name"] == "Jane"
 
 
-def test_list_patients_json(client: TestClient, create_patient):
+def test_list_patients_html(client: TestClient, create_patient):
     create_patient()
-    resp = client.get("/patients?format=json")
+    resp = client.get("/patients")
     assert resp.status_code == 200
-    data = resp.json()
-    assert isinstance(data, list)
-    assert len(data) >= 1
-    assert "first_name" in data[0]
+    assert "Patients" in resp.text

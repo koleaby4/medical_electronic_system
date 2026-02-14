@@ -7,7 +7,6 @@ def test_patients_page_initially_empty(client: TestClient):
     html = resp.text
     assert "Patients" in html
     assert "Add New Patient" in html
-    assert "Search patients" in html
 
 
 def test_create_patient_and_list(client: TestClient, create_patient):

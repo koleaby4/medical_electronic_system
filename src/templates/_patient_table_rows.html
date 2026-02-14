@@ -1,0 +1,16 @@
+{% for p in patients %}
+    <tr data-href="/patients/{{ p.patient_id }}" style="cursor: pointer;">
+        <td>{{ p.title }}</td>
+        <td>{{ p.first_name }}</td>
+        <td>{{ p.middle_name or '' }}</td>
+        <td>{{ p.last_name }}</td>
+        <td>{{ p.sex }}</td>
+        <td>{{ p.phone }}</td>
+        <td>{{ p.email }}</td>
+        <td class="d-flex gap-2">
+            <a href="/patients/{{ p.patient_id }}/edit" title="Edit Patient" class="me-2">
+                <img src="/static/images/pencil_edit.svg" alt="Edit" style="width:32px;height:32px;vertical-align:middle;"/>
+            </a>
+        </td>
+    </tr>
+{% endfor %}
