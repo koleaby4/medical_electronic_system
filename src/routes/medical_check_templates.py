@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -61,6 +61,7 @@ async def save_medical_check_template(
 
     items_by_idx: dict[int, dict[str, Any]] = {}
     import re
+
     item_key_pattern = re.compile(r"^items\[(\d+)\]\[(name|units|input_type|placeholder)\]$")
     for key, value in form.multi_items():
         if m := item_key_pattern.match(key):

@@ -83,9 +83,7 @@ async def create_medical_check(
             mc = MedicalCheck(
                 patient_id=patient_id,
                 check_date=data.get("observed_at") or data.get("check_date") or check_date,
-                template_name=_resolve_template_name(
-                    str(data.get("type") or data.get("template_id") or check_type)
-                ),
+                template_name=_resolve_template_name(str(data.get("type") or data.get("template_id") or check_type)),
                 status=MedicalCheckStatus(str(data.get("status") or status)),
                 notes=data.get("notes"),
                 medical_check_items=medical_check_items,
