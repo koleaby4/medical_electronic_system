@@ -44,10 +44,11 @@ class PatientsStorage(BaseStorage):
             ],
         )
 
-        if patient.patient_id is None:
+        if patient.patient_id is None and cur.lastrowid is not None:
             patient.patient_id = int(cur.lastrowid)
 
-        self._addresses.upsert_for_patient(patient.patient_id, patient.address)
+        if patient.patient_id is not None:
+            self._addresses.upsert_for_patient(patient.patient_id, patient.address)
         self.conn.commit()
         return patient
 
@@ -80,6 +81,7 @@ class PatientsStorage(BaseStorage):
             )
             if r := self._fetch_one_dict(cur):
                 return _row_to_patient(r)
+            return None
         finally:
             cur.close()
 

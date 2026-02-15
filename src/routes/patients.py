@@ -1,6 +1,6 @@
 import json
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -262,24 +262,27 @@ async def update_patient_post_method_override(
     if form.get("_method") != "PUT":
         raise HTTPException(status_code=405, detail="Method Not Allowed")
 
+    def _to_str(v: Any) -> str | None:
+        return str(v) if isinstance(v, str) else None
+
     return await update_patient(
         request=request,
         patient_id=patient_id,
         storage=storage,
-        title=form.get("title"),
-        first_name=form.get("first_name"),
-        middle_name=form.get("middle_name"),
-        last_name=form.get("last_name"),
-        sex=form.get("sex"),
-        dob=form.get("dob"),
-        email=form.get("email"),
-        phone=form.get("phone"),
+        title=_to_str(form.get("title")),
+        first_name=_to_str(form.get("first_name")),
+        middle_name=_to_str(form.get("middle_name")),
+        last_name=_to_str(form.get("last_name")),
+        sex=_to_str(form.get("sex")),
+        dob=date.fromisoformat(str(form.get("dob"))) if form.get("dob") and isinstance(form.get("dob"), str) else None,
+        email=_to_str(form.get("email")),
+        phone=_to_str(form.get("phone")),
         # Forward optional address fields explicitly so they are None/str, not Form(...) defaults
-        line_1=form.get("line_1"),
-        line_2=form.get("line_2"),
-        town=form.get("town"),
-        postcode=form.get("postcode"),
-        country=form.get("country"),
+        line_1=_to_str(form.get("line_1")),
+        line_2=_to_str(form.get("line_2")),
+        town=_to_str(form.get("town")),
+        postcode=_to_str(form.get("postcode")),
+        country=_to_str(form.get("country")),
     )
 
 
@@ -313,8 +316,9 @@ async def get_patient(
     last_ai_response = None
     if ai_requests := storage.ai_requests.get_by_patient(patient_id):
         last_request = ai_requests[0]
-        if ai_responses := storage.ai_responses.get_by_request(last_request.id):
-            last_ai_response = ai_responses[0].response_json
+        if last_request.id is not None:
+            if ai_responses := storage.ai_responses.get_by_request(last_request.id):
+                last_ai_response = ai_responses[0].response_json
 
     return templates.TemplateResponse(
         request,

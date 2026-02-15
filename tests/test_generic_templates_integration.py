@@ -70,10 +70,9 @@ def test_generic_template_post_and_persistence(client: TestClient, create_patien
         ],
     )
 
-    today = date.today().isoformat()
-    form = {
+    form: dict[str, str | int] = {
         "type": "FullVitals",
-        "date": today,
+        "date": date.today().isoformat(),
         "status": "Green",
         "param_count": 2,
         "param_name_0": "weight",
@@ -84,7 +83,9 @@ def test_generic_template_post_and_persistence(client: TestClient, create_patien
         "param_value_1": "180",
     }
 
-    resp_post = client.post(f"/patients/{patient_id}/medical_checks", data=form, follow_redirects=False)
+    resp_post = client.post(
+        f"/patients/{patient_id}/medical_checks", data={k: str(v) for k, v in form.items()}, follow_redirects=False
+    )
     assert resp_post.status_code in (303, 307)
 
     resp_get = client.get(f"/patients/{patient_id}/medical_checks")

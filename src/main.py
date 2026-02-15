@@ -12,7 +12,7 @@ from src.routes import medical_check_templates, medical_checks, patients, root
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db_path = Settings().db_file
-    app.storage = storage = DbStorage(db_path)
+    app.storage = storage = DbStorage(db_path)  # type: ignore
     yield
     storage.close()
 

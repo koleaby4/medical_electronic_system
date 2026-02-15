@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class AiResponse(BaseModel):
-    id: int | None = Field(None, description="Primary key")
+    id: int | None = None
     request_id: int
     response_json: str
-    created_at: datetime | None = Field(None, description="Timestamp of the response")
+    created_at: datetime | None = None

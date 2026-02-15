@@ -22,7 +22,7 @@ class AiResponsesStorage(BaseStorage):
             ],
         )
 
-        if response.id is None:
+        if response.id is None and cur.lastrowid is not None:
             response.id = int(cur.lastrowid)
 
         self.conn.commit()

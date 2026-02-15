@@ -19,8 +19,14 @@ def test_update_medical_check_json(client: TestClient, create_patient):
     patient_id = create_patient()
 
     # Create a check first
-    form = {"type": "physicals", "date": "2025-01-01", "status": "Green", "notes": "Old notes", "param_count": 0}
-    client.post(f"/patients/{patient_id}/medical_checks", data=form)
+    form: dict[str, str | int] = {
+        "type": "physicals",
+        "date": "2025-01-01",
+        "status": "Green",
+        "notes": "Old notes",
+        "param_count": 0,
+    }
+    client.post(f"/patients/{patient_id}/medical_checks", data={k: str(v) for k, v in form.items()})
 
     resp_list = client.get(f"/patients/{patient_id}/medical_checks")
     check_id = resp_list.json()["records"][0]["check_id"]
@@ -49,8 +55,8 @@ def test_delete_medical_check(client: TestClient, create_patient):
     patient_id = create_patient()
 
     # Create a check
-    form = {"type": "physicals", "date": "2025-01-01", "status": "Green", "param_count": 0}
-    client.post(f"/patients/{patient_id}/medical_checks", data=form)
+    form: dict[str, str | int] = {"type": "physicals", "date": "2025-01-01", "status": "Green", "param_count": 0}
+    client.post(f"/patients/{patient_id}/medical_checks", data={k: str(v) for k, v in form.items()})
     resp_list = client.get(f"/patients/{patient_id}/medical_checks")
     check_id = resp_list.json()["records"][0]["check_id"]
 

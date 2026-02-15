@@ -23,6 +23,7 @@ dev = [
     "pytest-asyncio",
     "pytest-cov",
     "ruff",
+    "mypy",
 ]
 
 [tool.pytest.ini_options]
@@ -34,3 +35,12 @@ line-length = 120
 
 [tool.black]
 line-length = 120
+
+[tool.mypy]
+python_version = "3.14"
+strict = false
+ignore_missing_imports = true
+check_untyped_defs = false
+disallow_untyped_defs = false
+mypy_path = "."
+explicit_package_bases = true

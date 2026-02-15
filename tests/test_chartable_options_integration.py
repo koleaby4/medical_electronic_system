@@ -16,7 +16,7 @@ def _create_template_with_numeric(client: TestClient, name: str = "Vitals") -> N
 
 
 def _create_check_with_item(client: TestClient, patient_id: int, check_template: str = "Vitals") -> None:
-    form = {
+    form: dict[str, str | int] = {
         "type": check_template,
         "date": date.today().isoformat(),
         "status": "Green",
@@ -25,7 +25,9 @@ def _create_check_with_item(client: TestClient, patient_id: int, check_template:
         "param_units_0": "kg",
         "param_value_0": "73.2",
     }
-    resp = client.post(f"/patients/{patient_id}/medical_checks", data=form, follow_redirects=False)
+    resp = client.post(
+        f"/patients/{patient_id}/medical_checks", data={k: str(v) for k, v in form.items()}, follow_redirects=False
+    )
     assert resp.status_code in (303, 307)
 
 

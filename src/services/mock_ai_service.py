@@ -62,7 +62,7 @@ class MockAiService(AiService):
                 )
                 self.db.ai_requests.save(ai_request)
 
-                ai_response = AiResponse(request_id=ai_request.id, response_json=json.dumps(cached_data))
+                ai_response = AiResponse(request_id=ai_request.id, response_json=json.dumps(cached_data))  # type: ignore
                 self.db.ai_responses.save(ai_response)
                 return ai_request, ai_response
             else:
@@ -84,23 +84,23 @@ class MockAiService(AiService):
                 )
                 self.db.ai_requests.save(ai_request)
                 ai_response = AiResponse(
-                    request_id=ai_request.id,
+                    request_id=ai_request.id,  # type: ignore
                     response_json=json.dumps({"choices": [{"message": {"content": json.dumps(dummy_content)}}]}),
                 )
                 self.db.ai_responses.save(ai_response)
                 return ai_request, ai_response
 
         # Record mode
-        ai_request, ai_response = await super().prepare_and_send_request(patient_id)
+        ai_request_rec, ai_response_rec = await super().prepare_and_send_request(patient_id)
 
-        if ai_response:
+        if ai_response_rec:
             self.fixtures_dir.mkdir(parents=True, exist_ok=True)
             # OpenAI response is in ai_response.response_json
-            resp_data = json.loads(ai_response.response_json)
+            resp_data = json.loads(ai_response_rec.response_json)
             with open(cache_file, "w") as f:
                 json.dump(resp_data, f, indent=2)
 
-        return ai_request, ai_response
+        return ai_request_rec, ai_response_rec
 
     def _generate_cache_key(self, payload: dict[str, Any]) -> str:
         key_data = {

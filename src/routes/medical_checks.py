@@ -110,7 +110,7 @@ async def create_medical_check(
 
     # HTML form path (existing behavior)
     form = await request.form()
-    medical_check_items: list[MedicalCheckItem] = []
+    medical_check_items_list: list[MedicalCheckItem] = []
     if param_count is None:
         indices: set[int] = set()
         for k in form.keys():
@@ -124,7 +124,13 @@ async def create_medical_check(
         name = form.get(f"param_name_{i}")
         value = form.get(f"param_value_{i}")
         units = form.get(f"param_units_{i}")
-        medical_check_items.append(MedicalCheckItem(name=name, units=units, value=value))
+        medical_check_items_list.append(
+            MedicalCheckItem(
+                name=str(name) if name else "",
+                units=str(units) if units else "",
+                value=str(value) if value else "",
+            )
+        )
 
     mc = MedicalCheck(
         patient_id=patient_id,
@@ -132,7 +138,7 @@ async def create_medical_check(
         template_name=_resolve_template_name(check_type),
         status=MedicalCheckStatus(status),
         notes=notes,
-        medical_check_items=medical_check_items,
+        medical_check_items=medical_check_items_list,
     )
 
     storage.medical_checks.save(
@@ -332,8 +338,10 @@ async def update_medical_check(
     if "notes" in data:
         storage.medical_checks.update_notes(check_id=check_id, notes=notes)
 
-    updated = storage.medical_checks.get_medical_check(patient_id=patient_id, check_id=check_id)
-    return updated
+    if updated := storage.medical_checks.get_medical_check(patient_id=patient_id, check_id=check_id):
+        return updated
+
+    raise HTTPException(status_code=404, detail="Medical check not found after update")
 
 
 @router.delete("/{check_id}")

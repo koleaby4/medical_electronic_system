@@ -25,7 +25,7 @@ class AiRequestsStorage(BaseStorage):
             ],
         )
 
-        if request.id is None:
+        if request.id is None and cur.lastrowid is not None:
             request.id = int(cur.lastrowid)
 
         # Reload to get created_at if needed, but for now we just return the object

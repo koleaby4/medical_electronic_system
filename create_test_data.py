@@ -310,7 +310,11 @@ def _get_check_status(medical_check_items: list[MedicalCheckItem]) -> MedicalChe
 def _seed_medical_checks(db: DbStorage, patients: list[Patient]) -> None:
     today = date.today()
 
-    def add_check(patient_id: int, check_template: str, offset_days: int, items: list[MedicalCheckItem], notes: str):
+    def add_check(
+        patient_id: int | None, check_template: str, offset_days: int, items: list[MedicalCheckItem], notes: str
+    ):
+        if patient_id is None:
+            return
         status = _get_check_status(items)
         db.medical_checks.save(
             patient_id=patient_id,

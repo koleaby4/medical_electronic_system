@@ -47,7 +47,7 @@ async def save_medical_check_template(
 ) -> HTMLResponse | RedirectResponse:
     form = await request.form()
 
-    check_name = form.get("check_name", "").strip()
+    check_name = str(form.get("check_name", "")).strip()
     if not check_name:
         return templates.TemplateResponse(
             request,
@@ -67,7 +67,8 @@ async def save_medical_check_template(
         if m := item_key_pattern.match(key):
             idx = int(m.group(1))
             field = m.group(2)
-            items_by_idx.setdefault(idx, {})[field] = (value or "").strip()
+            val = (value if isinstance(value, str) else "").strip()
+            items_by_idx.setdefault(idx, {})[field] = val
 
     items: list[MedicalCheckTemplateItem] = []
     for idx in items_by_idx:
@@ -81,7 +82,7 @@ async def save_medical_check_template(
             )
         )
 
-    raw_id = (form.get("template_id") or "").strip()
+    raw_id = str(form.get("template_id", "")).strip()
     template_id = int(raw_id) if raw_id.isdigit() else None
 
     if template_id is not None:

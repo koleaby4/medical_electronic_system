@@ -106,8 +106,8 @@ class MedicalCheckTemplatesStorage(BaseStorage):
             cur.close()
 
         return MedicalCheckTemplate(
-            template_id=header.get("template_id"),
-            name=header.get("name"),
+            template_id=header.get("template_id", 0),
+            name=header.get("name", "Unknown"),
             is_active=bool(header.get("is_active")),
             items=items,
         )
@@ -130,7 +130,7 @@ class MedicalCheckTemplatesStorage(BaseStorage):
         )
 
         if template_id is None:
-            template_id = int(cur.lastrowid)
+            template_id = int(cur.lastrowid or 0)
 
         self.conn.execute(
             "DELETE FROM medical_check_template_items WHERE template_id = ?",

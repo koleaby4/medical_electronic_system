@@ -23,7 +23,7 @@ def _create_sample_patient(client: TestClient) -> int:
 
 def _create_physicals_check(client: TestClient, patient_id: int, status: str = "Red", notes: str | None = None) -> int:
     today = date.today().isoformat()
-    form = {
+    form: dict[str, str | int] = {
         "type": "physicals",
         "date": today,
         "status": status,
@@ -32,7 +32,9 @@ def _create_physicals_check(client: TestClient, patient_id: int, status: str = "
     if notes is not None:
         form["notes"] = notes
 
-    resp_post = client.post(f"/patients/{patient_id}/medical_checks", data=form, follow_redirects=False)
+    resp_post = client.post(
+        f"/patients/{patient_id}/medical_checks", data={k: str(v) for k, v in form.items()}, follow_redirects=False
+    )
     assert resp_post.status_code in (303, 307)
 
     # Read back via API to obtain check_id

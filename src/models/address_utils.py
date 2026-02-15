@@ -6,7 +6,8 @@ from src.models.address import Address
 
 
 def build_address(data: Mapping[str, Any] | None = None) -> Address | None:
-    addr_obj = data.get("address", data or {})
+    data = data or {}
+    addr_obj = data.get("address", data)
 
     line_1 = addr_obj.get("line_1")
     town = addr_obj.get("town")

@@ -39,7 +39,7 @@ def test_post_physicals_with_notes_persisted_in_api(client: TestClient, create_p
     today = date.today().isoformat()
     notes_text = "Patient reported mild headache."
 
-    form = {
+    form: dict[str, str | int] = {
         "type": "physicals",
         "date": today,
         "status": "Red",
@@ -47,7 +47,9 @@ def test_post_physicals_with_notes_persisted_in_api(client: TestClient, create_p
         "param_count": 0,
     }
 
-    resp_post = client.post(f"/patients/{patient_id}/medical_checks", data=form, follow_redirects=False)
+    resp_post = client.post(
+        f"/patients/{patient_id}/medical_checks", data={k: str(v) for k, v in form.items()}, follow_redirects=False
+    )
     assert resp_post.status_code in (303, 307)
 
     resp_get = client.get(f"/patients/{patient_id}/medical_checks")

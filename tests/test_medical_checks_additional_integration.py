@@ -27,7 +27,7 @@ def _create_physicals_check(
             }
         )
     else:
-        form["param_count"] = 0
+        form["param_count"] = "0"
 
     if notes:
         form["notes"] = notes

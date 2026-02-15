@@ -69,12 +69,12 @@ class AiService:
             try:
                 response = await self.client.chat.completions.create(
                     model=self.settings.model,
-                    messages=payload["messages"],
+                    messages=payload["messages"],  # type: ignore
                     timeout=self.settings.timeout,
                 )
 
                 # Save response to DB
-                ai_response = AiResponse(request_id=ai_request.id, response_json=response.model_dump_json())
+                ai_response = AiResponse(request_id=ai_request.id, response_json=response.model_dump_json())  # type: ignore
                 self.db.ai_responses.save(ai_response)
             except Exception as e:
                 # In a real app we'd log this and maybe store error status

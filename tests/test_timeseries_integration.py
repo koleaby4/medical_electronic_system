@@ -10,7 +10,7 @@ def _create_sample_patient_id(create_patient) -> int:
 def _create_physicals_with_item(
     client: TestClient, patient_id: int, check_date: date, status: str, item_name: str, value: str, units: str
 ) -> None:
-    form = {
+    form: dict[str, str | int] = {
         "type": "physicals",
         "date": check_date.isoformat(),
         "status": status,
@@ -19,7 +19,9 @@ def _create_physicals_with_item(
         "param_value_0": value,
         "param_units_0": units,
     }
-    resp = client.post(f"/patients/{patient_id}/medical_checks", data=form, follow_redirects=False)
+    resp = client.post(
+        f"/patients/{patient_id}/medical_checks", data={k: str(v) for k, v in form.items()}, follow_redirects=False
+    )
     assert resp.status_code in (303, 307)
 
 

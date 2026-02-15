@@ -1,3 +1,4 @@
+import datetime
 import sqlite3
 
 from src.data_access.base import BaseStorage
@@ -47,7 +48,7 @@ class MedicalChecksStorage(BaseStorage):
                     """,
                     [check_template],
                 )
-                template_id = int(cur_ins.lastrowid)
+                template_id = int(cur_ins.lastrowid) if cur_ins.lastrowid else 0
 
         cur = self.conn.execute(
             """
@@ -57,7 +58,7 @@ class MedicalChecksStorage(BaseStorage):
             [patient_id, template_id, check_date, status, notes],
         )
 
-        check_id = int(cur.lastrowid)
+        check_id = int(cur.lastrowid) if cur.lastrowid else 0
 
         self.items.insert_items(check_id=check_id, medical_check_items=medical_check_items)
         self.conn.commit()
@@ -88,13 +89,15 @@ class MedicalChecksStorage(BaseStorage):
         records: list[MedicalCheck] = []
         for row in raw_rows:
             check_id = row.get("check_id")
+            if check_id is None:
+                continue
             items = self.items.get_items_by_check_id(check_id=check_id)
             medical_check = MedicalCheck(
-                check_id=row.get("check_id"),
-                patient_id=row.get("patient_id"),
-                check_date=row.get("check_date"),
-                template_name=row.get("check_template"),
-                status=MedicalCheckStatus(row.get("status")),
+                check_id=check_id,
+                patient_id=row.get("patient_id", 0),
+                check_date=row.get("check_date", datetime.date.today()),
+                template_name=row.get("check_template", "Unknown"),
+                status=MedicalCheckStatus(row.get("status", MedicalCheckStatus.GREEN.value)),
                 notes=row.get("notes"),
                 medical_check_items=items,
             )
@@ -129,11 +132,11 @@ class MedicalChecksStorage(BaseStorage):
         items = self.items.get_items_by_check_id(check_id=check_id)
 
         medical_check = MedicalCheck(
-            check_id=row.get("check_id"),
-            patient_id=row.get("patient_id"),
-            check_date=row.get("check_date"),
-            template_name=row.get("check_template"),
-            status=MedicalCheckStatus(row.get("status")),
+            check_id=row.get("check_id", check_id),
+            patient_id=row.get("patient_id", 0),
+            check_date=row.get("check_date", datetime.date.today()),
+            template_name=row.get("check_template", "Unknown"),
+            status=MedicalCheckStatus(row.get("status") or MedicalCheckStatus.GREEN.value),
             notes=row.get("notes"),
             medical_check_items=items,
         )
