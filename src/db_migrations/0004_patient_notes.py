@@ -26,4 +26,6 @@ def downgrade(conn: sqlite3.Connection) -> None:
     try:
         conn.execute("ALTER TABLE patients DROP COLUMN notes;")
     except sqlite3.OperationalError:
-        logger.warning("Could not drop column 'notes' from 'patients' table. This might be due to an older SQLite version.")
+        logger.warning(
+            "Could not drop column 'notes' from 'patients' table. This might be due to an older SQLite version."
+        )
