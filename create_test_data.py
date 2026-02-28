@@ -51,6 +51,7 @@ def build_sample_patients() -> list[Patient]:
             dob=date(1985, 5, 17),
             email="JOHN.DOE@EXAMPLE.COM",
             phone="+1-555-0100",
+            notes="Active lifestyle, enjoys hiking and cycling. Wears glasses, uses a cane for long distances. No known allergies.",
             address=Address(
                 line_1="1 Baker Street",
                 line_2=None,
@@ -68,6 +69,7 @@ def build_sample_patients() -> list[Patient]:
             dob=date(1990, 9, 12),
             email="EMILY.CLARK@MAIL.COM",
             phone="+44 20 7946 0001",
+            notes="Working professional, mother of two. Wears contacts, occasional migraines.",
             address=Address(
                 line_1="221B Baker Street",
                 line_2="",
@@ -85,6 +87,7 @@ def build_sample_patients() -> list[Patient]:
             dob=date(1960, 2, 3),
             email="ALEX.TAYLOR@HEALTH.ORG",
             phone="(555) 0101",
+            notes="Senior researcher with interest in occupational health. Prefers morning appointments. Uses reading glasses.",
             address=Address(
                 line_1="10 Downing Street",
                 line_2=None,
@@ -102,6 +105,7 @@ def build_sample_patients() -> list[Patient]:
             dob=date(2001, 7, 22),
             email="SAM.RIVERS@MAIL.NET",
             phone="+1 555 0102",
+            notes="Student athlete. Regular participant in local marathons. Wears sports glasses during competition.",
             address=Address(
                 line_1="1600 Pennsylvania Ave",
                 line_2=None,
@@ -119,6 +123,7 @@ def build_sample_patients() -> list[Patient]:
             dob=date(2008, 11, 5),
             email="OLIVIA.MARTIN@EXAMPLE.CO.UK",
             phone="555-0103",
+            notes="Primary school student. Up to date with all vaccinations. Wears colorful hearing aids.",
             address=Address(
                 line_1="742 Evergreen Terrace",
                 line_2=None,
@@ -136,6 +141,7 @@ def build_sample_patients() -> list[Patient]:
             dob=date(1948, 3, 9),
             email="ARTHUR.KENT@EXAMPLE.ORG",
             phone="555-0104",
+            notes="Retired military officer. Hearing loss in left ear. Uses a motorized wheelchair.",
             address=Address(
                 line_1="5 Fleet Street",
                 line_2=None,
