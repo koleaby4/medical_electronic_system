@@ -71,6 +71,10 @@
                 <input type="text" name="phone" id="phone" class="form-control"
                        value="{{ patient.phone if patient else '' }}" placeholder="Phone" required>
             </div>
+            <div class="col-12">
+                <label for="notes" class="form-label visually-hidden">Notes</label>
+                <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Notes">{{ patient.notes if patient and patient.notes else '' }}</textarea>
+            </div>
         </div>
 
         <div class="card mt-4 mb-4">

@@ -27,6 +27,14 @@
         <!-- Left column -->
         <div class="col-md-6">
             {% include '_patient_summary_card.html' %}
+            {% if patient.notes %}
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">Notes</div>
+                <div class="card-body">
+                    <p class="card-text">{{ patient.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Add tile controls -->
             <div class="card mb-3">

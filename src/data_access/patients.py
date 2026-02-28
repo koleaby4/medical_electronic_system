@@ -18,9 +18,9 @@ class PatientsStorage(BaseStorage):
             """
             INSERT INTO patients (
                 patient_id, title, first_name, middle_name, last_name,
-                sex, dob, email, phone
+                sex, dob, email, phone, notes
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(patient_id) DO UPDATE SET
                 title = excluded.title,
                 first_name = excluded.first_name,
@@ -29,7 +29,8 @@ class PatientsStorage(BaseStorage):
                 sex = excluded.sex,
                 dob = excluded.dob,
                 email = excluded.email,
-                phone = excluded.phone
+                phone = excluded.phone,
+                notes = excluded.notes
             """,
             [
                 patient.patient_id,
@@ -41,6 +42,7 @@ class PatientsStorage(BaseStorage):
                 patient.dob,
                 patient.email,
                 patient.phone,
+                patient.notes,
             ],
         )
 
@@ -72,7 +74,9 @@ class PatientsStorage(BaseStorage):
         try:
             cur.execute(
                 """
-                SELECT p.*, a.line_1, a.line_2, a.town, a.postcode, a.country
+                SELECT p.patient_id, p.title, p.first_name, p.middle_name, p.last_name,
+                       p.sex, p.dob, p.email, p.phone, p.notes,
+                       a.line_1, a.line_2, a.town, a.postcode, a.country
                 FROM patients p
                 LEFT JOIN addresses a ON a.patient_id = p.patient_id
                 WHERE p.patient_id = ?
@@ -107,6 +111,7 @@ def _row_to_patient(row: dict[str, Any]) -> Patient:
         "dob",
         "email",
         "phone",
+        "notes",
     }
     patient_data = {key: value for key, value in row.items() if key in patient_fields}
     return Patient(**patient_data, address=address)

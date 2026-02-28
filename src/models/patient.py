@@ -16,6 +16,7 @@ class Patient(BaseModel):
     phone: str
     middle_name: str | None = None
     patient_id: int | None = None
+    notes: str | None = None
     address: Address
 
     @field_validator("first_name", "last_name", "middle_name", mode="before")

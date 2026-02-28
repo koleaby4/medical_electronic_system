@@ -110,6 +110,7 @@ async def create_patient(
     dob: Annotated[date | None, Form()] = None,
     email: Annotated[str | None, Form()] = None,
     phone: Annotated[str | None, Form()] = None,
+    notes: Annotated[str | None, Form()] = None,
     line_1: Annotated[str | None, Form()] = None,
     line_2: Annotated[str | None, Form()] = None,
     town: Annotated[str | None, Form()] = None,
@@ -131,6 +132,7 @@ async def create_patient(
             "dob": data.get("dob"),
             "email": data.get("email"),
             "phone": data.get("phone"),
+            "notes": data.get("notes"),
             "address": addr,
         }
     else:
@@ -161,6 +163,7 @@ async def create_patient(
             "dob": dob,
             "email": email,
             "phone": phone,
+            "notes": notes,
             "address": addr,
         }
 
@@ -190,6 +193,7 @@ async def update_patient(
     dob: Annotated[date | None, Form()] = None,
     email: Annotated[str | None, Form()] = None,
     phone: Annotated[str | None, Form()] = None,
+    notes: Annotated[str | None, Form()] = None,
     line_1: Annotated[str | None, Form()] = None,
     line_2: Annotated[str | None, Form()] = None,
     town: Annotated[str | None, Form()] = None,
@@ -211,6 +215,7 @@ async def update_patient(
             "dob": data.get("dob"),
             "email": data.get("email"),
             "phone": data.get("phone"),
+            "notes": data.get("notes"),
             "address": addr,
         }
     else:
@@ -232,6 +237,7 @@ async def update_patient(
             "dob": dob,
             "email": email,
             "phone": phone,
+            "notes": notes,
             "address": addr,
         }
 
@@ -277,6 +283,7 @@ async def update_patient_post_method_override(
         dob=date.fromisoformat(str(form.get("dob"))) if form.get("dob") and isinstance(form.get("dob"), str) else None,
         email=_to_str(form.get("email")),
         phone=_to_str(form.get("phone")),
+        notes=_to_str(form.get("notes")),
         # Forward optional address fields explicitly so they are None/str, not Form(...) defaults
         line_1=_to_str(form.get("line_1")),
         line_2=_to_str(form.get("line_2")),
