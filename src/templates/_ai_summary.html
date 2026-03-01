@@ -38,18 +38,26 @@
             </div>
             <script>
                 (function() {
-                    const triggers = document.querySelectorAll('.ai-charts-trigger');
-                    const trigger = triggers[triggers.length - 1]; // Use the most recent one
-                    if (trigger) {
-                        const charts = JSON.parse(trigger.getAttribute('data-charts'));
-                        if (Array.isArray(charts) && window.addTileWith) {
-                            charts.forEach(chartSpec => {
-                                if (typeof chartSpec === 'string' && chartSpec.includes('.')) {
-                                    const [type, name] = chartSpec.split('.', 2);
-                                    window.addTileWith(type.trim(), name.trim());
-                                }
-                            });
+                    const runCharts = () => {
+                        const triggers = document.querySelectorAll('.ai-charts-trigger');
+                        const trigger = triggers[triggers.length - 1]; // Use the most recent one
+                        if (trigger) {
+                            const charts = JSON.parse(trigger.getAttribute('data-charts'));
+                            if (Array.isArray(charts) && window.addTileWith) {
+                                charts.forEach(chartSpec => {
+                                    if (typeof chartSpec === 'string' && chartSpec.includes('.')) {
+                                        const [type, name] = chartSpec.split('.', 2);
+                                        window.addTileWith(type.trim(), name.trim());
+                                    }
+                                });
+                            }
                         }
+                    };
+                    
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', runCharts);
+                    } else {
+                        runCharts();
                     }
                 })();
             </script>
