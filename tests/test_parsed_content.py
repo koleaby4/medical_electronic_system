@@ -1,13 +1,15 @@
 import io
 import json
 from datetime import date
-from unittest.mock import patch, MagicMock, AsyncMock
-from fastapi.testclient import TestClient
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from src.services.ai_service import AiService
+from fastapi.testclient import TestClient
+
 from settings import OpenAISettings, Settings
 from src.data_access.db_storage import DbStorage
-from pathlib import Path
+from src.services.ai_service import AiService
 
 
 @pytest.mark.asyncio

@@ -1,14 +1,13 @@
 import datetime
 import json
-from pathlib import Path
 from contextlib import suppress
+from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-
-from docling.document_converter import DocumentConverter
+from pypdf import PdfReader
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_ai_service, get_storage
@@ -31,9 +30,11 @@ def _read_attachment_content(file_path: Path) -> str | None:
     # Handle PDF files
     if suffix == ".pdf":
         try:
-            converter = DocumentConverter()
-            result = converter.convert(str(file_path))
-            return result.document.export_to_markdown()
+            reader = PdfReader(file_path)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+            return text.strip()
         except Exception as e:
             print(f"Error reading PDF attachment {file_path}: {e}")
             return None

@@ -13,7 +13,7 @@ dependencies = [
     "pydantic-settings",
     "dotenv",
     "openai",
-    "docling>=2.77.0",
+    "pypdf",
 ]
 
 [dependency-groups]

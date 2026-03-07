@@ -71,16 +71,15 @@ async def test_ai_service_includes_pdf_content(migrated_db, create_patient, tmp_
                     "filename": pdf_filename,
                     "content_type": "application/pdf",
                     "file_path": rel_path,
-                    "parsed_content": "Extracted PDF content in Markdown",
+                    "parsed_content": "Extracted PDF content",
                 }
             ],
         )
 
-        with patch("src.services.ai_service.DocumentConverter") as mock_converter_class:
-            mock_converter = mock_converter_class.return_value
-            mock_result = MagicMock()
-            mock_result.document.export_to_markdown.return_value = "Extracted PDF content in Markdown"
-            mock_converter.convert.return_value = mock_result
+        # No need to patch PdfReader here anymore as it is imported inside the function
+        # and we can use patch with a string targeting the import location or just mock the whole _read_attachment_content
+        with patch("src.services.ai_service.AiService._read_attachment_content") as mock_read:
+            mock_read.return_value = "Extracted PDF content"
 
             # Execute
             ai_req, _ = await ai_service.prepare_and_send_request(patient_id)
@@ -91,7 +90,7 @@ async def test_ai_service_includes_pdf_content(migrated_db, create_patient, tmp_
             attachment = user_content["medical_history"][0]["attachments"][0]
 
             assert attachment["filename"] == pdf_filename
-            assert attachment["content"] == "Extracted PDF content in Markdown"
+            assert attachment["content"] == "Extracted PDF content"
 
         # Cleanup
         if abs_path.exists():

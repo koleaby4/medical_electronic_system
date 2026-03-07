@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from openai import AsyncOpenAI
-from docling.document_converter import DocumentConverter
+from pypdf import PdfReader
 
 from settings import OpenAISettings
 from src.data_access.db_storage import DbStorage
@@ -111,9 +111,11 @@ class AiService:
         # Handle PDF files
         if suffix == ".pdf":
             try:
-                converter = DocumentConverter()
-                result = converter.convert(str(full_path))
-                return result.document.export_to_markdown()
+                reader = PdfReader(full_path)
+                text = ""
+                for page in reader.pages:
+                    text += page.extract_text() + "\n"
+                return text.strip()
             except Exception as e:
                 print(f"Error reading PDF attachment {full_path}: {e}")
                 return None
