@@ -1,7 +1,9 @@
 import json
+from pathlib import Path
 from typing import Any
 
 from openai import AsyncOpenAI
+from docling.document_converter import DocumentConverter
 
 from settings import OpenAISettings
 from src.data_access.db_storage import DbStorage
@@ -90,4 +92,40 @@ class AiService:
         return json.loads(data_json)
 
     def _anonymize_medical_check(self, mc: MedicalCheck) -> dict[str, Any]:
-        return json.loads(mc.model_dump_json())
+        data = json.loads(mc.model_dump_json())
+        # Attachments already have metadata (filename, content_type).
+        # We use the stored parsed_content if available.
+        for i, attachment in enumerate(mc.attachments):
+            if attachment.parsed_content:
+                data["attachments"][i]["content"] = attachment.parsed_content
+        return data
+
+    def _read_attachment_content(self, relative_path: str) -> str | None:
+        """Reads text content of an attachment if it is a text file or PDF."""
+        full_path = Path("attachments") / relative_path
+        if not full_path.exists() or not full_path.is_file():
+            return None
+
+        suffix = full_path.suffix.lower()
+
+        # Handle PDF files
+        if suffix == ".pdf":
+            try:
+                converter = DocumentConverter()
+                result = converter.convert(str(full_path))
+                return result.document.export_to_markdown()
+            except Exception as e:
+                print(f"Error reading PDF attachment {full_path}: {e}")
+                return None
+
+        # Simple check for text files by extension
+        text_extensions = {".txt", ".csv", ".json", ".xml", ".md"}
+        if suffix not in text_extensions:
+            return None
+
+        try:
+            # We assume UTF-8 for now.
+            return full_path.read_text(encoding="utf-8", errors="replace")
+        except Exception as e:
+            print(f"Error reading text attachment {full_path}: {e}")
+            return None

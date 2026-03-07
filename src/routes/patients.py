@@ -19,12 +19,15 @@ templates = Jinja2Templates(directory="src/templates")
 templates.env.filters["from_json"] = json.loads
 
 
-@router.get("", include_in_schema=False)
+@router.get("", response_model=None)
 async def list_patients(
     request: Request,
     storage: Annotated[DbStorage, Depends(get_storage)],
-) -> HTMLResponse:
+) -> HTMLResponse | JSONResponse:
     patients = storage.patients.get_all_patients()
+
+    if "application/json" in (request.headers.get("accept") or ""):
+        return JSONResponse(content={"records": [json.loads(p.model_dump_json()) for p in patients]})
 
     return templates.TemplateResponse(request, "patients.html", {"active_page": "patients", "patients": patients})
 

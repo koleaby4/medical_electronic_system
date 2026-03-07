@@ -3,7 +3,8 @@
 <form id="medicalCheckForm" class="vstack gap-3" 
       hx-post="/patients/{{ patient.patient_id }}/medical_checks"
       hx-target="body"
-      hx-push-url="true">
+      hx-push-url="true"
+      enctype="multipart/form-data">
     <div class="row g-2 align-items-center">
         <input type="hidden" name="type" value="{{ check_template }}">
         <div class="col-sm-12">
@@ -48,6 +49,11 @@
     <div>
         <label for="notes" class="form-label">Notes</label>
         <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+    </div>
+
+    <div>
+        <label for="attachments" class="form-label">Attachments</label>
+        <input type="file" id="attachments" name="attachments" class="form-control" multiple>
     </div>
 
     <div>

@@ -4,7 +4,7 @@ import sqlite3
 from src.data_access.base import BaseStorage
 from src.data_access.medical_check_items import MedicalCheckItemsStorage
 from src.models.enums import MedicalCheckStatus
-from src.models.medical_check import MedicalCheck
+from src.models.medical_check import MedicalCheck, MedicalCheckAttachment
 from src.models.medical_check_item import MedicalCheckItem
 
 
@@ -22,6 +22,7 @@ class MedicalChecksStorage(BaseStorage):
         status: str,
         medical_check_items: list[MedicalCheckItem],
         notes: str | None = None,
+        attachments: list[dict[str, str | None]] | None = None,
     ) -> int:
         # Resolve check_template to template_id (PK from medical_check_templates) if provided as a string
         template_id: int
@@ -61,6 +62,23 @@ class MedicalChecksStorage(BaseStorage):
         check_id = int(cur.lastrowid) if cur.lastrowid else 0
 
         self.items.insert_items(check_id=check_id, medical_check_items=medical_check_items)
+
+        if attachments:
+            for attachment in attachments:
+                self.conn.execute(
+                    """
+                    INSERT INTO medical_check_attachments (check_id, filename, content_type, file_path, parsed_content)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    [
+                        check_id,
+                        attachment["filename"],
+                        attachment["content_type"],
+                        attachment["file_path"],
+                        attachment.get("parsed_content"),
+                    ],
+                )
+
         self.conn.commit()
         return check_id
 
@@ -92,6 +110,7 @@ class MedicalChecksStorage(BaseStorage):
             if check_id is None:
                 continue
             items = self.items.get_items_by_check_id(check_id=check_id)
+            attachments = self.get_attachments_by_check_id(check_id=check_id)
             medical_check = MedicalCheck(
                 check_id=check_id,
                 patient_id=row.get("patient_id", 0),
@@ -100,6 +119,7 @@ class MedicalChecksStorage(BaseStorage):
                 status=MedicalCheckStatus(row.get("status", MedicalCheckStatus.GREEN.value)),
                 notes=row.get("notes"),
                 medical_check_items=items,
+                attachments=attachments,
             )
             records.append(medical_check)
 
@@ -130,6 +150,7 @@ class MedicalChecksStorage(BaseStorage):
             cur.close()
 
         items = self.items.get_items_by_check_id(check_id=check_id)
+        attachments = self.get_attachments_by_check_id(check_id=check_id)
 
         medical_check = MedicalCheck(
             check_id=row.get("check_id", check_id),
@@ -139,8 +160,25 @@ class MedicalChecksStorage(BaseStorage):
             status=MedicalCheckStatus(row.get("status") or MedicalCheckStatus.GREEN.value),
             notes=row.get("notes"),
             medical_check_items=items,
+            attachments=attachments,
         )
         return medical_check
+
+    def get_attachments_by_check_id(self, check_id: int) -> list[MedicalCheckAttachment]:
+        cur = self.conn.cursor()
+        try:
+            cur.execute(
+                """
+                SELECT attachment_id, check_id, filename, content_type, file_path, parsed_content
+                FROM medical_check_attachments
+                WHERE check_id = ?
+                """,
+                [check_id],
+            )
+            raw_rows = self._fetch_all_dicts(cur)
+            return [MedicalCheckAttachment(**row) for row in raw_rows]
+        finally:
+            cur.close()
 
     def update_status(self, *, check_id: int, status: str) -> None:
         self.conn.execute(

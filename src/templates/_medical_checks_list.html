@@ -7,7 +7,12 @@
              onclick="window.location.href='/patients/{{ patient_id }}/medical_checks/{{ r.check_id }}'"
              title="View details"
              {% endif %}>
-            <div class="fw-bold text-truncate">{{ r.template_name or '' }}</div>
+            <div class="fw-bold text-truncate">
+                {{ r.template_name or '' }}
+                {% if r.attachments %}
+                <span class="ms-1" title="{{ r.attachments|length }} attachment(s)">📎</span>
+                {% endif %}
+            </div>
             <div class="fw-bold ms-3">{{ r.check_date }}</div>
         </div>
     </div>

@@ -1,11 +1,14 @@
 import datetime
 import json
+from pathlib import Path
 from contextlib import suppress
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
+
+from docling.document_converter import DocumentConverter
 
 from src.data_access.db_storage import DbStorage
 from src.dependencies import get_ai_service, get_storage
@@ -16,6 +19,36 @@ from src.services.ai_service import AiService
 
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
+
+
+def _read_attachment_content(file_path: Path) -> str | None:
+    """Reads text content of an attachment if it is a text file or PDF."""
+    if not file_path.exists() or not file_path.is_file():
+        return None
+
+    suffix = file_path.suffix.lower()
+
+    # Handle PDF files
+    if suffix == ".pdf":
+        try:
+            converter = DocumentConverter()
+            result = converter.convert(str(file_path))
+            return result.document.export_to_markdown()
+        except Exception as e:
+            print(f"Error reading PDF attachment {file_path}: {e}")
+            return None
+
+    # Simple check for text files by extension
+    text_extensions = {".txt", ".csv", ".json", ".xml", ".md"}
+    if suffix not in text_extensions:
+        return None
+
+    try:
+        # We assume UTF-8 for now.
+        return file_path.read_text(encoding="utf-8", errors="replace")
+    except Exception as e:
+        print(f"Error reading text attachment {file_path}: {e}")
+        return None
 
 
 # Todo: refactor this?
@@ -69,11 +102,12 @@ async def create_medical_check(
     status: Annotated[str, Form(...)],
     notes: Annotated[str | None, Form()] = None,
     param_count: Annotated[int | None, Form()] = None,
+    attachments: list[UploadFile] = File(None),
 ) -> JSONResponse | RedirectResponse:
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
 
-    if is_json := "application/json" in (request.headers.get("content-type") or ""):
+    if "application/json" in request.headers.get("content-type", ""):
         data = await request.json()
         try:
             items_payload = data.get("items") or []
@@ -91,7 +125,6 @@ async def create_medical_check(
         except Exception as e:
             raise HTTPException(status_code=422, detail=f"Invalid payload: {e}")
 
-    if is_json:
         check_id = storage.medical_checks.save(
             patient_id=patient_id,
             check_template=mc.template_name,
@@ -141,7 +174,17 @@ async def create_medical_check(
         medical_check_items=medical_check_items_list,
     )
 
-    storage.medical_checks.save(
+    # Handle attachments
+    processed_attachments = []
+    if attachments:
+        # directory structure: attachments/{iso-check-date}/{check_id}
+        iso_date = mc.check_date.isoformat()
+        # use a temporary structure or just save after creating the medical check
+        # But wait, I need the check_id to create the directory.
+        # So I'll create the check first, then save files, then update the check (or just add attachments to DB).
+        pass
+
+    check_id = storage.medical_checks.save(
         patient_id=patient_id,
         check_template=mc.template_name,
         check_date=mc.check_date,
@@ -149,6 +192,53 @@ async def create_medical_check(
         medical_check_items=mc.medical_check_items,
         notes=mc.notes,
     )
+
+    if attachments:
+        # directory structure: attachments/{patient_id}/{iso-date}/{file_name}
+        iso_date = mc.check_date.isoformat()
+        upload_dir = Path("attachments") / str(patient_id) / iso_date
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        for attachment in attachments:
+            if not attachment.filename:
+                continue
+
+            file_path = upload_dir / attachment.filename
+            content = await attachment.read()
+            if not content:
+                continue
+
+            with open(file_path, "wb") as f:
+                f.write(content)
+
+            parsed_content = _read_attachment_content(file_path)
+
+            db_file_path = f"{patient_id}/{iso_date}/{attachment.filename}"
+            processed_attachments.append(
+                {
+                    "filename": attachment.filename,
+                    "content_type": attachment.content_type,
+                    "file_path": db_file_path,
+                    "parsed_content": parsed_content,
+                }
+            )
+
+        if processed_attachments:
+            for att in processed_attachments:
+                storage.medical_checks.conn.execute(
+                    """
+                    INSERT INTO medical_check_attachments (check_id, filename, content_type, file_path, parsed_content)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    [
+                        check_id,
+                        att["filename"],
+                        att["content_type"],
+                        att["file_path"],
+                        att.get("parsed_content"),
+                    ],
+                )
+            storage.medical_checks.conn.commit()
 
     # Trigger AI analysis
     await ai_service.prepare_and_send_request(patient_id)
@@ -358,3 +448,15 @@ async def delete_medical_check(
 
     storage.medical_checks.delete(check_id=check_id)
     return JSONResponse(status_code=204, content=None)
+
+
+@router.get("/attachments/{p_id}/{date_str}/{filename}", include_in_schema=False)
+async def get_attachment(
+    p_id: str,
+    date_str: str,
+    filename: str,
+) -> FileResponse:
+    file_path = Path("attachments") / p_id / date_str / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    return FileResponse(file_path)

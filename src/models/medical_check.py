@@ -6,6 +6,15 @@ from src.models.enums import MedicalCheckStatus
 from src.models.medical_check_item import MedicalCheckItem
 
 
+class MedicalCheckAttachment(BaseModel):
+    attachment_id: int | None = Field(default=None, description="DB identifier")
+    check_id: int | None = Field(default=None, description="Check identifier", exclude=True)
+    filename: str = Field(..., description="Original filename")
+    content_type: str | None = Field(None, description="MIME type")
+    file_path: str = Field(..., description="Local path to the file")
+    parsed_content: str | None = Field(None, description="Extracted and parsed file content")
+
+
 class MedicalCheck(BaseModel):
     check_id: int | None = Field(default=None, description="DB identifier")
     patient_id: int | None = Field(default=None, description="Patient identifier", exclude=True)
@@ -16,6 +25,7 @@ class MedicalCheck(BaseModel):
     status: MedicalCheckStatus = Field(..., description="Clinical status of the check outcome (Red | Amber | Green)")
     notes: str | None = Field(None, description="Optional notes about the check")
     medical_check_items: list[MedicalCheckItem] = Field(default_factory=list)
+    attachments: list[MedicalCheckAttachment] = Field(default_factory=list)
 
     @field_validator("status", mode="before")
     @classmethod
