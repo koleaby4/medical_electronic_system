@@ -73,10 +73,10 @@ async def send_to_ai(
     ai_service: Annotated[AiService, Depends(get_ai_service)],
 ) -> HTMLResponse | JSONResponse | RedirectResponse | str:
     try:
-        _, ai_resp = await ai_service.prepare_and_send_request(patient_id)
+        ai_req, ai_resp = await ai_service.prepare_and_send_request(patient_id)
 
         if request.headers.get("HX-Request"):
-            return templates.TemplateResponse(
+            response = templates.TemplateResponse(
                 request,
                 "_ai_summary.html",
                 {
@@ -84,6 +84,9 @@ async def send_to_ai(
                     "patient_id": patient_id,
                 },
             )
+            if ai_req and ai_req.id:
+                response.headers["X-AI-Request-ID"] = str(ai_req.id)
+            return response
 
         if "application/json" in (request.headers.get("accept") or ""):
             if ai_resp:
@@ -322,10 +325,12 @@ async def get_patient(
 
     medical_checks = storage.medical_checks.get_medical_checks(patient_id)
 
-    # Fetch last AI response if any
+    # Fetch last AI response and its request ID
     last_ai_response = None
+    last_request_id = None
     if ai_requests := storage.ai_requests.get_by_patient(patient_id):
         last_request = ai_requests[0]
+        last_request_id = last_request.id
         if last_request.id is not None:
             if ai_responses := storage.ai_responses.get_by_request(last_request.id):
                 last_ai_response = ai_responses[0].response_json
@@ -340,6 +345,43 @@ async def get_patient(
             "templates": check_templates,
             "medical_checks": medical_checks,
             "last_ai_response": last_ai_response,
+            "last_request_id": last_request_id,
+            "patient_id": patient_id,
+            "check_added": request.query_params.get("check_added") == "1",
+        },
+    )
+
+
+@router.get("/{patient_id}/ai_summary", include_in_schema=False)
+async def get_ai_summary(
+    request: Request,
+    patient_id: int,
+    storage: Annotated[DbStorage, Depends(get_storage)],
+    current_request_id: str | None = None,
+) -> HTMLResponse:
+    last_ai_response = None
+    last_request_id = None
+    if ai_requests := storage.ai_requests.get_by_patient(patient_id):
+        last_request = ai_requests[0]
+        last_request_id = last_request.id
+        if last_request.id is not None:
+            if ai_responses := storage.ai_responses.get_by_request(last_request.id):
+                last_ai_response = ai_responses[0].response_json
+
+    response = templates.TemplateResponse(
+        request,
+        "_ai_summary.html",
+        {
+            "ai_response": last_ai_response,
             "patient_id": patient_id,
         },
     )
+    if last_request_id:
+        response.headers["X-AI-Request-ID"] = str(last_request_id)
+
+    # Stop polling if we have a newer request ID than the one we started with,
+    # and it has a response.
+    if current_request_id and last_request_id and str(last_request_id) != str(current_request_id) and last_ai_response:
+        response.status_code = 286  # HTMX special status to stop polling
+
+    return response

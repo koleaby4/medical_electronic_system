@@ -4,7 +4,7 @@ from pathlib import Path
 from contextlib import suppress
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File, BackgroundTasks
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
@@ -97,6 +97,7 @@ async def create_medical_check(
     request: Request,
     storage: Annotated[DbStorage, Depends(get_storage)],
     ai_service: Annotated[AiService, Depends(get_ai_service)],
+    background_tasks: BackgroundTasks,
     check_type: Annotated[str, Form(alias="type")],
     check_date: Annotated[datetime.date, Form(alias="date")],
     status: Annotated[str, Form(...)],
@@ -134,8 +135,8 @@ async def create_medical_check(
             notes=mc.notes,
         )
 
-        # Trigger AI analysis
-        await ai_service.prepare_and_send_request(patient_id)
+        # Trigger AI analysis in background
+        background_tasks.add_task(ai_service.prepare_and_send_request, patient_id)
 
         created = storage.medical_checks.get_medical_check(patient_id=patient_id, check_id=check_id)
         headers = {"Location": f"/patients/{patient_id}/medical_checks/{check_id}"}
@@ -240,10 +241,10 @@ async def create_medical_check(
                 )
             storage.medical_checks.conn.commit()
 
-    # Trigger AI analysis
-    await ai_service.prepare_and_send_request(patient_id)
+    # Trigger AI analysis in background
+    background_tasks.add_task(ai_service.prepare_and_send_request, patient_id)
 
-    return RedirectResponse(url=f"/patients/{patient.patient_id}", status_code=303)
+    return RedirectResponse(url=f"/patients/{patient.patient_id}?check_added=1", status_code=303)
 
 
 @router.get("/new", include_in_schema=False)

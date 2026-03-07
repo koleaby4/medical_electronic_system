@@ -115,7 +115,13 @@
                     <div id="aiProgressBar" class="progress mb-3 htmx-indicator">
                         <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 100%"></div>
                     </div>
-                    <div id="medicalNotes" class="border rounded p-3 bg-light" style="min-height: 200px;">
+                    <div id="medicalNotes" class="border rounded p-3 bg-light" style="min-height: 200px;"
+                         {% if check_added %}
+                            hx-get="/patients/{{ patient.patient_id }}/ai_summary?current_request_id={{ last_request_id or '' }}"
+                            hx-trigger="load, every 3s"
+                            hx-indicator="#aiProgressBar"
+                         {% endif %}
+                         hx-on:htmx:after-on-load="if(event.detail.xhr.status === 200) { const idHeader = event.detail.xhr.getResponseHeader('X-AI-Request-ID'); if (idHeader) { this.setAttribute('hx-get', '/patients/{{ patient.patient_id }}/ai_summary?current_request_id=' + idHeader); } }">
                         {% with ai_response=last_ai_response, patient_id=patient.patient_id %}
                             {% include '_ai_summary.html' %}
                         {% endwith %}
