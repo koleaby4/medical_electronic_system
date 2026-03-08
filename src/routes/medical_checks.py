@@ -105,6 +105,7 @@ async def create_medical_check(
     notes: Annotated[str | None, Form()] = None,
     param_count: Annotated[int | None, Form()] = None,
     attachments: list[UploadFile] = File(None),
+    voice_recordings: list[UploadFile] = File(None),
 ) -> JSONResponse | RedirectResponse:
     if not (patient := storage.patients.get_patient(patient_id=patient_id)):
         raise HTTPException(status_code=404, detail=f"Patient with patient_id={patient_id} not found")
@@ -241,6 +242,28 @@ async def create_medical_check(
                     ],
                 )
             storage.medical_checks.conn.commit()
+
+    if voice_recordings:
+        iso_date = mc.check_date.isoformat()
+        upload_dir = Path("voice_recordings") / str(patient_id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        for recording in voice_recordings:
+            timestamp = datetime.datetime.now().strftime("%H%M%S_%f")
+            filename = f"{iso_date}_{timestamp}.webm"
+            file_path = upload_dir / filename
+
+            content = await recording.read()
+            if not content:
+                continue
+
+            with open(file_path, "wb") as f:
+                f.write(content)
+
+            db_file_path = f"{patient_id}/{filename}"
+            storage.voice_recordings.insert_recording(check_id=check_id, file_path=db_file_path)
+
+        storage.voice_recordings.conn.commit()
 
     # Trigger AI analysis in background
     background_tasks.add_task(ai_service.prepare_and_send_request, patient_id)

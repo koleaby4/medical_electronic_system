@@ -8,6 +8,7 @@ from src.data_access.ai_responses import AiResponsesStorage
 from src.data_access.medical_check_templates import MedicalCheckTemplatesStorage
 from src.data_access.medical_checks import MedicalChecksStorage
 from src.data_access.patients import PatientsStorage
+from src.data_access.voice_recordings import VoiceRecordingsStorage
 
 
 # Register adapters for date and datetime to avoid DeprecationWarning in Python 3.12+
@@ -44,6 +45,7 @@ class DbStorage:
         self.medical_check_templates = MedicalCheckTemplatesStorage(self._conn)
         self.ai_requests = AiRequestsStorage(self._conn)
         self.ai_responses = AiResponsesStorage(self._conn)
+        self.voice_recordings = VoiceRecordingsStorage(self._conn)
 
     def close(self) -> None:
         with suppress(Exception):

@@ -56,6 +56,29 @@
         <input type="file" id="attachments" name="attachments" class="form-control" multiple>
     </div>
 
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            Voice Recordings
+            <span id="recordingIndicator" class="badge bg-danger d-none">Recording...</span>
+        </div>
+        <div class="card-body">
+            <div class="d-flex gap-2 mb-3">
+                <button type="button" id="startRecordingBtn" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-mic"></i> Start Recording
+                </button>
+                <button type="button" id="pauseRecordingBtn" class="btn btn-outline-warning btn-sm d-none">
+                    Pause
+                </button>
+                <button type="button" id="finishRecordingBtn" class="btn btn-outline-success btn-sm d-none">
+                    Finish Recording
+                </button>
+            </div>
+            <ul id="recordingsList" class="list-group list-group-flush">
+                <!-- Recordings will be added here -->
+            </ul>
+        </div>
+    </div>
+
     <div>
         {{ status_select('status', 'status') }}
     </div>
@@ -69,6 +92,7 @@
     </div>
 </form>
 
+<script src="/static/js/audio-recorder.js"></script>
 <script>
     (function(){
         const dateEl = document.getElementById('checkDate');

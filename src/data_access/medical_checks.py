@@ -4,7 +4,7 @@ import sqlite3
 from src.data_access.base import BaseStorage
 from src.data_access.medical_check_items import MedicalCheckItemsStorage
 from src.models.enums import MedicalCheckStatus
-from src.models.medical_check import MedicalCheck, MedicalCheckAttachment
+from src.models.medical_check import MedicalCheck, MedicalCheckAttachment, VoiceRecording
 from src.models.medical_check_item import MedicalCheckItem
 
 
@@ -111,6 +111,7 @@ class MedicalChecksStorage(BaseStorage):
                 continue
             items = self.items.get_items_by_check_id(check_id=check_id)
             attachments = self.get_attachments_by_check_id(check_id=check_id)
+            voice_recordings = self._get_voice_recordings(check_id=check_id)
             medical_check = MedicalCheck(
                 check_id=check_id,
                 patient_id=row.get("patient_id", 0),
@@ -120,6 +121,7 @@ class MedicalChecksStorage(BaseStorage):
                 notes=row.get("notes"),
                 medical_check_items=items,
                 attachments=attachments,
+                voice_recordings=voice_recordings,
             )
             records.append(medical_check)
 
@@ -151,6 +153,7 @@ class MedicalChecksStorage(BaseStorage):
 
         items = self.items.get_items_by_check_id(check_id=check_id)
         attachments = self.get_attachments_by_check_id(check_id=check_id)
+        voice_recordings = self._get_voice_recordings(check_id=check_id)
 
         medical_check = MedicalCheck(
             check_id=row.get("check_id", check_id),
@@ -161,6 +164,7 @@ class MedicalChecksStorage(BaseStorage):
             notes=row.get("notes"),
             medical_check_items=items,
             attachments=attachments,
+            voice_recordings=voice_recordings,
         )
         return medical_check
 
@@ -177,6 +181,22 @@ class MedicalChecksStorage(BaseStorage):
             )
             raw_rows = self._fetch_all_dicts(cur)
             return [MedicalCheckAttachment(**row) for row in raw_rows]
+        finally:
+            cur.close()
+
+    def _get_voice_recordings(self, check_id: int) -> list[VoiceRecording]:
+        cur = self.conn.cursor()
+        try:
+            cur.execute(
+                """
+                SELECT voice_recording_id, check_id, file_path, full_text, summary
+                FROM voice_recordings
+                WHERE check_id = ?
+                """,
+                [check_id],
+            )
+            raw_rows = self._fetch_all_dicts(cur)
+            return [VoiceRecording(**row) for row in raw_rows]
         finally:
             cur.close()
 

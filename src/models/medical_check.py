@@ -15,6 +15,14 @@ class MedicalCheckAttachment(BaseModel):
     parsed_content: str | None = Field(None, description="Extracted and parsed file content")
 
 
+class VoiceRecording(BaseModel):
+    voice_recording_id: int | None = Field(default=None, description="DB identifier")
+    check_id: int | None = Field(default=None, description="Check identifier", exclude=True)
+    file_path: str = Field(..., description="Local path to the file")
+    full_text: str | None = Field(None, description="Transcribed full text")
+    summary: str | None = Field(None, description="AI summary of the transcribed text")
+
+
 class MedicalCheck(BaseModel):
     check_id: int | None = Field(default=None, description="DB identifier")
     patient_id: int | None = Field(default=None, description="Patient identifier", exclude=True)
@@ -26,6 +34,7 @@ class MedicalCheck(BaseModel):
     notes: str | None = Field(None, description="Optional notes about the check")
     medical_check_items: list[MedicalCheckItem] = Field(default_factory=list)
     attachments: list[MedicalCheckAttachment] = Field(default_factory=list)
+    voice_recordings: list[VoiceRecording] = Field(default_factory=list)
 
     @field_validator("status", mode="before")
     @classmethod
