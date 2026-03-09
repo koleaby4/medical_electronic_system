@@ -71,6 +71,37 @@
             </div>
         </div>
         {% endif %}
+
+        {% if check.voice_recordings %}
+        <div class="card mb-3">
+            <div class="card-header">Transcripts</div>
+            <div class="card-body">
+                {% for recording in check.voice_recordings %}
+                    <h6 class="border-bottom pb-2">{{ recording.file_path.split('/')[-1] }}</h6>
+                    {% if recording.full_text %}
+                        {% set transcript = recording.full_text | json_decode %}
+                        {% if transcript and transcript.segments is defined and transcript.segments %}
+                            <div class="transcript-container" style="max-height: 400px; overflow-y: auto;">
+                                {% for segment in transcript.segments %}
+                                    <div class="mb-2">
+                                        {% if segment.speaker != 'A' %}
+                                            <span class="badge bg-secondary me-1">Speaker {{ segment.speaker }}</span>
+                                        {% endif %}
+                                        <span style="white-space: pre-wrap;">{{ segment.text }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <pre class="mb-3" style="white-space: pre-wrap; background-color: #f8f9fa; padding: 10px; border-radius: 5px;">{{ recording.full_text }}</pre>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted small">Transcription in progress...</p>
+                    {% endif %}
+                    {% if not loop.last %}<hr>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 from contextlib import suppress
 from pathlib import Path
 from typing import Annotated, Any
@@ -16,8 +17,21 @@ from src.models.medical_check import MedicalCheck, MedicalChecks
 from src.models.medical_check_item import MedicalCheckItem
 from src.services.ai_service import AiService
 
+
+logger = logging.getLogger(__name__)
+
+
+def safe_json_decode(value: str) -> Any:
+    try:
+        return json.loads(value)
+    except (ValueError, TypeError):
+        return None
+
+
 router = APIRouter()
 templates = Jinja2Templates(directory="src/templates")
+templates.env.add_extension("jinja2.ext.loopcontrols")
+templates.env.filters["json_decode"] = safe_json_decode
 
 
 def _read_attachment_content(file_path: Path) -> str | None:
@@ -36,7 +50,7 @@ def _read_attachment_content(file_path: Path) -> str | None:
                 text += page.extract_text() + "\n"
             return text.strip()
         except Exception as e:
-            print(f"Error reading PDF attachment {file_path}: {e}")
+            logger.error(f"Error reading PDF attachment {file_path}: {e}")
             return None
 
     # Simple check for text files by extension
@@ -48,7 +62,7 @@ def _read_attachment_content(file_path: Path) -> str | None:
         # We assume UTF-8 for now.
         return file_path.read_text(encoding="utf-8", errors="replace")
     except Exception as e:
-        print(f"Error reading text attachment {file_path}: {e}")
+        logger.error(f"Error reading text attachment {file_path}: {e}")
         return None
 
 
@@ -90,6 +104,21 @@ async def list_medical_checks(
     checks = storage.medical_checks.get_medical_checks(patient_id)
 
     return MedicalChecks(records=checks)
+
+
+async def _transcribe_recordings_task(check_id: int, storage: DbStorage, ai_service: AiService) -> None:
+    """Background task to transcribe all voice recordings for a medical check."""
+    recordings = storage.voice_recordings.get_recordings_by_check_id(check_id)
+    for rec in recordings:
+        if not rec.file_path:
+            continue
+        # file_path in DB is relative to voice_recordings/
+        full_path = Path("voice_recordings") / rec.file_path
+        if full_path.exists():
+            transcript_json = await ai_service.transcribe_voice_recording(full_path)
+            storage.voice_recordings.update_transcription(
+                voice_recording_id=rec.voice_recording_id, full_text=transcript_json
+            )
 
 
 @router.post("", response_model=None)
@@ -264,6 +293,8 @@ async def create_medical_check(
             storage.voice_recordings.insert_recording(check_id=check_id, file_path=db_file_path)
 
         storage.voice_recordings.conn.commit()
+        # Trigger transcription in background
+        background_tasks.add_task(_transcribe_recordings_task, check_id, storage, ai_service)
 
     # Trigger AI analysis in background
     background_tasks.add_task(ai_service.prepare_and_send_request, patient_id)

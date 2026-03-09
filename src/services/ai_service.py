@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,9 @@ from src.models.medical_check import MedicalCheck
 from src.models.patient import Patient
 
 
+logger = logging.getLogger(__name__)
+
+
 class AiService:
     def __init__(self, db: DbStorage, settings: OpenAISettings):
         self.db = db
@@ -25,6 +29,26 @@ class AiService:
             if settings.api_key
             else None
         )
+
+    async def transcribe_voice_recording(self, file_path: Path) -> str:
+        """Transcribes a voice recording using gpt-4o-transcribe-diarize."""
+        if not self.client:
+            return "AI Service not configured (no API key)"
+
+        try:
+            with open(file_path, "rb") as audio_file:
+                response = await self.client.audio.transcriptions.create(
+                    model="gpt-4o-transcribe-diarize",
+                    file=audio_file,
+                    response_format="diarized_json",
+                    extra_body={"chunking_strategy": "auto"}
+                )
+                if hasattr(response, "model_dump_json"):
+                    return response.model_dump_json()
+                return str(response)
+        except Exception as e:
+            logger.error(f"Error transcribing {file_path}: {e}")
+            return f"Transcription error: {e}"
 
     async def prepare_and_send_request(self, patient_id: int) -> tuple[AiRequest, AiResponse | None]:
         # 1. Collect data
@@ -80,7 +104,7 @@ class AiService:
                 self.db.ai_responses.save(ai_response)
             except Exception as e:
                 # In a real app we'd log this and maybe store error status
-                print(f"Error calling OpenAI: {e}")
+                logger.exception(f"Error calling OpenAI: {e}")
                 raise
 
         return ai_request, ai_response
@@ -117,7 +141,7 @@ class AiService:
                     text += page.extract_text() + "\n"
                 return text.strip()
             except Exception as e:
-                print(f"Error reading PDF attachment {full_path}: {e}")
+                logger.error(f"Error reading PDF attachment {full_path}: {e}")
                 return None
 
         # Simple check for text files by extension
@@ -129,5 +153,5 @@ class AiService:
             # We assume UTF-8 for now.
             return full_path.read_text(encoding="utf-8", errors="replace")
         except Exception as e:
-            print(f"Error reading text attachment {full_path}: {e}")
+            logger.error(f"Error reading text attachment {full_path}: {e}")
             return None

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+import logging
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -7,6 +8,10 @@ from fastapi.staticfiles import StaticFiles
 from settings import Settings
 from src.data_access.db_storage import DbStorage
 from src.routes import medical_check_templates, medical_checks, patients, root
+
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -19,6 +24,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)
+    logger.info("Starting Medical Electronic System API")
     app.mount("/static", StaticFiles(directory="src/static"), name="static")
     app.include_router(root.router)
     app.include_router(patients.router, prefix="/patients")
